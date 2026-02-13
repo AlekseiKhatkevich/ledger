@@ -1,0 +1,108 @@
+# Python-generated files
+pycache/
+*.py[cod]
+*$py.class
+C extensions
+
+*.so
+Distribution / packaging
+
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+Installer logs
+
+pip-log.txt
+pip-delete-this-directory.txt
+Virtual environments
+
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+Pyenv
+
+.python-version
+celery beat
+
+celerybeat-schedule
+VS Code
+
+.vscode/
+PyCharm
+
+.idea/
+*.iml
+*.iws
+.idea/**/workspace.xml
+Editors
+
+*~
+*.swp
+*.swo
+.DS_Store
+Unit test / coverage
+
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+Jupyter
+
+.ipynb_checkpoints
+*.ipynb
+Sphinx
+
+docs/_build/
+Environments and dependency managers
+
+pip-wheel-metadata/
+poetry.lock
+poetry.toml
+.venv/
+.envrc
+Logs and runtime
+
+*.log
+instance/
+.webassets-cache
+Secrets (ensure these files are not committed)
+
+.env
+secrets.toml
+credentials.json
+config/*.secret
+Static / build outputs
+
+staticfiles/
+assets/
+build/*
+Optional: local config files
+
+config.yaml
+local_settings.py
