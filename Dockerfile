@@ -3,16 +3,16 @@
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 
-ENV PATH="/app/.venv/bin:/root/.local/bin/:$PATH"
+ENV PATH="/root/.local/bin/:$PATH"
 ENV UV_NO_DEV=1
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 ENV UV_PYTHON_DOWNLOADS=never
+ENV PYTHONPATH=/app
 
 RUN groupadd --system --gid 999 nonroot \
  && useradd --system --gid 999 --uid 999 --create-home nonroot
-
 
 WORKDIR /app
 
@@ -26,9 +26,16 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
+ENV PATH="/app/.venv/bin:$PATH"
+
 ENTRYPOINT []
 
 USER nonroot
 
-CMD ["uv", "run", "granian", "--interface", "asgi", "main:app", "--loop", "uvloop", "--reload"]
+CMD ["granian", \
+    "--interface", "asgi", \
+    "main:app", \
+    "--loop", "uvloop", \
+    "--reload", \
+    "--host", "0.0.0.0"]
 
