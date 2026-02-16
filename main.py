@@ -2,13 +2,13 @@ from litestar import Litestar, get
 
 
 @get("/")
-async def index() -> bool:
-    return True
+async def readiness() -> str:
+    return 'test'
 
 
 @get("/books/{book_id:int}")
-async def get_book(book_id: int) -> dict[str, int]:
+async def get_book333(book_id: int) -> dict[str, int]:
     return {"book_id": book_id}
 
 
-app = Litestar([index, get_book])
+app = Litestar([readiness, get_book333])

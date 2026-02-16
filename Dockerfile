@@ -24,7 +24,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked
+    uv sync --locked \
+    && chown -R 999:999 /app /root/.cache/uv
 
 ENV PATH="/app/.venv/bin:$PATH"
 
