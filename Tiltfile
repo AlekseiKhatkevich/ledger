@@ -1,5 +1,3 @@
-print('Hello World')
-
 k8s_yaml('app.yaml')
 
 docker_build('backend-api', context='.', dockerfile='Dockerfile',)
