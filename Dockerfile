@@ -20,6 +20,7 @@ ENV PYTHONPATH=/app
 ENV GRANIAN_RELOAD=$GRANIAN_RELOAD
 ENV GRANIAN_INTERFACE='asgi'
 ENV GRANIAN_LOOP='uvloop'
+ENV GRANIAN_HOST='0.0.0.0'
 
 RUN groupadd --system --gid 999 nonroot \
  && useradd --system --gid 999 --uid 999 --create-home nonroot
