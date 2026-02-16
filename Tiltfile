@@ -1,7 +1,7 @@
 docker_build(
     'backend-api',
     context='.',
-    build_args={'UV_NO_DEV': '1'},
+    build_args={'UV_NO_DEV': '1', 'GRANIAN_RELOAD': '1',},
     live_update=[
         sync('.', '/app'),
         run('uv sync',

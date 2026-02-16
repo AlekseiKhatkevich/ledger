@@ -4,14 +4,22 @@
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 
 ARG UV_NO_DEV='0'
+ARG GRANIAN_RELOAD='0'
 
+#  system
 ENV PATH="/root/.local/bin/:$PATH"
+#  uv
 ENV UV_NO_DEV=$UV_NO_DEV
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 ENV UV_PYTHON_DOWNLOADS=never
+#  python
 ENV PYTHONPATH=/app
+# granian
+ENV GRANIAN_RELOAD=$GRANIAN_RELOAD
+ENV GRANIAN_INTERFACE='asgi'
+ENV GRANIAN_LOOP='uvloop'
 
 RUN groupadd --system --gid 999 nonroot \
  && useradd --system --gid 999 --uid 999 --create-home nonroot
@@ -27,7 +35,7 @@ COPY . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked \
-    && chown -R 999:999 /app /root/.cache/uv #  для Tilt, чтобы работал live update для не-рут юзера
+    && chown -R 999:999 /app  #  для Tilt, чтобы работал live update для не-рут юзера
 
 ENV PATH="/app/.venv/bin:$PATH"
 
@@ -36,10 +44,5 @@ ENTRYPOINT []
 USER nonroot
 
 # add uv run befor in case of env troubles, might help...
-CMD ["granian", \
-    "--interface", "asgi", \
-    "main:app", \
-    "--loop", "uvloop", \
-    "--reload", \
-    "--host", "0.0.0.0"]
+CMD ["granian", "main:app"]
 
