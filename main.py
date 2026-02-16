@@ -2,8 +2,8 @@ from litestar import Litestar, get
 
 
 @get("/")
-async def readiness() -> str:
-    return 'test'
+async def readiness() -> bool:
+    return False
 
 
 @get("/books/{book_id:int}")

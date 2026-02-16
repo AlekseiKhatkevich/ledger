@@ -3,8 +3,10 @@
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 
+ARG UV_NO_DEV='0'
+
 ENV PATH="/root/.local/bin/:$PATH"
-ENV UV_NO_DEV=1
+ENV UV_NO_DEV=$UV_NO_DEV
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
@@ -25,7 +27,7 @@ COPY . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked \
-    && chown -R 999:999 /app /root/.cache/uv
+    && chown -R 999:999 /app /root/.cache/uv #  для Tilt, чтобы работал live update для не-рут юзера
 
 ENV PATH="/app/.venv/bin:$PATH"
 
