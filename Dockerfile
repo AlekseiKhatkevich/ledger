@@ -32,6 +32,7 @@ ENTRYPOINT []
 
 USER nonroot
 
+# add uv run befor in case of env troubles, might help...
 CMD ["granian", \
     "--interface", "asgi", \
     "main:app", \
