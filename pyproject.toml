@@ -8,3 +8,8 @@ dependencies = [
     "granian[reload,uvloop]>=2.7.1",
     "litestar>=2.20.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ipython>=9.10.0",
+]
