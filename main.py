@@ -2,8 +2,8 @@ from litestar import Litestar, get
 
 
 @get("/health")
-async def health() -> bool:
-    return False
+async def health() -> dict[str, str]:
+    return {"status":"ok"}
 
 
 @get("/books/{book_id:int}")

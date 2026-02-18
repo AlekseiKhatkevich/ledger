@@ -7,7 +7,7 @@ services:
       - GRANIAN_RELOAD=1
       - UV_NO_DEV=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 2s
       retries: 2
@@ -23,3 +23,5 @@ services:
           path: ./pyproject.toml
         - action: rebuild
           path: ./uv.lock
+        - action: rebuild
+          path: ./Dockerfile
