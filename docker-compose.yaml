@@ -6,8 +6,9 @@ services:
     environment:
       - GRANIAN_RELOAD=1
       - UV_NO_DEV=0
+    networks: [ demo ]
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health|| exit 1"]
       interval: 10s
       timeout: 2s
       retries: 2
@@ -29,8 +30,9 @@ services:
 #  ---
 
   etcd1: &etcd
-    image: ${PATRONI_TEST_IMAGE:-patroni}
-#    networks: [ demo ]
+    build:
+      context: ./patroni
+    networks: [ demo ]
     environment:
       ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
       ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
@@ -55,8 +57,9 @@ services:
     command: etcd --name etcd3 --initial-advertise-peer-urls http://etcd3:2380
 
   haproxy:
-    image: ${PATRONI_TEST_IMAGE:-patroni}
-#    networks: [ demo ]
+    build:
+      context: ./patroni
+    networks: [ demo ]
     env_file: patroni/docker/patroni.env
     hostname: haproxy
     container_name: demo-haproxy
@@ -70,8 +73,9 @@ services:
       PATRONI_SCOPE: demo
 
   patroni1:
-    image: ${PATRONI_TEST_IMAGE:-patroni}
-#    networks: [ demo ]
+    build:
+      context: ./patroni
+    networks: [ demo ]
     env_file: patroni/docker/patroni.env
     hostname: patroni1
     container_name: demo-patroni1
@@ -80,8 +84,9 @@ services:
       PATRONI_NAME: patroni1
 
   patroni2:
-    image: ${PATRONI_TEST_IMAGE:-patroni}
-#    networks: [ demo ]
+    build:
+      context: ./patroni
+    networks: [ demo ]
     env_file: patroni/docker/patroni.env
     hostname: patroni2
     container_name: demo-patroni2
@@ -89,12 +94,7 @@ services:
       <<: *haproxy_env
       PATRONI_NAME: patroni2
 
-  patroni3:
-    image: ${PATRONI_TEST_IMAGE:-patroni}
-#    networks: [ demo ]
-    env_file: patroni/docker/patroni.env
-    hostname: patroni3
-    container_name: demo-patroni3
-    environment:
-      <<: *haproxy_env
-      PATRONI_NAME: patroni3
+
+networks:
+  demo:
+    driver: bridge

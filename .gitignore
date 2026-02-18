@@ -106,3 +106,5 @@ Optional: local config files
 
 config.yaml
 local_settings.py
+
+patroni
