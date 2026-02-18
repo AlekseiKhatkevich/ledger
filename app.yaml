@@ -19,6 +19,7 @@ spec:
           image: backend-api
           ports:
             - containerPort: 8000
+            - containerPort: 5555  # for pdb
           readinessProbe:
             httpGet:
               port: 8000

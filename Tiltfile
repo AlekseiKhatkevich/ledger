@@ -9,4 +9,4 @@ docker_build(
     ]
 )
 k8s_yaml('app.yaml')
-k8s_resource('backend-api', port_forwards='8000')
+k8s_resource('backend-api', port_forwards=[8000, 5555])

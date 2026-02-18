@@ -6,10 +6,13 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "granian[reload,uvloop]>=2.7.1",
-    "litestar>=2.20.0",
+    "litestar[standard]>=2.20.0",
 ]
 
 [dependency-groups]
 dev = [
     "ipython>=9.10.0",
+    "pydevd-pycharm~=253.30387.173",
+    "remote-pdb>=2.1.0",
+    "web-pdb>=1.6.3",
 ]
