@@ -25,6 +25,8 @@ ENV GRANIAN_HOST='0.0.0.0'
 RUN groupadd --system --gid 999 nonroot \
  && useradd --system --gid 999 --uid 999 --create-home nonroot
 
+USER nonroot
+
 WORKDIR /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -32,17 +34,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project
 
-COPY . /app
+COPY --chown=app:app . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked \
-    && chown -R 999:999 /app  #  для Tilt, чтобы работал live update для не-рут юзера
+    uv sync --locked
 
 ENV PATH="/app/.venv/bin:$PATH"
 
 ENTRYPOINT []
-
-USER nonroot
 
 # add uv run befor in case of env troubles, might help...
 CMD ["granian", "main:app"]

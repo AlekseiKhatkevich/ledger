@@ -1,0 +1,19 @@
+services:
+  backend-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GRANIAN_RELOAD=1
+      - UV_NO_DEV=0
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .venv/
+        - action: rebuild
+          path: ./pyproject.toml
+        - action: rebuild
+          path: ./uv.lock
