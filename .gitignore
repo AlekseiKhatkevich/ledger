@@ -108,3 +108,4 @@ config.yaml
 local_settings.py
 
 patroni
+secrets
