@@ -35,7 +35,7 @@ services:
 #  ---
 
   postgres:
-    image: postgres:18-alpine
+    image: postgres:18
     container_name: my_postgres
     restart: unless-stopped
     environment:
@@ -146,3 +146,11 @@ volumes:
   pg_patroni1:
   pg_patroni2:
   postgres_data:
+
+secrets:
+  postgres_password:
+    file: ./postgres_password.txt
+  postgres_login:
+    file: ./postgres_login.txt
+
+#/run/secrets/<secret_name>
