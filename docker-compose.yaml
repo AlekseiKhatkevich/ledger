@@ -40,8 +40,9 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+#      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ledger-db
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     ports:
       - "5432:5432"
     volumes:
@@ -53,6 +54,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    secrets:
+      - db_password
 
   #  ---
 
@@ -148,9 +151,5 @@ volumes:
   postgres_data:
 
 secrets:
-  postgres_password:
-    file: ./postgres_password.txt
-  postgres_login:
-    file: ./postgres_login.txt
-
-#/run/secrets/<secret_name>
+  db_password:
+    file: ./db_password.txt
