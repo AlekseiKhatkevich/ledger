@@ -39,6 +39,47 @@ services:
     image: postgres:18
     container_name: my_postgres
     restart: unless-stopped
+    command: [
+      "postgres",
+      "-c", "shared_buffers=8GB",
+      "-c", "effective_cache_size=24GB",
+      "-c", "work_mem=64MB",
+      "-c", "maintenance_work_mem=2GB",
+      "-c", "wal_buffers=64MB",
+      "-c", "huge_pages=try",
+      "-c", "max_connections=200",
+      "-c", "superuser_reserved_connections=3",
+      "-c", "wal_level=replica",
+      "-c", "max_wal_size=4GB",
+      "-c", "min_wal_size=1GB",
+      "-c", "wal_compression=on",
+      "-c", "synchronous_commit=on",
+      "-c", "checkpoint_timeout=15min",
+      "-c", "checkpoint_completion_target=0.9",
+      "-c", "bgwriter_delay=200ms",
+      "-c", "bgwriter_lru_maxpages=100",
+      "-c", "bgwriter_lru_multiplier=2.0",
+      "-c", "random_page_cost=1.1",
+      "-c", "effective_io_concurrency=200",
+      "-c", "default_statistics_target=100",
+      "-c", "max_parallel_workers_per_gather=2",
+      "-c", "max_parallel_workers=8",
+      "-c", "max_parallel_maintenance_workers=2",
+      "-c", "autovacuum=on",
+      "-c", "autovacuum_max_workers=3",
+      "-c", "autovacuum_vacuum_scale_factor=0.1",
+      "-c", "autovacuum_analyze_scale_factor=0.05",
+      "-c", "autovacuum_vacuum_cost_delay=2ms",
+      "-c", "autovacuum_vacuum_cost_limit=1000",
+      "-c", "log_filename='postgresql-%Y-%m-%d.log'",
+      "-c", "log_min_duration_statement=1000",
+      "-c", "log_checkpoints=on",
+      "-c", "log_lock_waits=on",
+      "-c", "log_temp_files=0",
+      "-c", "log_autovacuum_min_duration=0",
+      "-c", "log_line_prefix='%m [%p] %q%u@%d '",
+      "-c", "password_encryption=scram-sha-256"
+    ]
     environment:
       PGPASSFILE: /run/secrets/pg_pass
     ports:
@@ -52,6 +93,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    stop_grace_period: 120s
     secrets:
       - pg_pass
 
