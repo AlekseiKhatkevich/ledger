@@ -6,13 +6,17 @@ services:
     environment:
       - GRANIAN_RELOAD=1
       - UV_NO_DEV=0
-    networks: [ demo ]
+    networks: [ ledger-network ]
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health|| exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 2s
       retries: 2
       start_period: 2s
+    restart: unless-stopped
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
     develop:
       watch:
         - action: sync
@@ -20,6 +24,7 @@ services:
           target: /app
           ignore:
             - .venv/
+            - .patroni/
         - action: rebuild
           path: ./pyproject.toml
         - action: rebuild
@@ -29,10 +34,27 @@ services:
 
 #  ---
 
+  postgres:
+    image: postgres:18-alpine
+    container_name: my_postgres
+    restart: on-failure
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ledger-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      [ ledger-network ]
+
+  #  ---
+
   etcd1: &etcd
     build:
       context: ./patroni
-    networks: [ demo ]
+    networks: [ ledger-network ]
     environment:
       ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
       ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
@@ -43,23 +65,29 @@ services:
     container_name: demo-etcd1
     hostname: etcd1
     command: etcd --name etcd1 --initial-advertise-peer-urls http://etcd1:2380
+    restart: unless-stopped
+    profiles: [patroni]
 
   etcd2:
     <<: *etcd
     container_name: demo-etcd2
     hostname: etcd2
     command: etcd --name etcd2 --initial-advertise-peer-urls http://etcd2:2380
+    restart: unless-stopped
+    profiles: [patroni]
 
   etcd3:
     <<: *etcd
     container_name: demo-etcd3
     hostname: etcd3
     command: etcd --name etcd3 --initial-advertise-peer-urls http://etcd3:2380
+    restart: unless-stopped
+    profiles: [patroni]
 
   haproxy:
     build:
       context: ./patroni
-    networks: [ demo ]
+    networks: [ ledger-network ]
     env_file: patroni/docker/patroni.env
     hostname: haproxy
     container_name: demo-haproxy
@@ -71,30 +99,45 @@ services:
       ETCDCTL_ENDPOINTS: http://etcd1:2379,http://etcd2:2379,http://etcd3:2379
       PATRONI_ETCD3_HOSTS: "'etcd1:2379','etcd2:2379','etcd3:2379'"
       PATRONI_SCOPE: demo
+    restart: unless-stopped
+    profiles: [patroni]
 
   patroni1:
     build:
       context: ./patroni
-    networks: [ demo ]
+    networks: [ ledger-network ]
     env_file: patroni/docker/patroni.env
     hostname: patroni1
     container_name: demo-patroni1
     environment:
       <<: *haproxy_env
       PATRONI_NAME: patroni1
+    restart: unless-stopped
+    volumes:
+      - pg_patroni1:/var/lib/postgresql/data
+    profiles: [patroni]
 
   patroni2:
     build:
       context: ./patroni
-    networks: [ demo ]
+    networks: [ ledger-network ]
     env_file: patroni/docker/patroni.env
     hostname: patroni2
     container_name: demo-patroni2
     environment:
       <<: *haproxy_env
       PATRONI_NAME: patroni2
+    restart: unless-stopped
+    volumes:
+      - pg_patroni2:/var/lib/postgresql/data
+    profiles: [patroni]
 
 
 networks:
-  demo:
-    driver: bridge
+    ledger-network:
+      driver: bridge
+
+volumes:
+  pg_patroni1:
+  pg_patroni2:
+  postgres_data:

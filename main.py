@@ -14,6 +14,10 @@ async def get_book333(book_id: int) -> dict[str, int]:
 async def healtht() -> dict :
     return {"status":"ok"}
 
+@get("/d")
+async def healtht1() -> dict :
+    return {"status":"ok"}
 
 
-app = Litestar([health, get_book333, healtht])
+
+app = Litestar([health, get_book333, healtht, healtht1])
