@@ -1,9 +1,15 @@
 from functools import cache
+from typing import TYPE_CHECKING, Protocol
+
 from sqlalchemy.ext.asyncio import create_async_engine
-# "postgresql+psycopg2://scott:tiger@localhost:5432/mydatabase"
+
+from settings import settings
+
+
+class SupportsStr(Protocol):
+    def __str__(self) -> str:...
+
 @cache
 class DB:
-    def __init__(self, conn_string):
-        self.engine = create_async_engine(
-            "postgresql+asyncpg:"
-        )
+    def __init__(self, conn_string: SupportsStr | None = None) -> None:
+        self.engine = create_async_engine(str(conn_string or settings.pg_dsn))

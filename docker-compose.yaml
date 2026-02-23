@@ -202,8 +202,6 @@ volumes:
   postgres_data:
 
 secrets:
-#  pg_pass:
-#    file: secrets/postgres/pgpass.conf
   pg_user:
     file: secrets/postgres/pg_user.txt
   pg_pass:
