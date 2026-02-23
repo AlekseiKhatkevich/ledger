@@ -6,6 +6,13 @@ services:
     environment:
       - GRANIAN_RELOAD=1
       - UV_NO_DEV=0
+      - POSTGRES_USER_FILE=/run/secrets/pg_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_pass
+      - POSTGRES_DB_FILE=/run/secrets/pg_db
+    secrets:
+      - pg_user
+      - pg_pass
+      - pg_db
     networks: [ ledger-network ]
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
@@ -81,7 +88,10 @@ services:
       "-c", "password_encryption=scram-sha-256"
     ]
     environment:
-      PGPASSFILE: /run/secrets/pg_pass
+#      PGPASSFILE: /run/secrets/pg_pass
+      POSTGRES_USER_FILE: /run/secrets/pg_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+      POSTGRES_DB_FILE: /run/secrets/pg_db
     ports:
       - "5432:5432"
     volumes:
@@ -95,7 +105,9 @@ services:
       retries: 5
     stop_grace_period: 120s
     secrets:
+      - pg_user
       - pg_pass
+      - pg_db
 
   #  ---
 
@@ -191,5 +203,11 @@ volumes:
   postgres_data:
 
 secrets:
+#  pg_pass:
+#    file: secrets/postgres/pgpass.conf
+  pg_user:
+    file: secrets/postgres/pg_user.txt
   pg_pass:
-    file: secrets/postgres/pgpass.conf
+    file: secrets/postgres/pg_pass.txt
+  pg_db:
+    file: secrets/postgres/pg_db.txt
