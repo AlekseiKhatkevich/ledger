@@ -1,14 +1,23 @@
+x-common-env-map: &common-env-map
+  POSTGRES_USER_FILE: /run/secrets/pg_user
+  POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+  POSTGRES_DB_FILE: /run/secrets/pg_db
+
 services:
   backend-api:
     build: .
     ports:
       - "8000:8000"
     environment:
-      - GRANIAN_RELOAD=1
-      - UV_NO_DEV=0
-      - POSTGRES_USER_FILE=/run/secrets/pg_user
-      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_pass
-      - POSTGRES_DB_FILE=/run/secrets/pg_db
+      <<: *common-env-map
+      GRANIAN_RELOAD: 1
+      UV_NO_DEV: 1
+#      - GRANIAN_RELOAD=1
+#      - UV_NO_DEV=0
+#      - POSTGRES_USER_FILE=/run/secrets/pg_user
+#      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_pass
+#      - POSTGRES_DB_FILE=/run/secrets/pg_db
+#      - *common-env-map
     secrets:
       - pg_user
       - pg_pass
@@ -87,11 +96,7 @@ services:
       "-c", "log_line_prefix='%m [%p] %q%u@%d '",
       "-c", "password_encryption=scram-sha-256"
     ]
-    environment:
-#      PGPASSFILE: /run/secrets/pg_pass
-      POSTGRES_USER_FILE: /run/secrets/pg_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
-      POSTGRES_DB_FILE: /run/secrets/pg_db
+    environment: *common-env-map
     ports:
       - "5432:5432"
     volumes:
