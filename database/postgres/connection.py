@@ -1,5 +1,5 @@
 from functools import cache
-from typing import TYPE_CHECKING, Protocol
+from typing import Protocol
 
 from sqlalchemy.ext.asyncio import create_async_engine
 

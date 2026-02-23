@@ -12,8 +12,6 @@ class PostgresSettings:
     POSTGRES_DB_FILE: str
     PGHOSTADDR: str
 
-    model_config = SettingsConfigDict(secrets_dir='/run/secrets',)
-
     @computed_field
     @cached_property
     def pg_dsn(self) -> PostgresDsn:
@@ -30,6 +28,7 @@ class Settings(PostgresSettings, BaseSettings):
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
         env_file=('secrets/postgres/.env', '.env.prod'),
+        secrets_dir='/run/secrets',
     )
 
 settings: Settings
