@@ -12,12 +12,6 @@ services:
       <<: *common-env-map
       GRANIAN_RELOAD: 1
       UV_NO_DEV: 1
-#      - GRANIAN_RELOAD=1
-#      - UV_NO_DEV=0
-#      - POSTGRES_USER_FILE=/run/secrets/pg_user
-#      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_pass
-#      - POSTGRES_DB_FILE=/run/secrets/pg_db
-#      - *common-env-map
     secrets:
       - pg_user
       - pg_pass
@@ -35,6 +29,12 @@ services:
         condition: service_healthy
     develop:
       watch:
+        - action: rebuild
+          path: ./pyproject.toml
+        - action: rebuild
+          path: ./uv.lock
+        - action: rebuild
+          path: ./Dockerfile
         - action: sync
           path: .
           target: /app
@@ -42,12 +42,6 @@ services:
             - .venv/
             - .patroni/
             - .secrets
-        - action: rebuild
-          path: ./pyproject.toml
-        - action: rebuild
-          path: ./uv.lock
-        - action: rebuild
-          path: ./Dockerfile
 
 #  ---
 
@@ -104,7 +98,7 @@ services:
     networks:
       [ ledger-network ]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+      test: ["CMD-SHELL", "pg_isready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
