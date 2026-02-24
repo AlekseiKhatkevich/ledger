@@ -11,12 +11,13 @@ class PostgresSettings:
     POSTGRES_USER_FILE: str
     POSTGRES_DB_FILE: str
     PGHOSTADDR: str
-    ECHO: bool = False
+    POSTGRES_ECHO: bool = False
     POOL_PRE_PING: bool = True
     POOL_TIMEOUT: PositiveFloat = 10.0
     POOL_SIZE: PositiveInt = 3
     POOL_MAX_OVERFLOW: PositiveInt = 20
     POOL_USE_LIFO: bool = True
+    ECHO_POOL: bool = True
 
     @computed_field
     @cached_property
@@ -35,6 +36,8 @@ class PostgresSettings:
 
 @cache
 class Settings(PostgresSettings, BaseSettings):
+    APP_NAME: str = 'ledger'
+
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
         env_file=('secrets/postgres/.env', '.env.prod'),
