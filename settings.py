@@ -1,9 +1,9 @@
 from functools import cached_property, cache
 from pathlib import Path
 
-from pydantic import PostgresDsn
-from pydantic import computed_field
+from pydantic import computed_field, PositiveInt, PositiveFloat
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import URL
 
 
 class PostgresSettings:
@@ -11,16 +11,26 @@ class PostgresSettings:
     POSTGRES_USER_FILE: str
     POSTGRES_DB_FILE: str
     PGHOSTADDR: str
+    ECHO: bool = False
+    POOL_PRE_PING: bool = True
+    POOL_TIMEOUT: PositiveFloat = 10.0
+    POOL_SIZE: PositiveInt = 3
+    POOL_MAX_OVERFLOW: PositiveInt = 20
+    POOL_USE_LIFO: bool = True
 
     @computed_field
     @cached_property
-    def pg_dsn(self) -> PostgresDsn:
+    def pg_dsn(self) -> URL:
         """Reading Postgres credentials from docker secrets."""
         pwd = Path(self.POSTGRES_PASSWORD_FILE).read_text()
         usr = Path(self.POSTGRES_USER_FILE).read_text()
         db = Path(self.POSTGRES_DB_FILE).read_text()
-        return PostgresDsn(
-            f'postgresql+asyncpg://{usr}:{pwd}@{self.PGHOSTADDR}:5432/{db}'
+        return URL.create(
+            'postgresql+asyncpg',
+            username=usr,
+            password=pwd,
+            host=self.PGHOSTADDR,
+            database=db,
         )
 
 @cache
@@ -29,6 +39,7 @@ class Settings(PostgresSettings, BaseSettings):
         env_ignore_empty=True,
         env_file=('secrets/postgres/.env', '.env.prod'),
         secrets_dir='/run/secrets',
+        extra='ignore',
     )
 
 settings: Settings
