@@ -11,6 +11,7 @@ dependencies = [
     "litestar[standard]>=2.20.0",
     "pydantic-settings>=2.13.1",
     "sqlalchemy[asyncio]>=2.0.46",
+    "structlog>=25.5.0",
 ]
 
 [dependency-groups]

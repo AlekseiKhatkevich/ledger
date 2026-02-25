@@ -1,5 +1,5 @@
 from litestar import Litestar, get
-from database.postgres.connection import db
+from api import lifespan, plugins
 
 @get("/health")
 async def health() -> dict :
@@ -22,5 +22,6 @@ async def healtht1() -> dict :
 
 app = Litestar(
     [health, get_book333, healtht, healtht1],
-    on_shutdown=(db.close, ),
+    on_shutdown=lifespan.on_shutdown,
+    plugins=plugins.list_of_plugins,
 )

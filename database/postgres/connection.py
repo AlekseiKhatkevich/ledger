@@ -1,7 +1,7 @@
 import os
 import secrets
 from functools import cache
-
+import structlog
 import anyio
 from litestar.serialization import decode_json, encode_json
 from typing import TYPE_CHECKING
@@ -12,6 +12,8 @@ import weakref
 
 if TYPE_CHECKING:
     from sqlalchemy import URL
+
+log = structlog.get_logger()
 
 
 @cache
@@ -35,12 +37,11 @@ class DB:
 
     async def close(self) -> None:
         await self.engine.dispose()
+        await log.ainfo('Sqlalchemy engine has disposed')
 
     @property
     def pool_status(self) -> str:
         return self.engine.pool.status()
-
-
 
 db: DB
 def __getattr__(name: str) -> DB:
