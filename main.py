@@ -1,5 +1,5 @@
 from litestar import Litestar, get
-
+from database.postgres.connection import db
 
 @get("/health")
 async def health() -> dict :
@@ -20,4 +20,7 @@ async def healtht1() -> dict :
 
 
 
-app = Litestar([health, get_book333, healtht, healtht1])
+app = Litestar(
+    [health, get_book333, healtht, healtht1],
+    on_shutdown=(db.close, ),
+)

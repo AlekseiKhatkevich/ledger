@@ -46,7 +46,6 @@ class Settings(PostgresSettings, BaseSettings):
     )
 
 settings: Settings
-
 def __getattr__(name: str) -> Settings:
     if name == 'settings':
         return Settings()
