@@ -1,7 +1,5 @@
 from database.postgres.connection import db
 
-on_startup = ()
+on_startup = []
 
-on_shutdown = (
-    db.close,
-)
+on_shutdown = [db.close,]

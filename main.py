@@ -19,9 +19,10 @@ async def healtht1() -> dict :
     return {"status":"ok"}
 
 
-
+from litestar.plugins.structlog import StructlogPlugin
 app = Litestar(
     [health, get_book333, healtht, healtht1],
+    on_startup=lifespan.on_startup,
     on_shutdown=lifespan.on_shutdown,
-    plugins=plugins.list_of_plugins,
+    plugins=[StructlogPlugin()],
 )

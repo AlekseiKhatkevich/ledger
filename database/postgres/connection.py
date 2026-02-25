@@ -1,14 +1,16 @@
 import os
 import secrets
-from functools import cache
-import structlog
+import weakref
+from contextlib import asynccontextmanager, aclosing
+from functools import cache, cached_property
+from typing import TYPE_CHECKING, AsyncGenerator
+
 import anyio
+import structlog
 from litestar.serialization import decode_json, encode_json
-from typing import TYPE_CHECKING
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from settings import settings
-import weakref
 
 if TYPE_CHECKING:
     from sqlalchemy import URL
@@ -34,6 +36,15 @@ class DB:
             connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
         )
         self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
+
+    @cached_property
+    def _maker(self) -> async_sessionmaker:
+        return async_sessionmaker(self.engine, expire_on_commit=False)
+
+    @asynccontextmanager
+    async def session(self) -> AsyncGenerator[AsyncSession]:
+        async with aclosing(self._maker()) as session:
+            yield session
 
     async def close(self) -> None:
         await self.engine.dispose()
