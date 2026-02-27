@@ -11,7 +11,7 @@ class PostgresSettings:
     POSTGRES_USER_FILE: str
     POSTGRES_DB_FILE: str
     PGHOSTADDR: str
-    POSTGRES_ECHO: bool = False
+    POSTGRES_ECHO: bool = True
     POOL_PRE_PING: bool = True
     POOL_TIMEOUT: PositiveFloat = 10.0
     POOL_SIZE: PositiveInt = 3
