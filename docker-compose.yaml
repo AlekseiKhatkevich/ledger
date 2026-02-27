@@ -100,7 +100,7 @@ services:
     networks:
       [ ledger-network ]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d ledger-db -U postgres228 || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -d $(cat /run/secrets/pg_db) -U $(cat /run/secrets/pg_user) || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
