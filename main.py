@@ -1,28 +1,22 @@
-from litestar import Litestar, get
-from api import lifespan, plugins
+from litestar import Litestar, Request, get
+
+
+
 
 @get("/health")
 async def health() -> dict :
+    # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
     return {"status":"ok"}
 
-
-@get("/books/{book_id:int}")
-async def get_book333(book_id: int) -> dict[str, int]:
-    return {"book_id": book_id}
-
-@get("/t")
-async def healtht() -> dict :
-    return {"status":"ok"}
-
-@get("/d")
-async def healtht1() -> dict :
-    return {"status":"ok"}
+@get("/")
+async def my_router_handler(request: Request) -> None:
+    request.logger.info("inside a request1")
+    return None
 
 
-from litestar.plugins.structlog import StructlogPlugin
 app = Litestar(
-    [health, get_book333, healtht, healtht1],
-    on_startup=lifespan.on_startup,
-    on_shutdown=lifespan.on_shutdown,
-    plugins=[StructlogPlugin()],
+    [ my_router_handler, health],
+    # on_startup=lifespan.on_startup,
+    # on_shutdown=lifespan.on_shutdown,
+    # plugins=[StructlogPlugin()],
 )
