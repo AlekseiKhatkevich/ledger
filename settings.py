@@ -10,7 +10,7 @@ class PostgresSettings:
     POSTGRES_PASSWORD_FILE: str
     POSTGRES_USER_FILE: str
     POSTGRES_DB_FILE: str
-    PGHOSTADDR: str
+    PGHOSTADDR: str = 'postgres'
     POSTGRES_ECHO: bool = True
     POOL_PRE_PING: bool = True
     POOL_TIMEOUT: PositiveFloat = 10.0
@@ -40,7 +40,7 @@ class Settings(PostgresSettings, BaseSettings):
 
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
-        env_file=('secrets/postgres/.env', '.env.prod'),
+        env_file=('secrets/postgres/.env', ),
         secrets_dir='/run/secrets',
         extra='ignore',
     )

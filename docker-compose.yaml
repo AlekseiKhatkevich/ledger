@@ -13,6 +13,7 @@ services:
       GRANIAN_RELOAD: 1
       UV_NO_DEV: 1
       ALEMBIC_CONFIG: alembic/alembic.ini
+      PGHOSTADDR: postgres
     secrets:
       - pg_user
       - pg_pass
