@@ -21,9 +21,10 @@ ENV GRANIAN_RELOAD=$GRANIAN_RELOAD
 ENV GRANIAN_INTERFACE='asgi'
 ENV GRANIAN_LOOP='uvloop'
 ENV GRANIAN_HOST='0.0.0.0'
+ENV HOME=/app
 
-RUN groupadd --system --gid 999 nonroot \
-  && useradd --system --gid 999 --uid 999 --create-home nonroot \
+RUN groupadd --system --gid 1000 nonroot \
+  && useradd --system --gid 1000 --uid 1000 --create-home nonroot \
   && apt-get update && apt-get install -y --no-install-recommends curl \
   && rm -rf /var/lib/apt/lists/*
 

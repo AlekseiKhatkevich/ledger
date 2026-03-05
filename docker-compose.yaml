@@ -27,6 +27,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./alembic:/app/alembic:z
+      - ./migrations:/app/migrations:z
+      - ./migrations/versions:/app/migrations/versions:z
     develop:
       watch:
         - action: rebuild
@@ -42,6 +46,8 @@ services:
             - .venv/
             - .patroni/
             - .secrets
+            - .migrations
+            - .alembic
 
 #  ---
 
