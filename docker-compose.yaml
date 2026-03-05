@@ -12,6 +12,7 @@ services:
       <<: *common-env-map
       GRANIAN_RELOAD: 1
       UV_NO_DEV: 1
+      ALEMBIC_CONFIG: alembic/alembic.ini
     secrets:
       - pg_user
       - pg_pass
@@ -29,8 +30,6 @@ services:
         condition: service_healthy
     volumes:
       - ./alembic:/app/alembic:z
-      - ./migrations:/app/migrations:z
-      - ./migrations/versions:/app/migrations/versions:z
     develop:
       watch:
         - action: rebuild
@@ -45,9 +44,8 @@ services:
           ignore:
             - .venv/
             - .patroni/
-            - .secrets
-            - .migrations
-            - .alembic
+            - secrets/
+            - alembic/
 
 #  ---
 
