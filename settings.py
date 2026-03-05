@@ -10,7 +10,7 @@ class PostgresSettings:
     POSTGRES_PASSWORD_FILE: str
     POSTGRES_USER_FILE: str
     POSTGRES_DB_FILE: str
-    PGHOSTADDR: str = 'postgres'
+    PGHOSTADDR: str
     POSTGRES_ECHO: bool = True
     POOL_PRE_PING: bool = True
     POOL_TIMEOUT: PositiveFloat = 10.0
