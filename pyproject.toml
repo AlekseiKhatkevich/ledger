@@ -9,6 +9,7 @@ dependencies = [
     "asyncstdlib>=3.13.1",
     "granian[reload,uvloop]>=2.7.1",
     "litestar[opentelemetry,standard]>=2.20.0",
+    "opentelemetry-exporter-otlp>=1.40.0",
     "pydantic-settings>=2.13.1",
     "sqlalchemy[asyncio]>=2.0.46",
     "structlog>=25.5.0",

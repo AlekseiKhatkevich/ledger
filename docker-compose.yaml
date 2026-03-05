@@ -24,9 +24,9 @@ services:
       retries: 2
       start_period: 1s
     restart: unless-stopped
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
     develop:
       watch:
         - action: rebuild

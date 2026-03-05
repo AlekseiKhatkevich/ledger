@@ -12,3 +12,6 @@ up-dev:
 
 down-dev:
     docker compose down
+
+build:
+    docker compose build
