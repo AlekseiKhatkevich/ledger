@@ -37,3 +37,8 @@ migrate where='head':
 [group('alembic')]
 downgrade where='-1':
     uv run alembic downgrade {{where}}
+
+# open keycloak web ui
+[group('keycloak')]
+keycloak:
+    xdg-open http://localhost:8080/admin/master/console/#/master

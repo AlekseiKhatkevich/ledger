@@ -131,18 +131,18 @@ services:
       DB_VENDOR: postgres
       DB_ADDR: postgres
       DB_DATABASE: keycloak
-      DB_USER: $(cat /run/secrets/pg_user)
-      DB_PASSWORD: $(cat /run/secrets/pg_pass)
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
     depends_on:
       - postgres
     networks:
       [ ledger-network ]
     env_file:
       - ./secrets/keycloak/.env
+    restart: unless-stopped
     secrets:
       - pg_user
       - pg_pass
-      - pg_db
     #  ---
 
   etcd1: &etcd
