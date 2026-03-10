@@ -120,6 +120,22 @@ services:
 
   #  ---
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    entrypoint: /opt/keycloak/bin/kc.sh start-dev
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: postgres
+      DB_DATABASE: keycloak
+      DB_USER: postgres228
+      DB_PASSWORD: 1q2w3e
+    depends_on:
+      - postgres
+    #  ---
+
   etcd1: &etcd
     build:
       context: ./patroni
@@ -210,6 +226,7 @@ volumes:
   pg_patroni1:
   pg_patroni2:
   postgres_data:
+  keycloak_data:
 
 secrets:
   pg_user:
