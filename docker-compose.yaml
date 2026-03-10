@@ -127,13 +127,22 @@ services:
       - "8443:8443"
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
+      <<: *common-env-map
       DB_VENDOR: postgres
       DB_ADDR: postgres
       DB_DATABASE: keycloak
-      DB_USER: postgres228
-      DB_PASSWORD: 1q2w3e
+      DB_USER: $(cat /run/secrets/pg_user)
+      DB_PASSWORD: $(cat /run/secrets/pg_pass)
     depends_on:
       - postgres
+    networks:
+      [ ledger-network ]
+    env_file:
+      - ./secrets/keycloak/.env
+    secrets:
+      - pg_user
+      - pg_pass
+      - pg_db
     #  ---
 
   etcd1: &etcd
