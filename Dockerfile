@@ -1,7 +1,7 @@
 # https://docs.astral.sh/uv/guides/integration/docker/
 # https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
 
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
+FROM ghcr.io/astral-sh/uv:python3.14-trixie
 
 ARG UV_NO_DEV='0'
 ARG GRANIAN_RELOAD='0'
