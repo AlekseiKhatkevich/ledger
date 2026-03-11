@@ -48,6 +48,7 @@ services:
     image: postgres:18
     container_name: my_postgres
     restart: unless-stopped
+    profiles: [main]
     command: [
       "postgres",
       "-c", "shared_buffers=8GB",
@@ -99,7 +100,7 @@ services:
     networks:
       [ ledger-network ]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $(cat /run/secrets/pg_db) -U $(cat /run/secrets/pg_user) || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -d $PGDATABASE -U $PGUSER || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -111,6 +112,7 @@ services:
   keycloak:
 #    image: quay.io/keycloak/keycloak:24.0.3
     image: quay.io/keycloak/keycloak:latest
+    profiles: [main]
     ports:
       - "8080:8080"
       - "8443:8443"

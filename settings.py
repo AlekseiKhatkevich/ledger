@@ -54,8 +54,9 @@ class Settings(
         extra='ignore',
     )
 
-settings: Settings
-def __getattr__(name: str) -> Settings:
-    if name == 'settings':
-        return Settings()
-    raise AttributeError(f'Module {__name__} has no attribute {name}')
+settings = Settings()
+# settings: Settings
+# def __getattr__(name: str) -> Settings:
+#     if name == 'settings':
+#         return Settings()
+#     raise AttributeError(f'Module {__name__} has no attribute {name}')

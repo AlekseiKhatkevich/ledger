@@ -4,7 +4,7 @@ from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from pydantic import BaseModel, SecretStr
-
+from settings import Settings
 # from user.auth.keycloak_based import KeyCloakAuth
 
 resource = Resource(attributes={
@@ -36,5 +36,6 @@ class UserLoginPayload(BaseModel):
 app = Litestar(
     [ my_router_handler, health,],
     plugins=[StructlogPlugin(), OpenTelemetryPlugin(open_telemetry_config)],
-    # debug=settings.DEBUG,
+    debug=Settings().DEBUG,
+    # debug=True,
 )
