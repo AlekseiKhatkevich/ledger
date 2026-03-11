@@ -16,10 +16,10 @@ services:
       UV_NO_DEV: 1
       ALEMBIC_CONFIG: alembic/alembic.ini
       PGHOSTADDR: postgres
-      KEYCLOAK_SERVER_URL: https://sso.anqorithm.com/auth
-      KEYCLOAK_REALM: testing
-      KEYCLOAK_CLIENT_ID: fastapi-keycloak
-      KEYCLOAK_CLIENT_SECRET: 1q2w3e
+#      KEYCLOAK_SERVER_URL: https://sso.anqorithm.com/auth
+#      KEYCLOAK_REALM: testing
+#      KEYCLOAK_CLIENT_ID: fastapi-keycloak
+#      KEYCLOAK_CLIENT_SECRET: 1q2w3e
     secrets:
       - pg_user
       - pg_pass

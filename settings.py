@@ -1,7 +1,7 @@
 from functools import cached_property, cache
 from pathlib import Path
 
-from pydantic import computed_field, PositiveInt, PositiveFloat
+from pydantic import computed_field, PositiveInt, PositiveFloat, AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -34,13 +34,24 @@ class PostgresSettings:
             database=db,
         )
 
+class KeycloakSettings:
+    KEYCLOAK_SERVER_URL: AnyHttpUrl
+    KEYCLOAK_REALM: str
+    KEYCLOAK_CLIENT_ID: str
+    KEYCLOAK_CLIENT_SECRET: str
+    KEYCLOAK_POOL_MAXSIZE: PositiveInt
+
 @cache
-class Settings(PostgresSettings, BaseSettings):
+class Settings(
+    PostgresSettings,
+    KeycloakSettings,
+    BaseSettings,
+):
     APP_NAME: str = 'ledger'
 
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
-        env_file=('secrets/postgres/.env', ),
+        env_file=('secrets/postgres/.env', 'secrets/keycloak/.env', ),
         secrets_dir='/run/secrets',
         extra='ignore',
     )
