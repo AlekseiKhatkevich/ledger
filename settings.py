@@ -7,9 +7,9 @@ from sqlalchemy import URL
 
 
 class PostgresSettings:
-    POSTGRES_PASSWORD_FILE: str
-    POSTGRES_USER_FILE: str
-    POSTGRES_DB_FILE: str
+    PGPASSWORD: str
+    PGUSER: str
+    PGDATABASE: str
     PGHOSTADDR: str
     POSTGRES_ECHO: bool = True
     POOL_PRE_PING: bool = True
@@ -23,15 +23,12 @@ class PostgresSettings:
     @cached_property
     def pg_dsn(self) -> URL:
         """Reading Postgres credentials from docker secrets."""
-        pwd = Path(self.POSTGRES_PASSWORD_FILE).read_text()
-        usr = Path(self.POSTGRES_USER_FILE).read_text()
-        db = Path(self.POSTGRES_DB_FILE).read_text()
         return URL.create(
             'postgresql+asyncpg',
-            username=usr,
-            password=pwd,
+            username=self.PGUSER,
+            password=self.PGPASSWORD,
             host=self.PGHOSTADDR,
-            database=db,
+            database=self.PGDATABASE,
         )
 
 class KeycloakSettings:
@@ -48,6 +45,7 @@ class Settings(
     BaseSettings,
 ):
     APP_NAME: str = 'ledger'
+    DEBUG: bool = False
 
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
