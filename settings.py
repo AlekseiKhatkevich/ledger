@@ -10,7 +10,7 @@ class PostgresSettings:
     PGPASSWORD: str
     PGUSER: str
     PGDATABASE: str
-    PGHOSTADDR: str
+    PGHOSTADDR: str = 'postgres'
     POSTGRES_ECHO: bool = True
     POOL_PRE_PING: bool = True
     POOL_TIMEOUT: PositiveFloat = 10.0
@@ -31,6 +31,7 @@ class PostgresSettings:
             database=self.PGDATABASE,
         )
 
+
 class KeycloakSettings:
     KEYCLOAK_SERVER_URL: AnyHttpUrl
     KEYCLOAK_REALM: str
@@ -50,7 +51,6 @@ class Settings(
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
         env_file=('secrets/postgres/.env', 'secrets/keycloak/.env', ),
-        secrets_dir='/run/secrets',
         extra='ignore',
     )
 

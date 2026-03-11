@@ -5,7 +5,7 @@ from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from pydantic import BaseModel, SecretStr
 
-from user.auth.keycloak_based import KeyCloakAuth
+# from user.auth.keycloak_based import KeyCloakAuth
 
 resource = Resource(attributes={
     SERVICE_NAME: "ledger-backend"
@@ -28,13 +28,13 @@ async def my_router_handler() -> None:
 class UserLoginPayload(BaseModel):
     email: str
     password: SecretStr
-
-@post('/login')
-async def login(data: UserLoginPayload) -> dict:
-    return await KeyCloakAuth().get_token(str(data.email), str(data.password),)
+#
+# @post('/login')
+# async def login(data: UserLoginPayload) -> dict:
+#     return await KeyCloakAuth().get_token(str(data.email), str(data.password),)
 
 app = Litestar(
-    [ my_router_handler, health, login],
+    [ my_router_handler, health,],
     plugins=[StructlogPlugin(), OpenTelemetryPlugin(open_telemetry_config)],
     # debug=settings.DEBUG,
 )
