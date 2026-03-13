@@ -6,10 +6,11 @@ from sqlalchemy import URL
 
 
 class PostgresSettings:
+    """PostgesDB settings"""
     PGPASSWORD: str
     PGUSER: str
     PGDATABASE: str
-    PGHOSTADDR: str = 'postgres'
+    PGHOSTADDR: str
     POSTGRES_ECHO: bool = True
     POOL_PRE_PING: bool = True
     POOL_TIMEOUT: PositiveFloat = 10.0
@@ -21,7 +22,7 @@ class PostgresSettings:
     @computed_field
     @cached_property
     def pg_dsn(self) -> URL:
-        """Reading Postgres credentials from docker secrets."""
+        """Reading Postgres credentials from docker secrets or env."""
         return URL.create(
             'postgresql+asyncpg',
             username=self.PGUSER,
@@ -32,7 +33,8 @@ class PostgresSettings:
 
 
 class KeycloakSettings:
-    KEYCLOAK_SERVER_URL: AnyHttpUrl = 'www.google.com'
+    """Keycloak auth server settings"""
+    KEYCLOAK_SERVER_URL: AnyHttpUrl
     KEYCLOAK_REALM: str
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
@@ -44,6 +46,7 @@ class Settings(
     KeycloakSettings,
     BaseSettings,
 ):
+    """Combined settings"""
     APP_NAME: str = 'ledger'
     DEBUG: bool = False
 

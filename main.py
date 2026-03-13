@@ -9,9 +9,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from config import settings
 from user.controllers import UserController
 
-resource = Resource(attributes={
-    SERVICE_NAME: "ledger-backend"
-})
+resource = Resource(attributes={SERVICE_NAME: "ledger-backend"})
 provider = TracerProvider(resource=resource)
 open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
 
@@ -21,15 +19,16 @@ def set_settings(app:Litestar) -> None:
 @get("/health")
 async def health() -> dict :
     # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
+    # todo отдельный контроллер
     return {"status":"ok"}
 
 @get("/")
-async def my_router_handler() -> None:
+async def root() -> None:
     return "ROOT"
 
 
 app = Litestar(
-    [ my_router_handler, health, UserController],
+    [root, health, UserController],
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
     on_startup=[set_settings, ],

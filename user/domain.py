@@ -5,12 +5,14 @@ from pydantic import SecretStr, BaseModel
 
 
 class UserLoginPayload(BaseModel):
+    """For login // password /login endpoint"""
     email: str
     password: SecretStr
 
 
 @dataclass
 class UserLoginReturn:
+    """For login // password /login endpoint, returns tokens to a user"""
     access_token: str
     expires_in: int
     refresh_expires_in: int

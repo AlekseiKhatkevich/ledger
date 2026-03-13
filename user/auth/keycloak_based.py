@@ -6,6 +6,7 @@ from config import settings
 
 @cache
 class KeyCloakAuth:
+    """KeyKloak auth for user tokens and stuff"""
     def __init__(
             self,
             server_url: str | None = None,
@@ -32,5 +33,6 @@ class KeyCloakAuth:
         )
 
     async def get_token(self, user: str, password: str) -> dict:
+        """Get tokens by login // password"""
         return await self.keycloak_openid.a_token(user, password)
 
