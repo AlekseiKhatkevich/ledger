@@ -1,5 +1,4 @@
 from functools import cached_property, cache
-from pathlib import Path
 
 from pydantic import computed_field, PositiveInt, PositiveFloat, AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -39,7 +38,7 @@ class KeycloakSettings:
     KEYCLOAK_CLIENT_SECRET: str
     KEYCLOAK_POOL_MAXSIZE: PositiveInt
 
-
+@cache
 class Settings(
     PostgresSettings,
     KeycloakSettings,

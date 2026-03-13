@@ -2,7 +2,7 @@ from functools import cache, cached_property
 
 from keycloak import KeycloakOpenID
 
-from config import Settings
+from config import settings
 
 @cache
 class KeyCloakAuth:
@@ -14,7 +14,6 @@ class KeyCloakAuth:
             client_secret_key: str | None = None,
             pool_maxsize: str | None = None,
     ) -> None:
-        settings = Settings()
         self.server_url = server_url or settings.KEYCLOAK_SERVER_URL.encoded_string()
         self.client_id = client_id or settings.KEYCLOAK_CLIENT_ID
         self.realm_name = realm_name or settings.KEYCLOAK_REALM

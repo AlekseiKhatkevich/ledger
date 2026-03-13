@@ -10,10 +10,10 @@ services:
       UV_NO_DEV: 1
       ALEMBIC_CONFIG: alembic/alembic.ini
       PGHOSTADDR: postgres
-      DEBUG: 1
+      DEBUG: ${DEBUG:-1}
     networks: [ ledger-network ]
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "./aux/docker/healthcheck/backend_healthcheck.sh"]
       interval: 10s
       timeout: 2s
       retries: 2
