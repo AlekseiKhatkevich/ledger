@@ -33,13 +33,13 @@ class PostgresSettings:
 
 
 class KeycloakSettings:
-    KEYCLOAK_SERVER_URL: AnyHttpUrl
+    KEYCLOAK_SERVER_URL: AnyHttpUrl = 'www.google.com'
     KEYCLOAK_REALM: str
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
     KEYCLOAK_POOL_MAXSIZE: PositiveInt
 
-@cache
+
 class Settings(
     PostgresSettings,
     KeycloakSettings,
@@ -54,7 +54,6 @@ class Settings(
         extra='ignore',
     )
 
-settings = Settings()
 # settings: Settings
 # def __getattr__(name: str) -> Settings:
 #     if name == 'settings':

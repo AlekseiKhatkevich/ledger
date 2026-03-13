@@ -10,7 +10,7 @@ import structlog
 from litestar.serialization import decode_json, encode_json
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from settings import settings
+from config import settings
 
 if TYPE_CHECKING:
     from sqlalchemy import URL
