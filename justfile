@@ -10,13 +10,8 @@ alias down := down-dev
 
 #  start container
 [group('docker')]
-up-dev:
-    docker compose --profile main up --watch --remove-orphans
-
-#  start only backend app
-[group('docker')]
-up-dev-backend-only:
-    docker compose up --watch --remove-orphans
+up-dev profile="main":
+    docker compose --profile {{profile}} up --remove-orphans
 
 #  stop container
 [group('docker')]

@@ -47,5 +47,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 
 # add uv run befor in case of env troubles, might help...
-CMD ["granian", "main:app"]
+CMD ["uv", "run", "granian", "main:app"]
 

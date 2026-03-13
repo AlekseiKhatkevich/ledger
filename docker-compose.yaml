@@ -25,25 +25,8 @@ services:
 #        condition: service_healthy
     volumes:
       - ./alembic:/app/alembic:z
-      - .:/app
-      - /app/.venv
-  #    develop:
-#      watch:
-#        - action: rebuild
-#          path: ./pyproject.toml
-#        - action: rebuild
-#          path: ./uv.lock
-#        - action: rebuild
-#          path: ./Dockerfile
-#        - action: sync
-#          path: .
-#          target: /app
-#          ignore:
-#            - .venv/
-#            - .patroni/
-##            - secrets/
-#            - alembic/
-
+      - .:/app:Z
+#      - /app/.venv
 #  ---
 
   postgres:

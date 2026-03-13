@@ -38,8 +38,8 @@ async def login(data: UserLoginPayload) -> dict :
 
 app = Litestar(
     [ my_router_handler, health, login],
-    plugins=[OpenTelemetryPlugin(open_telemetry_config)],
-    debug=Settings().DEBUG,
-    on_startup=[set_settings,]
-    #debug=True,
+    plugins=[OpenTelemetryPlugin(open_telemetry_config),],
+    # debug=Settings().DEBUG,
+    on_startup=[set_settings, ],
+    debug=True,
 )
