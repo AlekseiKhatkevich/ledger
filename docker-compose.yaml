@@ -27,6 +27,11 @@ services:
       - ./alembic:/app/alembic:z
       - .:/app:Z
 #      - /app/.venv
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./docker-compose.yaml
+          target: ./app/docker-compose.yaml
 #  ---
 
   postgres:

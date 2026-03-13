@@ -33,7 +33,7 @@ class UserLoginPayload(BaseModel):
 
 @post('/login')
 async def login(data: UserLoginPayload) -> dict :
-    return await KeyCloakAuth().get_token(str(data.email), str(data.password),)
+    return await KeyCloakAuth().get_token(str(data.email), data.password.get_secret_value(),)
 
 
 app = Litestar(
