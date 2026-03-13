@@ -1,9 +1,16 @@
+from dataclasses import dataclass
+from typing import Literal
+
 from litestar import Litestar, get, post
 from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
+from litestar.dto import DataclassDTO
 from litestar.plugins.structlog import StructlogPlugin
+from litestar.status_codes import HTTP_202_ACCEPTED, HTTP_200_OK
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from pydantic import BaseModel, SecretStr
+from litestar.openapi.config import OpenAPIConfig
+from litestar.openapi.plugins import ScalarRenderPlugin
 
 from config import settings
 from user.auth.keycloak_based import KeyCloakAuth
@@ -31,8 +38,23 @@ class UserLoginPayload(BaseModel):
     email: str
     password: SecretStr
 
-@post('/login')
-async def login(data: UserLoginPayload) -> dict :
+@dataclass
+class UserLoginReturn:
+    access_token: str
+    expires_in: int
+    refresh_expires_in: int
+    refresh_token: str
+    token_type: Literal['Bearer', 'JWT']
+    id_token: str
+    # not_before_policy: int
+    session_state: str
+    scope: str
+
+UserLoginReturnDTO = DataclassDTO[UserLoginReturn]
+
+# todo добавить схему
+@post('/login', return_dto=UserLoginReturnDTO, status_code=HTTP_200_OK)
+async def login(data: UserLoginPayload) -> UserLoginReturn:
     return await KeyCloakAuth().get_token(str(data.email), data.password.get_secret_value(),)
 
 
@@ -41,4 +63,11 @@ app = Litestar(
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
     on_startup=[set_settings, ],
+    openapi_config=OpenAPIConfig(
+        title='Ledger',
+        description='FOSS ledger 4 your crypto assets, you know...',
+        version="0.0.0.0.0.0.0.1",
+        render_plugins=[ScalarRenderPlugin()],
+        path='/docs',
+    ),
 )
