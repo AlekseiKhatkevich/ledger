@@ -6,6 +6,8 @@ from config import settings
 
 @cache
 class KeyCloakAuth:
+    # https: // anqorithm.medium.com / integrating - fastapi -
+    # with-keycloak -for -authentication-151d0996afbc
     """KeyKloak auth for user tokens and stuff"""
     def __init__(
             self,

@@ -19,6 +19,7 @@ class UserController(Controller):
     path = '/user'
     exception_handlers = {KeycloakAuthenticationError: keycloak_login_exception_handler}
 
+    # todo add 401 status code into schema
     @post('/login', return_dto=UserLoginReturnDTO, status_code=HTTP_200_OK)
     async def login(self, data: UserLoginPayload) -> UserLoginReturn:
         return await KeyCloakLoginUseCase().execute(str(data.email), data.password.get_secret_value(),)
