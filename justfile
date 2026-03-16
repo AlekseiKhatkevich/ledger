@@ -11,7 +11,7 @@ alias down := down-dev
 #  start container
 [group('docker')]
 up-dev profile="main":
-    docker compose --profile {{profile}} up --remove-orphans
+    docker compose --profile {{profile}} up --watch --remove-orphans
 
 #  stop container
 [group('docker')]

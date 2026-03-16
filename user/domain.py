@@ -22,3 +22,9 @@ class UserLoginReturn:
     not_before_policy: int
     session_state: str
     scope: str
+
+
+@dataclass
+class Keycloak401Response:
+    error: str
+    error_description: str

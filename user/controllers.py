@@ -1,10 +1,12 @@
 from keycloak import KeycloakAuthenticationError
 from litestar import post, Controller, Request, Response, MediaType
-from litestar.status_codes import HTTP_200_OK
+from litestar.exceptions import NotAuthorizedException
+from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
-from user.domain import UserLoginPayload, UserLoginReturn
+from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response
 from user.dto import UserLoginReturnDTO
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
+from litestar.openapi.datastructures import ResponseSpec
 
 
 def keycloak_login_exception_handler(_: Request, exc: KeycloakAuthenticationError) -> Response:
@@ -18,8 +20,19 @@ def keycloak_login_exception_handler(_: Request, exc: KeycloakAuthenticationErro
 class UserController(Controller):
     path = '/user'
     exception_handlers = {KeycloakAuthenticationError: keycloak_login_exception_handler}
+    raises = [NotAuthorizedException]
 
-    # todo add 401 status code into schema
-    @post('/login', return_dto=UserLoginReturnDTO, status_code=HTTP_200_OK)
+    @post(
+        '/login',
+        return_dto=UserLoginReturnDTO,
+        status_code=HTTP_200_OK,
+        responses={
+            HTTP_401_UNAUTHORIZED: ResponseSpec(
+                data_container=Keycloak401Response,
+                description='Wrong credentials',
+            )
+        }
+    )
     async def login(self, data: UserLoginPayload) -> UserLoginReturn:
+        # noinspection PyTypeChecker
         return await KeyCloakLoginUseCase().execute(str(data.email), data.password.get_secret_value(),)
