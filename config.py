@@ -39,6 +39,7 @@ class KeycloakSettings:
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
     KEYCLOAK_POOL_MAXSIZE: PositiveInt
+    KEYCLOAK_API_KEY_HEADER: str
 
 @cache
 class Settings(

@@ -38,3 +38,7 @@ class KeyCloakAuth:
         """Get tokens by login // password"""
         return await self.keycloak_openid.a_token(user, password)
 
+    async def verify_token(self, token: str) -> dict:
+        """Verifies token and returns user information"""
+        return await self.keycloak_openid.a_userinfo(token)
+

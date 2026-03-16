@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from typing import Literal
 
@@ -28,3 +29,19 @@ class UserLoginReturn:
 class Keycloak401Response:
     error: str
     error_description: str
+
+
+@dataclass
+class User:
+    name: str
+    preferred_username: str
+    given_name: str
+    family_name: str
+    email: str
+    email_verified: bool
+    sub: uuid.UUID
+
+
+@dataclass
+class KeyCloakToken:
+    api_key: str

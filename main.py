@@ -1,5 +1,6 @@
 from litestar import Litestar, get
 from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
+from litestar.middleware import DefineMiddleware
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import ScalarRenderPlugin
 from litestar.plugins.structlog import StructlogPlugin
@@ -7,11 +8,14 @@ from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 
 from config import settings
+from user.auth.keycloack_middleware import KeyCloakAuthenticationMiddleware
 from user.controllers import UserController
 
 resource = Resource(attributes={SERVICE_NAME: "ledger-backend"})
 provider = TracerProvider(resource=resource)
 open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
+
+auth_mw = DefineMiddleware(KeyCloakAuthenticationMiddleware, exclude=UserController.path + '/login')
 
 def set_settings(app:Litestar) -> None:
     app.state.settings = settings
@@ -19,11 +23,12 @@ def set_settings(app:Litestar) -> None:
 @get("/health")
 async def health() -> dict :
     # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
-    # todo отдельный контроллер
+    # todo отдельный контроллер AUX CONTROLLER
     return {"status":"ok"}
 
 @get("/")
 async def root() -> None:
+    # Bearer
     return "ROOT"
 
 
@@ -32,6 +37,7 @@ app = Litestar(
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
     on_startup=[set_settings, ],
+    middleware=[auth_mw],
     openapi_config=OpenAPIConfig(
         title='Ledger',
         description='FOSS ledger 4 your crypto assets, you know...',

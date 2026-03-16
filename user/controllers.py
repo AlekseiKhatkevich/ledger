@@ -20,7 +20,8 @@ def keycloak_login_exception_handler(_: Request, exc: KeycloakAuthenticationErro
 class UserController(Controller):
     path = '/user'
     exception_handlers = {KeycloakAuthenticationError: keycloak_login_exception_handler}
-    raises = [NotAuthorizedException]
+    tags = ('user', )
+    security = [{'OpenID': []}]
 
     @post(
         '/login',
@@ -34,5 +35,6 @@ class UserController(Controller):
         }
     )
     async def login(self, data: UserLoginPayload) -> UserLoginReturn:
+        """To obtain OpenID credentials"""
         # noinspection PyTypeChecker
         return await KeyCloakLoginUseCase().execute(str(data.email), data.password.get_secret_value(),)
