@@ -1,10 +1,7 @@
-from typing import Sequence
-
 from keycloak import KeycloakAuthenticationError
 from litestar.connection import ASGIConnection
 from litestar.exceptions import NotAuthorizedException
 from litestar.middleware import AbstractAuthenticationMiddleware, AuthenticationResult
-from litestar.types import ASGIApp, Method, Scopes
 
 from config import settings
 from user.auth.keycloak_based import KeyCloakAuth
@@ -25,14 +22,16 @@ class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
         auth_header = connection.headers.get(settings.KEYCLOAK_API_KEY_HEADER)
         if not auth_header:
             raise NotAuthorizedException(detail='No token provided',)
-
-        token = KeyCloakToken(api_key=auth_header)
         try:
             user = User(** await self._keycloak_auth_provider.verify_token(auth_header))
         except KeycloakAuthenticationError:
             raise NotAuthorizedException(
                 detail='Wrong or outdated token',
                 extra={'token': auth_header},
-            )
-        return AuthenticationResult(user=user, auth=token)
-
+            ) from None
+        return AuthenticationResult(user=user, auth=KeyCloakToken(api_key=auth_header))
+# todo депенденси юзера получать из реквеста
+#  todo эндпоинт создания юзера в кейклок
+#  todo через прокси аутентификация
+# todo tests
+# todo 401 во все маршруты из-за мидлеваре

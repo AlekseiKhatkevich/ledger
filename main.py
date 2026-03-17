@@ -15,7 +15,10 @@ resource = Resource(attributes={SERVICE_NAME: "ledger-backend"})
 provider = TracerProvider(resource=resource)
 open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
 
-auth_mw = DefineMiddleware(KeyCloakAuthenticationMiddleware, exclude=UserController.path + '/login')
+auth_mw = DefineMiddleware(
+    KeyCloakAuthenticationMiddleware,
+    exclude='/docs',
+)
 
 def set_settings(app:Litestar) -> None:
     app.state.settings = settings
@@ -28,7 +31,6 @@ async def health() -> dict :
 
 @get("/")
 async def root() -> None:
-    # Bearer
     return "ROOT"
 
 
@@ -37,12 +39,12 @@ app = Litestar(
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
     on_startup=[set_settings, ],
-    middleware=[auth_mw],
+    middleware=[auth_mw, ],
     openapi_config=OpenAPIConfig(
         title='Ledger',
         description='FOSS ledger 4 your crypto assets, you know...',
         version="0.0.0.0.0.0.0.1",
         render_plugins=[ScalarRenderPlugin()],
-        path='/docs',
+        path=settings.API_SCHEMA_ENDPOINT,
     ),
 )

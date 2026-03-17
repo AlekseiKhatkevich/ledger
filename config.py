@@ -41,8 +41,13 @@ class KeycloakSettings:
     KEYCLOAK_POOL_MAXSIZE: PositiveInt
     KEYCLOAK_API_KEY_HEADER: str
 
+
+class ApiSettings:
+    API_SCHEMA_ENDPOINT: str = '/docs'
+
 @cache
 class Settings(
+    ApiSettings,
     PostgresSettings,
     KeycloakSettings,
     BaseSettings,

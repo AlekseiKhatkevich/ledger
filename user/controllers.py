@@ -25,6 +25,7 @@ class UserController(Controller):
 
     @post(
         '/login',
+        exclude_from_auth=True,
         return_dto=UserLoginReturnDTO,
         status_code=HTTP_200_OK,
         responses={
