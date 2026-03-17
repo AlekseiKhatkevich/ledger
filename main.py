@@ -1,8 +1,10 @@
 from litestar import Litestar, get
 from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
+from litestar.di import Provide
 from litestar.middleware import DefineMiddleware
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import ScalarRenderPlugin
+from litestar.openapi.spec import Components, SecurityScheme
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
@@ -10,6 +12,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from config import settings
 from user.auth.keycloack_middleware import KeyCloakAuthenticationMiddleware
 from user.controllers import UserController
+from user.dependencies import keycloak_user
 
 resource = Resource(attributes={SERVICE_NAME: "ledger-backend"})
 provider = TracerProvider(resource=resource)
@@ -23,14 +26,16 @@ auth_mw = DefineMiddleware(
 def set_settings(app:Litestar) -> None:
     app.state.settings = settings
 
-@get("/health")
+
+
+@get("/health", exclude_from_auth=True)
 async def health() -> dict :
     # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
     # todo отдельный контроллер AUX CONTROLLER
     return {"status":"ok"}
 
 @get("/")
-async def root() -> None:
+async def root() -> str:
     return "ROOT"
 
 
@@ -40,11 +45,21 @@ app = Litestar(
     debug=settings.DEBUG,
     on_startup=[set_settings, ],
     middleware=[auth_mw, ],
+    dependencies={'kc_user': Provide(keycloak_user)},
     openapi_config=OpenAPIConfig(
         title='Ledger',
         description='FOSS ledger 4 your crypto assets, you know...',
         version="0.0.0.0.0.0.0.1",
         render_plugins=[ScalarRenderPlugin()],
         path=settings.API_SCHEMA_ENDPOINT,
+        security = [{'OpenID': []}],
+        components=Components(
+            security_schemes={
+                "BearerToken": SecurityScheme(
+                    type="http",
+                    scheme="bearer",
+                )
+            },
+        ),
     ),
 )

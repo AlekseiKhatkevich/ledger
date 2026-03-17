@@ -1,12 +1,11 @@
 from keycloak import KeycloakAuthenticationError
 from litestar import post, Controller, Request, Response, MediaType
-from litestar.exceptions import NotAuthorizedException
+from litestar.openapi.datastructures import ResponseSpec
 from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
 from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response
 from user.dto import UserLoginReturnDTO
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
-from litestar.openapi.datastructures import ResponseSpec
 
 
 def keycloak_login_exception_handler(_: Request, exc: KeycloakAuthenticationError) -> Response:
@@ -21,7 +20,6 @@ class UserController(Controller):
     path = '/user'
     exception_handlers = {KeycloakAuthenticationError: keycloak_login_exception_handler}
     tags = ('user', )
-    security = [{'OpenID': []}]
 
     @post(
         '/login',
