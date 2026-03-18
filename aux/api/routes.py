@@ -5,6 +5,7 @@ from litestar import Litestar, Router, get
 async def health() -> dict :
     """Healthcheck"""
     # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
+    # curl --head -fsS http://localhost:9000/health/ready
     return {"status":"ok"}
 
 aux_router = Router(path='aux', route_handlers=(health, ), tags=('aux', ))

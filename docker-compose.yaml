@@ -106,6 +106,7 @@ services:
     ports:
       - "8080:8080"
       - "8443:8443"
+      - "9000:9000"
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
       DB_VENDOR: postgres
@@ -113,6 +114,8 @@ services:
       DB_DATABASE: keycloak
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
     depends_on:
       - postgres
     networks:
@@ -120,6 +123,15 @@ services:
     env_file:
       - ./secrets/keycloak/.env
     restart: unless-stopped
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
     #  ---
 
