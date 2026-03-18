@@ -1,9 +1,9 @@
 from keycloak import KeycloakAuthenticationError
-from litestar import post, Controller, Request, Response, MediaType
+from litestar import post, Controller, Request, Response, MediaType, get
 from litestar.openapi.datastructures import ResponseSpec
 from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
-from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response
+from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response, User as KC_User
 from user.dto import UserLoginReturnDTO
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
 
@@ -37,3 +37,8 @@ class UserController(Controller):
         """To obtain OpenID credentials"""
         # noinspection PyTypeChecker
         return await KeyCloakLoginUseCase().execute(str(data.email), data.password.get_secret_value(),)
+
+    @get('/')
+    async def userinfo(self, kc_user: KC_User) -> KC_User:
+        """Information about current request user"""
+        return kc_user

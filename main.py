@@ -9,6 +9,7 @@ from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 
+from aux.api.routes import aux_router
 from config import settings
 from user.auth.keycloack_middleware import KeyCloakAuthenticationMiddleware
 from user.controllers import UserController
@@ -27,20 +28,13 @@ def set_settings(app:Litestar) -> None:
     app.state.settings = settings
 
 
-
-@get("/health", exclude_from_auth=True)
-async def health() -> dict :
-    # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
-    # todo отдельный контроллер AUX CONTROLLER
-    return {"status":"ok"}
-
 @get("/")
 async def root() -> str:
     return "ROOT"
 
 
 app = Litestar(
-    [root, health, UserController],
+    [root, aux_router, UserController],
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
     on_startup=[set_settings, ],

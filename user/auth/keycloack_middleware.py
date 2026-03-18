@@ -30,8 +30,7 @@ class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
                 extra={'token': auth_header},
             ) from None
         return AuthenticationResult(user=user, auth=KeyCloakToken(api_key=auth_header))
-# todo депенденси юзера получать из реквеста
+
 #  todo эндпоинт создания юзера в кейклок
 #  todo через прокси аутентификация
 # todo tests
-# todo 401 во все маршруты из-за мидлеваре
