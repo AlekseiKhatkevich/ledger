@@ -3,4 +3,4 @@
 
 http://localhost:8001
 
-reverse_proxy backend-api:5555
+reverse_proxy backend-api:8000
