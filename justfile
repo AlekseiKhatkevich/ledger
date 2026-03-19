@@ -16,7 +16,7 @@ up-dev profile="main":
 #  stop container
 [group('docker')]
 down-dev:
-    docker compose down
+    docker compose down --remove-orphans
 
 #  build container
 [group('docker')]

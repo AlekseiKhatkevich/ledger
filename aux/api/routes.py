@@ -1,11 +1,10 @@
-from litestar import Litestar, Router, get
+from litestar import Router, get
 
 
 @get('/health', exclude_from_auth=True)
 async def health() -> dict :
     """Healthcheck"""
     # todo добавить проверку доступности каждого внешнего сервиса (может только критичных ??)
-    # curl --head -fsS http://localhost:9000/health/ready
     return {"status":"ok"}
 
 aux_router = Router(path='aux', route_handlers=(health, ), tags=('aux', ))

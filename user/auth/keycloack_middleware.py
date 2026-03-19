@@ -32,5 +32,4 @@ class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
         return AuthenticationResult(user=user, auth=KeyCloakToken(api_key=auth_header))
 
 #  todo эндпоинт создания юзера в кейклок
-#  todo через прокси аутентификация
 # todo tests
