@@ -21,17 +21,18 @@ services:
     restart: unless-stopped
 #    depends_on:
 #      - postgres
+#      - caddy
 #      postgres:
 #        condition: service_healthy
     volumes:
       - ./alembic:/app/alembic:z
       - .:/app:Z
-#      - /app/.venv
     develop:
       watch:
         - action: sync+restart
           path: ./docker-compose.yaml
           target: ./app/docker-compose.yaml
+
 #  ---
 
   postgres:
@@ -136,101 +137,23 @@ services:
     #  ---
 
   caddy:
-      image: caddy:<version>
-      restart: unless-stopped
-      ports:
-        - "80:80"
-        - "443:443"
-        - "443:443/udp"
-      volumes:
-        - ./conf:/etc/caddy
-        - ./site:/srv
-        - caddy_data:/data
-        - caddy_config:/config
+    image: caddy:2.11-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+      - "8001:8001"
+    volumes:
+      - ./aux/caddy:/etc/caddy
+      - ./site:/srv
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      [ ledger-network ]
+    profiles: [main]
 
   #  ---
-
-  etcd1: &etcd
-    build:
-      context: ./patroni
-    networks: [ ledger-network ]
-    environment:
-      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
-      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
-      ETCD_INITIAL_CLUSTER: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
-      ETCD_INITIAL_CLUSTER_STATE: new
-      ETCD_INITIAL_CLUSTER_TOKEN: tutorial
-      ETCD_UNSUPPORTED_ARCH: arm64
-    container_name: demo-etcd1
-    hostname: etcd1
-    command: etcd --name etcd1 --initial-advertise-peer-urls http://etcd1:2380
-    restart: unless-stopped
-    profiles: [patroni]
-
-  etcd2:
-    <<: *etcd
-    container_name: demo-etcd2
-    hostname: etcd2
-    command: etcd --name etcd2 --initial-advertise-peer-urls http://etcd2:2380
-    restart: unless-stopped
-    profiles: [patroni]
-
-  etcd3:
-    <<: *etcd
-    container_name: demo-etcd3
-    hostname: etcd3
-    command: etcd --name etcd3 --initial-advertise-peer-urls http://etcd3:2380
-    restart: unless-stopped
-    profiles: [patroni]
-
-  haproxy:
-    build:
-      context: ./patroni
-    networks: [ ledger-network ]
-    env_file: patroni/docker/patroni.env
-    hostname: haproxy
-    container_name: demo-haproxy
-    ports:
-      - "5000:5000"
-      - "5001:5001"
-    command: haproxy
-    environment: &haproxy_env
-      ETCDCTL_ENDPOINTS: http://etcd1:2379,http://etcd2:2379,http://etcd3:2379
-      PATRONI_ETCD3_HOSTS: "'etcd1:2379','etcd2:2379','etcd3:2379'"
-      PATRONI_SCOPE: demo
-    restart: unless-stopped
-    profiles: [patroni]
-
-  patroni1:
-    build:
-      context: ./patroni
-    networks: [ ledger-network ]
-    env_file: patroni/docker/patroni.env
-    hostname: patroni1
-    container_name: demo-patroni1
-    environment:
-      <<: *haproxy_env
-      PATRONI_NAME: patroni1
-    restart: unless-stopped
-    volumes:
-      - pg_patroni1:/var/lib/postgresql
-    profiles: [patroni]
-
-  patroni2:
-    build:
-      context: ./patroni
-    networks: [ ledger-network ]
-    env_file: patroni/docker/patroni.env
-    hostname: patroni2
-    container_name: demo-patroni2
-    environment:
-      <<: *haproxy_env
-      PATRONI_NAME: patroni2
-    restart: unless-stopped
-    volumes:
-      - pg_patroni2:/var/lib/postgresql
-    profiles: [patroni]
-
 
 networks:
     ledger-network:
@@ -241,3 +164,5 @@ volumes:
   pg_patroni2:
   postgres_data:
   keycloak_data:
+  caddy_data:
+  caddy_config:

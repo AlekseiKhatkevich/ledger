@@ -11,12 +11,17 @@ alias down := down-dev
 #  start container
 [group('docker')]
 up-dev profile="main":
-    docker compose --profile {{profile}} up --watch --remove-orphans
+    docker compose --profile {{profile}} up --watch
+
+#  force recreate container
+[group('docker')]
+force-recreate:
+    docker compose --profile main up --watch --force-recreate
 
 #  stop container
 [group('docker')]
-down-dev:
-    docker compose down --remove-orphans
+down-dev profile="main":
+    docker compose --profile {{profile}} down
 
 #  build container
 [group('docker')]
@@ -42,3 +47,8 @@ downgrade where='-1':
 [group('keycloak')]
 keycloak:
     xdg-open http://localhost:8080/admin/master/console/#/master
+
+#  reloads caddy web server config file
+[group('caddy')]
+caddy-reload:
+    docker compose kill -sUSR1 caddy

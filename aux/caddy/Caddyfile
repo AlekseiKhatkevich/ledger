@@ -1,0 +1,6 @@
+#http://localhost:8001
+#respond "Hello, world!"
+
+http://localhost:8001
+
+reverse_proxy backend-api:5555

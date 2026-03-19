@@ -111,3 +111,4 @@ patroni
 secrets
 /data/
 /fastapi-keycloak/
+/site/
