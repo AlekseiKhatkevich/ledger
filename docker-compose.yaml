@@ -1,8 +1,10 @@
 services:
   backend-api:
     build: .
-    ports:
-      - "8000:8000"
+#    ports:
+#      - "8000:8000"
+    expose:
+      - '8000'
     environment:
       GRANIAN_RELOAD: 1
       GRANIAN_WORKERS_LIFETIME: 60
@@ -19,9 +21,9 @@ services:
       retries: 2
       start_period: 1s
     restart: unless-stopped
-#    depends_on:
-#      - postgres
-#      - caddy
+    depends_on:
+      - postgres
+      - caddy
 #      postgres:
 #        condition: service_healthy
     volumes:
@@ -101,7 +103,6 @@ services:
   #  ---
 
   keycloak:
-#    image: quay.io/keycloak/keycloak:24.0.3
     image: quay.io/keycloak/keycloak:latest
     profiles: [main]
     ports:
@@ -140,13 +141,10 @@ services:
     image: caddy:2.11-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-      - "8001:8001"
+      - "8000:8000"
     volumes:
-      - ./aux/caddy:/etc/caddy
-      - ./site:/srv
+      - ./aux/caddy:/etc/caddy:ro
+      - ./site:/srv:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:

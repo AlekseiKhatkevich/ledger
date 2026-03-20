@@ -1,6 +1,13 @@
-#http://localhost:8001
-#respond "Hello, world!"
+{
+    debug
+}
 
-http://localhost:8001
 
-reverse_proxy backend-api:8000
+:8000 {
+reverse_proxy backend-api:8000 {
+    health_uri /aux/health
+    health_interval 5s
+    health_timeout 2s
+    health_timeout 1s
+}
+}
