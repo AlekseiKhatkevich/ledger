@@ -51,4 +51,4 @@ keycloak:
 #  reloads caddy web server config file
 [group('caddy')]
 caddy-reload:
-    docker compose kill -sUSR1 caddy
+    docker compose --profile main kill  -sUSR1 caddy

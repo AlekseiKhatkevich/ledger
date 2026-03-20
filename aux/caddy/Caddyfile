@@ -2,6 +2,12 @@
     debug
 }
 
+:8001 {
+    @ready path /_caddy_ready
+    handle @ready {
+    respond "ok" 200
+}
+}
 
 :8000 {
 reverse_proxy backend-api:8000 {

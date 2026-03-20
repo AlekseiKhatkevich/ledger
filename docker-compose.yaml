@@ -142,6 +142,7 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+      - "8001:8001"
     volumes:
       - ./aux/caddy:/etc/caddy:ro
       - ./site:/srv:ro
@@ -150,6 +151,12 @@ services:
     networks:
       [ ledger-network ]
     profiles: [main]
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8001/_caddy_ready || exit 1" ]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 2s
 
   #  ---
 
