@@ -1,8 +1,6 @@
 services:
   backend-api:
     build: .
-#    ports:
-#      - "8000:8000"
     expose:
       - '8000'
     environment:
@@ -105,10 +103,11 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     profiles: [main]
-    ports:
+    expose:
+#     for health checking
+      - "9000:9000"
       - "8080:8080"
       - "8443:8443"
-      - "9000:9000"
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
       DB_VENDOR: postgres
@@ -143,6 +142,8 @@ services:
     ports:
       - "8000:8000"
       - "8001:8001"
+      - "8080:8080"
+      - "8443:8443"
     volumes:
       - ./aux/caddy:/etc/caddy:ro
       - ./site:/srv:ro
@@ -165,8 +166,6 @@ networks:
       driver: bridge
 
 volumes:
-  pg_patroni1:
-  pg_patroni2:
   postgres_data:
   keycloak_data:
   caddy_data:
