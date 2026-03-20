@@ -11,9 +11,12 @@
 }
 
 :8000 {
-    handle /user/login {
-        reverse_proxy keycloak:8080/realms/test/protocol/openid-connect/token
-    }
+    @login path /user/login
+
+    handle @login {
+        rewrite * /realms/test/protocol/openid-connect/token
+        reverse_proxy keycloak:8080
+        }
 
     handle * {
         reverse_proxy backend-api:8000 {
