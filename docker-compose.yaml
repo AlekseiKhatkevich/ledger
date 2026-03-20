@@ -105,9 +105,9 @@ services:
     profiles: [main]
     expose:
 #     for health checking
-      - "9000:9000"
-      - "8080:8080"
-      - "8443:8443"
+      - "9000"
+      - "8080"
+      - "8443"
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
       DB_VENDOR: postgres

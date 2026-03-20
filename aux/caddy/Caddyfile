@@ -3,6 +3,20 @@
     grace_period 10s
 }
 
+(keykloack_healthcheck) {
+    health_uri /health/ready
+    health_interval 10s
+    health_timeout 2s
+    health_port 9000
+}
+
+(ledger_healthcheck) {
+    health_uri /aux/health
+    health_interval 5s
+    health_timeout 1s
+}
+
+# Caddy self healthcheck
 :8001 {
     @ready path /_caddy_ready
     handle @ready {
@@ -10,28 +24,26 @@
 }
 }
 
+# ledger backend
 :8000 {
     @login path /user/login
 
+#   Proxying token sourcing to keykloack endpoint
     handle @login {
         rewrite * /realms/test/protocol/openid-connect/token
         reverse_proxy keycloak:8080
+        import keykloack_healthcheck
         }
 
     handle * {
         reverse_proxy backend-api:8000 {
-            health_uri /aux/health
-            health_interval 5s
-            health_timeout 1s
+            import ledger_healthcheck
                 }
             }
 }
-
+# all keycloak (amin, etc))
 :8080, :8443 {
     reverse_proxy keycloak:8080 {
-    health_uri /health/ready
-    health_interval 10s
-    health_timeout 2s
-    health_port 9000
+    import keykloack_healthcheck
 }
 }

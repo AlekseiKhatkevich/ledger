@@ -22,7 +22,7 @@ class UserController(Controller):
     tags = ('user', )
 
     @post(
-        '/login',
+        '/login/via-backend',
         exclude_from_auth=True,
         return_dto=UserLoginReturnDTO,
         status_code=HTTP_200_OK,
