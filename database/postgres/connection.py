@@ -22,7 +22,7 @@ log = structlog.get_logger()
 class DB:
     def __init__(self, url: URL | None = None) -> None:
         self.engine = create_async_engine(
-            url or settings.pg_dsn,
+            url or settings.PG_DSN,
             echo=settings.POSTGRES_ECHO,
             echo_pool=settings.ECHO_POOL,
             pool_pre_ping=settings.POOL_PRE_PING,

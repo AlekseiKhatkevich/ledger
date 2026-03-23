@@ -1,6 +1,6 @@
-Keycloak auth:
+**Keycloak auth:**
 
- - пример запроса на получение openid токена:
+ - Fetch openID token, an example:
 
 ```shell
 curl --location 'http://localhost:8000/user/login' \

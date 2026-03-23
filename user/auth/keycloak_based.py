@@ -17,7 +17,7 @@ class KeyCloakAuth:
             client_secret_key: str | None = None,
             pool_maxsize: str | None = None,
     ) -> None:
-        self.server_url = server_url or settings.KEYCLOAK_SERVER_URL.encoded_string()
+        self.server_url = server_url or settings.KEYCLOAK_SERVER_URL
         self.client_id = client_id or settings.KEYCLOAK_CLIENT_ID
         self.realm_name = realm_name or settings.KEYCLOAK_REALM
         self.client_secret_key = client_secret_key or settings.KEYCLOAK_CLIENT_SECRET

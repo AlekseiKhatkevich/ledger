@@ -21,7 +21,7 @@ class PostgresSettings:
 
     @computed_field
     @cached_property
-    def pg_dsn(self) -> URL:
+    def PG_DSN(self) -> URL:
         """Reading Postgres credentials from docker secrets or env."""
         return URL.create(
             'postgresql+asyncpg',
@@ -34,12 +34,20 @@ class PostgresSettings:
 
 class KeycloakSettings:
     """Keycloak auth server settings"""
-    KEYCLOAK_SERVER_URL: AnyHttpUrl
     KEYCLOAK_REALM: str
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
     KEYCLOAK_POOL_MAXSIZE: PositiveInt
     KEYCLOAK_API_KEY_HEADER: str
+    KEYCLOAK_DOMAIN: str
+    KEYCLOAK_PORT: PositiveInt
+    KEYCLOAK_SCHEME: str
+
+    @computed_field
+    @cached_property
+    def KEYCLOAK_SERVER_URL(self) -> str:
+        """Url to Keycloak auth server"""
+        return f'{self.KEYCLOAK_SCHEME}://{self.KEYCLOAK_DOMAIN}:{self.KEYCLOAK_PORT}/'
 
 
 class ApiSettings:

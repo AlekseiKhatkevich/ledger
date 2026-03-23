@@ -1,9 +1,16 @@
+x-environment: &common_env
+  KEYCLOAK_DOMAIN: keycloak
+  KEYCLOAK_PORT: 8080
+  KEYCLOAK_SCHEME: http
+
+
 services:
   backend-api:
     build: .
     expose:
       - '8000'
     environment:
+      <<: *common_env
       GRANIAN_RELOAD: 1
       GRANIAN_WORKERS_LIFETIME: 60
       GRANIAN_METRICS_ENABLED: 1
@@ -117,11 +124,9 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_METRICS_ENABLED: true
       KC_HEALTH_ENABLED: true
-
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT: false
-
       KC_FEATURES: hostname:v2
     depends_on:
       - postgres
@@ -158,6 +163,8 @@ services:
     networks:
       [ ledger-network ]
     profiles: [main]
+    environment:
+      <<: *common_env
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8001/_caddy_ready || exit 1" ]
       interval: 5s

@@ -32,7 +32,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-postgres_url = settings.pg_dsn.render_as_string(hide_password=False)
+postgres_url = settings.PG_DSN.render_as_string(hide_password=False)
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
