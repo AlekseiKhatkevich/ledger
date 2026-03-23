@@ -32,17 +32,15 @@
     handle @login {
         rewrite * /realms/test/protocol/openid-connect/token
         reverse_proxy keycloak:8080 {
-#
-                header_up X-Forwarded-For "{remote}"
-#
-                header_up X-Forwarded-Proto "{scheme}"
-#
-#                header_up X-Forwarded-Host "{host}"
-            header_up X-Forwarded-Host keycloak
-                header_up X-Forwarded-Port "8080"
-#
 
-}
+            header_up X-Forwarded-For {remote}
+
+            header_up X-Forwarded-Proto {scheme}
+
+            header_up X-Forwarded-Host keycloak
+
+            header_up X-Forwarded-Port 8080
+            }
         }
 
     handle * {

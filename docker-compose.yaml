@@ -121,6 +121,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT: false
+
+      KC_FEATURES: hostname:v2
     depends_on:
       - postgres
     networks:
