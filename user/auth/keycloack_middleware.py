@@ -33,3 +33,4 @@ class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
 
 #  todo эндпоинт создания юзера в кейклок
 # todo tests
+# todo сделать эндпойнт рефреша
