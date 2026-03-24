@@ -26,6 +26,7 @@
 
 # ledger backend
 :8000 {
+#   valid until 24.03.27
     tls /etc/caddy/certificate.pem /etc/caddy/privatekey.pem
 
     @login path /user/login

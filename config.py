@@ -47,7 +47,8 @@ class KeycloakSettings:
     @cached_property
     def KEYCLOAK_SERVER_URL(self) -> str:
         """Url to Keycloak auth server"""
-        return f'{self.KEYCLOAK_SCHEME}://{self.KEYCLOAK_DOMAIN}:{self.KEYCLOAK_PORT}/'
+        #  From inside always use http as we have ssl termination inside Caddy proxy
+        return f'http://{self.KEYCLOAK_DOMAIN}:{self.KEYCLOAK_PORT}/'
 
 
 class ApiSettings:
