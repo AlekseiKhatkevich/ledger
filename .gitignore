@@ -114,3 +114,4 @@ secrets
 /site/
 *.pem
 *.crt
+/.python_history
