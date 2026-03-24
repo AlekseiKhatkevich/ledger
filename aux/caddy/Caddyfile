@@ -39,7 +39,7 @@
             import keykloack_healthcheck
 
             header_up X-Forwarded-For {remote}
-#           as backend uses http connection to KeyCloak internally we have 2 use it to here
+#           as backend uses http connection to KeyCloak internally we have 2 use it too here
 #           in order to have same ISS field inside JWT
             header_up X-Forwarded-Proto http
 

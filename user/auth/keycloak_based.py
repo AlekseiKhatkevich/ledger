@@ -42,3 +42,6 @@ class KeyCloakAuth:
         """Verifies token and returns user information"""
         return await self.keycloak_openid.a_userinfo(token)
 
+    async def refresh_token(self, refresh_token: str) -> dict:
+        """Refreshes token"""
+        return await self.keycloak_openid.a_refresh_token(refresh_token)

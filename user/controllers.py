@@ -3,9 +3,10 @@ from litestar import post, Controller, Request, Response, MediaType, get
 from litestar.openapi.datastructures import ResponseSpec
 from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
-from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response, User as KC_User
+from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response, User as KC_User, KeyCloakRefreshToken
 from user.dto import UserLoginReturnDTO
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
+from user.usecases.keycloakrefresh import KeyCloakRefreshUseCase
 
 
 def keycloak_login_exception_handler(_: Request, exc: KeycloakAuthenticationError) -> Response:
@@ -26,6 +27,7 @@ class UserController(Controller):
         exclude_from_auth=True,
         return_dto=UserLoginReturnDTO,
         status_code=HTTP_200_OK,
+        deprecated=True,
         responses={
             HTTP_401_UNAUTHORIZED: ResponseSpec(
                 data_container=Keycloak401Response,
@@ -37,6 +39,16 @@ class UserController(Controller):
         """To obtain OpenID credentials"""
         # noinspection PyTypeChecker
         return await KeyCloakLoginUseCase().execute(str(data.email), data.password.get_secret_value(),)
+
+    @post(
+        '/refresh',
+        exclude_from_auth=True,
+        return_dto=UserLoginReturnDTO,
+        status_code=HTTP_200_OK,
+    )
+    async def refresh_token(self, data: KeyCloakRefreshToken) -> UserLoginReturn:
+        # noinspection PyTypeChecker
+        return await KeyCloakRefreshUseCase().execute(data.refresh_token)
 
     @get('/')
     async def userinfo(self, kc_user: KC_User) -> KC_User:

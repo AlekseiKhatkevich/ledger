@@ -45,3 +45,7 @@ class User:
 @dataclass
 class KeyCloakToken:
     api_key: str
+
+@dataclass
+class KeyCloakRefreshToken:
+    refresh_token: str
