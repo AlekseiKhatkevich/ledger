@@ -29,10 +29,14 @@
 #   valid until 24.03.27
     tls /etc/caddy/certificate.pem /etc/caddy/privatekey.pem
 
-    @login path /user/login
+    @login+refresh {
+        method POST
+        path /user/login
+        path /user/refresh
+    }
 
-#   Proxying token sourcing to keykloack endpoint
-    handle @login {
+#   Proxying token sourcing and refreshing to keykloack endpoint. Both operation use same EP.
+    handle @login+refresh {
         rewrite * /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect/token
 
         reverse_proxy keycloak:8080 {

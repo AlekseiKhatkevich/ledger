@@ -45,6 +45,7 @@ class UserController(Controller):
         exclude_from_auth=True,
         return_dto=UserLoginReturnDTO,
         status_code=HTTP_200_OK,
+        deprecated=True,
     )
     async def refresh_token(self, data: KeyCloakRefreshToken) -> UserLoginReturn:
         # noinspection PyTypeChecker
