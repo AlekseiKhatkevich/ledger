@@ -42,6 +42,8 @@ class KeycloakSettings:
     KEYCLOAK_DOMAIN: str
     KEYCLOAK_PORT: PositiveInt
     KEYCLOAK_SCHEME: str
+    KEYCLOAK_ADMIN: str
+    KEYCLOAK_ADMIN_PASSWORD: str
 
     @computed_field
     @cached_property

@@ -1,6 +1,6 @@
 from functools import cache, cached_property
 
-from keycloak import KeycloakOpenID
+from keycloak import KeycloakOpenID, KeycloakOpenIDConnection, KeycloakAdmin
 
 from config import settings
 
@@ -16,13 +16,31 @@ class KeyCloakAuth:
             realm_name: str | None = None,
             client_secret_key: str | None = None,
             pool_maxsize: str | None = None,
+            admin_username: str | None = None,
+            admin_password: str | None = None,
+            admin_user_realm_name: str = 'master'
     ) -> None:
         self.server_url = server_url or settings.KEYCLOAK_SERVER_URL
         self.client_id = client_id or settings.KEYCLOAK_CLIENT_ID
         self.realm_name = realm_name or settings.KEYCLOAK_REALM
         self.client_secret_key = client_secret_key or settings.KEYCLOAK_CLIENT_SECRET
         self.pool_maxsize = pool_maxsize or settings.KEYCLOAK_POOL_MAXSIZE
+        self.admin_username = admin_username or settings.KEYCLOAK_ADMIN
+        self.admin_password = admin_password or settings.KEYCLOAK_ADMIN_PASSWORD
+        self.admin_user_realm_name = 'master'
 
+
+
+    @cached_property
+    def keycloak_admin(self) -> KeycloakAdmin:
+        return KeycloakAdmin(
+            server_url=self.server_url,
+            username=self.admin_username,
+            password=self.admin_password,
+            realm_name=self.realm_name,
+            user_realm_name=self.admin_user_realm_name,
+            pool_maxsize=self.pool_maxsize,
+        )
 
     @cached_property
     def keycloak_openid(self) -> KeycloakOpenID:

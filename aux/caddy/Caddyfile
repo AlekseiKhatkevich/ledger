@@ -31,8 +31,7 @@
 
     @login+refresh {
         method POST
-        path /user/login
-        path /user/refresh
+        path /user/login /user/refresh
     }
 
 #   Proxying token sourcing and refreshing to keykloack endpoint. Both operation use same EP.
@@ -60,7 +59,7 @@
             }
 }
 
-# all keycloak (amin, etc))
+# all keycloak (admin, etc))
 :8080, :8443 {
     reverse_proxy keycloak:8080 {
     import keykloack_healthcheck
