@@ -41,6 +41,19 @@ class User:
     email_verified: bool
     sub: uuid.UUID
 
+@dataclass
+class UserCreateIn:
+    email: str
+    username: str
+    first_name: str
+    last_name: str
+    password: str
+    locale: Literal['ru', 'en', ] = 'ru'
+    type: Literal['password', ] = 'password'
+    enabled: bool = True
+    exist_ok: bool = True
+
+
 
 @dataclass
 class KeyCloakToken:

@@ -3,8 +3,9 @@ from litestar import post, Controller, Request, Response, MediaType, get
 from litestar.openapi.datastructures import ResponseSpec
 from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
-from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response, User as KC_User, KeyCloakRefreshToken
-from user.dto import UserLoginReturnDTO
+from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response, User as KC_User, KeyCloakRefreshToken, \
+    UserCreateIn
+from user.dto import UserLoginReturnDTO, UserCreateInDTO, UserOutDTO
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
 from user.usecases.keycloakrefresh import KeyCloakRefreshUseCase
 
@@ -55,3 +56,7 @@ class UserController(Controller):
     async def userinfo(self, kc_user: KC_User) -> KC_User:
         """Information about current request user"""
         return kc_user
+
+    @post('/create', dto=UserCreateInDTO, return_dto=UserOutDTO)
+    async def create_user(self, data: UserCreateIn) -> UserOutDTO:
+        return 'casdasd'

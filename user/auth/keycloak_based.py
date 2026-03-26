@@ -1,8 +1,11 @@
+import uuid
 from functools import cache, cached_property
 
-from keycloak import KeycloakOpenID, KeycloakOpenIDConnection, KeycloakAdmin
+from keycloak import KeycloakOpenID, KeycloakAdmin
 
 from config import settings
+from user.domain import UserCreateIn
+
 
 @cache
 class KeyCloakAuth:
@@ -27,8 +30,7 @@ class KeyCloakAuth:
         self.pool_maxsize = pool_maxsize or settings.KEYCLOAK_POOL_MAXSIZE
         self.admin_username = admin_username or settings.KEYCLOAK_ADMIN
         self.admin_password = admin_password or settings.KEYCLOAK_ADMIN_PASSWORD
-        self.admin_user_realm_name = 'master'
-
+        self.admin_user_realm_name = admin_user_realm_name
 
 
     @cached_property
@@ -63,3 +65,19 @@ class KeyCloakAuth:
     async def refresh_token(self, refresh_token: str) -> dict:
         """Refreshes token"""
         return await self.keycloak_openid.a_refresh_token(refresh_token)
+
+    async def create_user(self, user_data: UserCreateIn) -> uuid.UUID:
+        """Creates user in KeyCloak"""
+        new_user = await self.keycloak_admin.a_create_user(
+            dict(
+                email=user_data.email,
+                username=user_data.username,
+                enabled=True,
+                firstName=user_data.first_name,
+                lastName=user_data.last_name,
+                exist_ok=user_data.exist_ok,
+                credentials=[{'value': user_data.password, 'type': user_data.type,}],
+                attributes={'locale': [user_data.locale,]}
+            )
+        )
+        return uuid.UUID(new_user)
