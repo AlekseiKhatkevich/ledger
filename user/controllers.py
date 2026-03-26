@@ -9,9 +9,9 @@ from user.domain import (UserLoginPayload,
                          Keycloak401Response,
                          User as KC_User,
                          KeyCloakRefreshToken,
-                         UserCreateIn,
+                         UserCreateIn, User, CreatedUserOut,
                          )
-from user.dto import UserLoginReturnDTO, UserCreateInDTO, UserOutDTO
+from user.dto import UserLoginReturnDTO, UserCreateInDTO, UserOutDTO, CreatedUserOutDTO
 from user.usecases.keycloak_create_user import KeyCloakCreateUserUseCase
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
 from user.usecases.keycloakrefresh import KeyCloakRefreshUseCase
@@ -74,8 +74,8 @@ class UserController(Controller):
         """Information about current request user"""
         return kc_user
 
-    @post('/create', dto=UserCreateInDTO, return_dto=UserOutDTO, exclude_from_auth=True,)
-    async def create_user(self, data: UserCreateIn) -> UserOutDTO:
-        # todo user exists
-        # todo schema on return data
+
+    @post('/create', dto=UserCreateInDTO, return_dto=CreatedUserOutDTO, exclude_from_auth=True,)
+    async def create_user(self, data: UserCreateIn) -> CreatedUserOut:
+        # noinspection PyTypeChecker
         return await KeyCloakCreateUserUseCase().execute(data)

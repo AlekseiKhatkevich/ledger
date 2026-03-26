@@ -1,7 +1,7 @@
 from litestar.dto import DataclassDTO, DTOConfig
 from litestar.plugins.pydantic import PydanticDTO
 
-from user.domain import UserLoginPayload, UserLoginReturn, UserCreateIn, User
+from user.domain import UserLoginPayload, UserLoginReturn, UserCreateIn, User, CreatedUserOut
 
 
 class UserLoginPayloadDTO(PydanticDTO[UserLoginPayload]):
@@ -16,4 +16,7 @@ class UserCreateInDTO(DataclassDTO[UserCreateIn]):
     )
 
 class UserOutDTO(DataclassDTO[User]):
+    pass
+
+class CreatedUserOutDTO(DataclassDTO[CreatedUserOut]):
     pass

@@ -1,5 +1,6 @@
+import datetime
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from pydantic import SecretStr, BaseModel
@@ -60,3 +61,32 @@ class KeyCloakToken:
 @dataclass
 class KeyCloakRefreshToken:
     refresh_token: str
+
+@dataclass
+class Attributes:
+    location: list[str]
+
+class Access:
+    manageGroupMembership: bool
+    resetPassword: bool
+    view: bool
+    mapRoles: bool
+    impersonate: bool
+    manage: bool
+
+@dataclass
+class CreatedUserOut:
+    id: uuid.UUID
+    username: str
+    firstName: str
+    lastName: str
+    email: str
+    emailVerified: bool
+    attributes: Attributes
+    enabled: bool
+    createdTimestamp: int
+    totp: bool
+    disableableCredentialTypes: list
+    requiredActions: list
+    notBefore: int
+    access: Access
