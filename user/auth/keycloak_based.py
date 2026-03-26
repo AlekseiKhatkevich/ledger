@@ -75,9 +75,13 @@ class KeyCloakAuth:
                 enabled=True,
                 firstName=user_data.first_name,
                 lastName=user_data.last_name,
-                exist_ok=user_data.exist_ok,
                 credentials=[{'value': user_data.password, 'type': user_data.type,}],
                 attributes={'locale': [user_data.locale,]}
-            )
+            ),
+            exist_ok=user_data.exist_ok,
         )
         return uuid.UUID(new_user)
+
+    async def get_user(self, user_id: uuid.UUID) -> dict:
+        """Fetch Keycloak user by id."""
+        return await self.keycloak_admin.a_get_user(user_id)

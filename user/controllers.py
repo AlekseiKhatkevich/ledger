@@ -1,11 +1,18 @@
 from keycloak import KeycloakAuthenticationError
 from litestar import post, Controller, Request, Response, MediaType, get
 from litestar.openapi.datastructures import ResponseSpec
-from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED
+from litestar.status_codes import HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
 
-from user.domain import UserLoginPayload, UserLoginReturn, Keycloak401Response, User as KC_User, KeyCloakRefreshToken, \
-    UserCreateIn
+from user.auth.exceptions import DuplicateUserException
+from user.domain import (UserLoginPayload,
+                         UserLoginReturn,
+                         Keycloak401Response,
+                         User as KC_User,
+                         KeyCloakRefreshToken,
+                         UserCreateIn,
+                         )
 from user.dto import UserLoginReturnDTO, UserCreateInDTO, UserOutDTO
+from user.usecases.keycloak_create_user import KeyCloakCreateUserUseCase
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
 from user.usecases.keycloakrefresh import KeyCloakRefreshUseCase
 
@@ -17,11 +24,21 @@ def keycloak_login_exception_handler(_: Request, exc: KeycloakAuthenticationErro
         status_code=exc.response_code,
     )
 
+def keycloak_create_user_exception_handler(_: Request, exc: DuplicateUserException) -> Response:
+    return Response(
+        media_type=MediaType.JSON,
+        content={'detail': exc.message, 'status_code': HTTP_400_BAD_REQUEST, },
+        status_code=HTTP_400_BAD_REQUEST,
+    )
+
 
 class UserController(Controller):
     path = '/user'
-    exception_handlers = {KeycloakAuthenticationError: keycloak_login_exception_handler}
-    tags = ('user', )
+    tags = ('user',)
+    exception_handlers = {
+        KeycloakAuthenticationError: keycloak_login_exception_handler,
+        DuplicateUserException: keycloak_create_user_exception_handler,
+    }
 
     @post(
         '/login/via-backend',
@@ -57,6 +74,8 @@ class UserController(Controller):
         """Information about current request user"""
         return kc_user
 
-    @post('/create', dto=UserCreateInDTO, return_dto=UserOutDTO)
+    @post('/create', dto=UserCreateInDTO, return_dto=UserOutDTO, exclude_from_auth=True,)
     async def create_user(self, data: UserCreateIn) -> UserOutDTO:
-        return 'casdasd'
+        # todo user exists
+        # todo schema on return data
+        return await KeyCloakCreateUserUseCase().execute(data)

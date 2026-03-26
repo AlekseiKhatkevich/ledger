@@ -15,7 +15,7 @@ from user.auth.keycloack_middleware import KeyCloakAuthenticationMiddleware
 from user.controllers import UserController
 from user.dependencies import keycloak_user
 
-resource = Resource(attributes={SERVICE_NAME: "ledger-backend"})
+resource = Resource(attributes={SERVICE_NAME: settings.APP_NAME})
 provider = TracerProvider(resource=resource)
 open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
 

@@ -51,9 +51,7 @@ class UserCreateIn:
     locale: Literal['ru', 'en', ] = 'ru'
     type: Literal['password', ] = 'password'
     enabled: bool = True
-    exist_ok: bool = True
-
-
+    exist_ok: bool = False
 
 @dataclass
 class KeyCloakToken:
