@@ -21,6 +21,8 @@ dependencies = [
 dev = [
     "ipython>=9.10.0",
     "pydevd-pycharm~=253.30387.173",
+    "pytest>=9.0.2",
+    "pytest-randomly>=4.0.1",
     "remote-pdb>=2.1.0",
     "web-pdb>=1.6.3",
 ]
