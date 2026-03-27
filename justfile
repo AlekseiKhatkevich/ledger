@@ -52,3 +52,8 @@ keycloak:
 [group('caddy')]
 caddy-reload:
     docker compose --profile main kill  -sUSR1 caddy
+
+#  run tests
+[group('pytest')]
+pytest:
+    docker compose --profile main exec pytest

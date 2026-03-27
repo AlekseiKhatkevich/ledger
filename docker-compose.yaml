@@ -15,7 +15,7 @@ services:
       GRANIAN_RELOAD: 1
       GRANIAN_WORKERS_LIFETIME: 60
       GRANIAN_METRICS_ENABLED: 1
-      UV_NO_DEV: 1
+      UV_NO_DEV: 0
       ALEMBIC_CONFIG: alembic/alembic.ini
       PGHOSTADDR: postgres
       DEBUG: ${DEBUG:-1}

@@ -3,8 +3,8 @@
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie
 
-ARG UV_NO_DEV='0'
-ARG GRANIAN_RELOAD='0'
+ARG UV_NO_DEV=0
+ARG GRANIAN_RELOAD=0
 
 #  system
 ENV PATH="/root/.local/bin/:$PATH"
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project
 
-COPY --chown=app:app . /app
+COPY --chown=nonroot:nonroot . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
