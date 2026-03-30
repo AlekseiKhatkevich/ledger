@@ -8,6 +8,7 @@ from litestar.openapi.spec import Components, SecurityScheme
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
+from api import lifespan
 
 from aux.api.routes import aux_router
 from config import settings
@@ -24,9 +25,6 @@ auth_mw = DefineMiddleware(
     exclude='/docs',
 )
 
-def set_settings(app:Litestar) -> None:
-    app.state.settings = settings
-
 
 @get("/")
 async def root() -> str:
@@ -37,7 +35,8 @@ app = Litestar(
     [root, aux_router, UserController],
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
-    on_startup=[set_settings, ],
+    on_startup=lifespan.on_startup,
+    on_shutdown=lifespan.on_shutdown,
     middleware=[auth_mw, ],
     dependencies={'kc_user': Provide(keycloak_user)},
     openapi_config=OpenAPIConfig(

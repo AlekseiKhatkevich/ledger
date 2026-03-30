@@ -13,7 +13,7 @@ def test_dict() -> dict[str, Any]:
     }
 
 
-def test_dict_keys_converter(test_dict):
+def test_dict_keys_converter(test_dict) -> None:
     result_dict = dict_keys_converter(
         test_dict,
         keys=('some-key', 'nonexists',),

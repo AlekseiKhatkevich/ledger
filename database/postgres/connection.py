@@ -20,7 +20,7 @@ log = structlog.get_logger()
 
 @cache
 class DB:
-    def __init__(self, url: URL | None = None) -> None:
+    def __init__(self, url: URL | None = None, finalize: bool = False) -> None:
         self.engine = create_async_engine(
             url or settings.PG_DSN,
             echo=settings.POSTGRES_ECHO,
@@ -35,7 +35,8 @@ class DB:
             execution_options={'logging_token': f'connect#: {secrets.token_hex(3)}',},
             connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
         )
-        self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
+        if finalize:
+            self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
 
     @cached_property
     def _maker(self) -> async_sessionmaker:
