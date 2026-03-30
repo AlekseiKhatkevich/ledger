@@ -7,14 +7,15 @@ auth = KeyCloakAuth()
 # headers --  {'Content-Type': 'application/x-www-form-urlencoded'}
 
 
-async def test_get_token(kc_get_token_api_mock):
+async def test_get_token(kc_get_token_api_mock, kc_get_token_response):
     token_data = await auth.get_token('test@disroot.org', '1q2w3e')
-    assert token_data['access_token']
-    assert token_data['expires_in']
-    assert token_data['refresh_expires_in']
-    assert token_data['token_type']
-    assert token_data['id_token']
-    assert token_data['not-before-policy']
-    assert token_data['session_state']
-    assert token_data['scope']
+    assert token_data == kc_get_token_response
+
+
+async def test_verify_token(kc_userinfo_api_mock, kc_userinfo_response):
+    userinfo = await auth.verify_token(token='random_token_here')
+    assert userinfo == kc_userinfo_response
+
+async def test_refresh_token():
+    pass
 

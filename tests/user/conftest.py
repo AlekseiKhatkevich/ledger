@@ -5,6 +5,7 @@ from pytest_httpx import HTTPXMock
 
 from config import settings
 
+KEYCLOAK_BASE_API_URL = f'{settings.KEYCLOAK_SERVER_URL}realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/'
 
 @pytest.fixture(scope='session')
 def kc_get_token_response() -> dict[str, Any]:
@@ -60,9 +61,28 @@ def kc_get_token_response() -> dict[str, Any]:
  'scope': 'openid email profile',
     }
 
+@pytest.fixture(scope='session')
+def kc_userinfo_response() -> dict[str, Any]:
+    return {
+    "name": "Test User",
+    "preferred_username": "test_user",
+    "given_name": "Test",
+    "family_name": "User",
+    "email": "test@disroot.org",
+    "email_verified": True,
+    "sub": "7f4296f5-ba32-434e-9c18-2ad2e40b9526"
+}
+
 @pytest.fixture
 def kc_get_token_api_mock(httpx_mock: HTTPXMock, kc_get_token_response: dict[str, Any]) -> None:
     httpx_mock.add_response(
-        url=f'{settings.KEYCLOAK_SERVER_URL}realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token',
+        url=f'{KEYCLOAK_BASE_API_URL}token',
         json=kc_get_token_response,
+    )
+
+@pytest.fixture
+def kc_userinfo_api_mock(httpx_mock: HTTPXMock, kc_userinfo_response: dict[str, Any]) -> None:
+    httpx_mock.add_response(
+        url=f'{KEYCLOAK_BASE_API_URL}userinfo',
+        json=kc_userinfo_response,
     )
