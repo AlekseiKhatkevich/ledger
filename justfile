@@ -55,5 +55,5 @@ caddy-reload:
 
 #  run tests
 [group('pytest')]
-pytest:
-    docker compose --profile main exec pytest
+test path='':
+    docker compose exec backend-api bash -c "uv run pytest {{path}}"
