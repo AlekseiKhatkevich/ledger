@@ -31,7 +31,7 @@ async def root() -> str:
     return "ROOT"
 
 
-app = Litestar(
+app: Litestar = Litestar(
     [root, aux_router, UserController],
     plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
     debug=settings.DEBUG,
