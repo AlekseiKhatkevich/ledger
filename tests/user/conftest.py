@@ -86,3 +86,7 @@ def kc_userinfo_api_mock(httpx_mock: HTTPXMock, kc_userinfo_response: dict[str, 
         url=f'{KEYCLOAK_BASE_API_URL}userinfo',
         json=kc_userinfo_response,
     )
+
+@pytest.fixture
+def kc_refresh_token_api_mock(kc_get_token_api_mock) -> None:
+    pass
