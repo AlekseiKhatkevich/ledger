@@ -1,11 +1,32 @@
+import datetime
+import uuid
 from typing import Any
 
 import pytest
+from litestar.status_codes import HTTP_201_CREATED
+from polyfactory.pytest_plugin import register_fixture
 from pytest_httpx import HTTPXMock
 
 from config import settings
+from tests.user.auth.factories import UserCreateInFactory
+from user.auth.keycloak_based import KeyCloakAuth
+from user.domain import UserCreateIn
+
+register_fixture(UserCreateInFactory)
+
 
 KEYCLOAK_BASE_API_URL = f'{settings.KEYCLOAK_SERVER_URL}realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/'
+
+
+@pytest.fixture
+def kc_auth() -> KeyCloakAuth:
+    auth = KeyCloakAuth()
+    #  avoid extra api call to /refresh
+    auth.keycloak_admin.connection._expires_at = (
+            datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=1)
+    )
+    return auth
+
 
 @pytest.fixture(scope='session')
 def kc_get_token_response() -> dict[str, Any]:
@@ -90,3 +111,56 @@ def kc_userinfo_api_mock(httpx_mock: HTTPXMock, kc_userinfo_response: dict[str, 
 @pytest.fixture
 def kc_refresh_token_api_mock(kc_get_token_api_mock) -> None:
     pass
+
+@pytest.fixture
+def user_create_in(user_create_in_factory: UserCreateInFactory) -> UserCreateIn:
+    return user_create_in_factory.build()
+
+@pytest.fixture
+def kc_get_user_return_data(user_create_in: UserCreateIn) -> dict[str, Any]:
+    return {
+        "id": "30e46920-b7ae-4ba8-aa6a-9e7fcf201915",
+        "username": user_create_in.username,
+        "firstName": user_create_in.first_name,
+        "lastName": user_create_in.last_name,
+        "email": user_create_in.email,
+        "emailVerified": False,
+        "attributes": {
+            "location": [
+                "ru"
+            ]
+        },
+        "enabled": user_create_in.enabled,
+        "createdTimestamp": datetime.datetime.now().timestamp(),
+        "totp": False,
+        "disableableCredentialTypes": [],
+        "requiredActions": [],
+        "notBefore": 0,
+        "access": {
+            "manageGroupMembership": True,
+            "resetPassword": True,
+            "view": True,
+            "mapRoles": True,
+            "impersonate": True,
+            "manage": True
+        }
+    }
+
+@pytest.fixture
+def kc_create_new_user_api_mock(httpx_mock: HTTPXMock) -> uuid.UUID:
+    kc_url = f'{settings.KEYCLOAK_SERVER_URL}admin/realms/{settings.KEYCLOAK_REALM}/users'
+    random_user_uuid = uuid.uuid4()
+    httpx_mock.add_response(
+        status_code=HTTP_201_CREATED,
+        url=kc_url,
+        headers={
+            'location': f'{kc_url}/{random_user_uuid}',
+            'referrer-policy': 'no-referrer',
+            'strict-transport-security': 'max-age=31536000; includeSubDomains',
+            'x-content-type-options': 'nosniff',
+            'x-frame-options': 'SAMEORIGIN',
+            'x-robots-tag': 'none',
+            'content-length': '0',
+        }
+    )
+    return random_user_uuid

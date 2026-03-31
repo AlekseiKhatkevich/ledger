@@ -2,6 +2,8 @@
 
 set dotenv-filename := "secrets/just/.env"
 
+backend_name := 'backend-api'
+
 default:
    just --list
 
@@ -46,7 +48,7 @@ downgrade where='-1':
 # open keycloak web ui
 [group('keycloak')]
 keycloak:
-    xdg-open http://localhost:8080/admin/master/console/#/master
+    xdg-open http://localhost:8080/admin/master/console/#/test
 
 #  reloads caddy web server config file
 [group('caddy')]
@@ -56,4 +58,10 @@ caddy-reload:
 #  run tests
 [group('pytest')]
 test path='':
-    docker compose exec backend-api bash -c "uv run pytest {{path}}"
+    docker compose exec {{backend_name}} bash -c "uv run pytest {{path}}"
+
+# open api docs
+[group('api')]
+api-docs:
+    xdg-open https://localhost:8000/docs
+
