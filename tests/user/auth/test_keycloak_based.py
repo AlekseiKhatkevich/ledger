@@ -1,5 +1,3 @@
-import uuid
-
 import msgspec
 
 
@@ -30,3 +28,4 @@ async def test_get_user(kc_auth, kc_get_user_api_mock, user_from_get_user):
     user_uuid = kc_get_user_api_mock
     response = await kc_auth.get_user(user_uuid)
     assert response == msgspec.to_builtins(user_from_get_user)
+

@@ -1,3 +1,5 @@
+from typing import Any
+
 from keycloak import KeycloakAuthenticationError
 from litestar.connection import ASGIConnection
 from litestar.exceptions import NotAuthorizedException
@@ -10,9 +12,9 @@ from user.domain import KeyCloakToken, User
 
 class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, auth_provider: Any | None = None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._keycloak_auth_provider = KeyCloakAuth()
+        self._keycloak_auth_provider = auth_provider or KeyCloakAuth()
 
     async def authenticate_request(self, connection: ASGIConnection) -> AuthenticationResult:
         """
@@ -30,5 +32,3 @@ class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
                 extra={'token': auth_header},
             ) from None
         return AuthenticationResult(user=user, auth=KeyCloakToken(api_key=auth_header))
-
-# todo tests

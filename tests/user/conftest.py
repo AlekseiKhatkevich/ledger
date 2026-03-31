@@ -1,6 +1,5 @@
 import datetime
 import uuid
-from dataclasses import asdict
 from typing import Any
 
 import msgspec
@@ -181,4 +180,3 @@ def kc_get_user_api_mock(httpx_mock: HTTPXMock, user_from_get_user: CreatedUserO
         json = msgspec.to_builtins(user_from_get_user)
     )
     return user_uuid
-
