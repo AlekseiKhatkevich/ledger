@@ -66,6 +66,7 @@ class KeyCloakRefreshToken:
 class Attributes:
     location: list[str]
 
+@dataclass
 class Access:
     manageGroupMembership: bool
     resetPassword: bool

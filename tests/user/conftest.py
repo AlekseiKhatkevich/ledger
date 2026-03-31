@@ -1,18 +1,21 @@
 import datetime
 import uuid
+from dataclasses import asdict
 from typing import Any
 
+import msgspec
 import pytest
 from litestar.status_codes import HTTP_201_CREATED
 from polyfactory.pytest_plugin import register_fixture
 from pytest_httpx import HTTPXMock
 
 from config import settings
-from tests.user.auth.factories import UserCreateInFactory
+from tests.user.auth.factories import UserCreateInFactory, CreatedUserOutFactory
 from user.auth.keycloak_based import KeyCloakAuth
-from user.domain import UserCreateIn
+from user.domain import UserCreateIn, CreatedUserOut
 
 register_fixture(UserCreateInFactory)
+register_fixture(CreatedUserOutFactory)
 
 
 KEYCLOAK_BASE_API_URL = f'{settings.KEYCLOAK_SERVER_URL}realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/'
@@ -117,6 +120,10 @@ def user_create_in(user_create_in_factory: UserCreateInFactory) -> UserCreateIn:
     return user_create_in_factory.build()
 
 @pytest.fixture
+def user_from_get_user(created_user_out_factory: CreatedUserOutFactory) -> CreatedUserOut:
+    return created_user_out_factory.build()
+
+@pytest.fixture
 def kc_get_user_return_data(user_create_in: UserCreateIn) -> dict[str, Any]:
     return {
         "id": "30e46920-b7ae-4ba8-aa6a-9e7fcf201915",
@@ -164,3 +171,14 @@ def kc_create_new_user_api_mock(httpx_mock: HTTPXMock) -> uuid.UUID:
         }
     )
     return random_user_uuid
+
+@pytest.fixture
+def kc_get_user_api_mock(httpx_mock: HTTPXMock, user_from_get_user: CreatedUserOut) -> uuid.UUID:
+    user_uuid = user_from_get_user.id
+    httpx_mock.add_response(
+        url=f'{settings.KEYCLOAK_SERVER_URL}admin/realms/{settings.KEYCLOAK_REALM}/users/'
+            f'{user_uuid}?userProfileMetadata=false',
+        json = msgspec.to_builtins(user_from_get_user)
+    )
+    return user_uuid
+
