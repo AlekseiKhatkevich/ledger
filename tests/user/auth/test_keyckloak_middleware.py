@@ -16,27 +16,36 @@ from user.domain import KeyCloakToken, User
 def kc_auth_middleware(kc_auth: KeyCloakAuth) -> KeyCloakAuthenticationMiddleware:
     return KeyCloakAuthenticationMiddleware(auth_provider=kc_auth, app=app)
 
-
-async def test_kc_auth_middleware_negative_no_header(kc_auth_middleware):
+@pytest.fixture
+def connection() -> Mock:
     connection = Mock(spec_set=ASGIConnection)
+    connection.headers = {settings.KEYCLOAK_API_KEY_HEADER: 'i_am_a_fake_jwt_token'}
+    return connection
+
+
+async def test_kc_auth_middleware_negative_no_header(kc_auth_middleware, connection):
     connection.headers = {}
 
     with pytest.raises(NotAuthorizedException, match='No token provided'):
         await kc_auth_middleware.authenticate_request(connection)
 
 
-async def test_kc_auth_middleware_negative_invalid_token(kc_auth_middleware):
-    pass
+@pytest.mark.parametrize('kc_userinfo_api_mock', (401, ), indirect=True)
+async def test_kc_auth_middleware_negative_invalid_token(
+        kc_auth_middleware,
+        kc_userinfo_api_mock,
+        connection,
+):
+    with pytest.raises(NotAuthorizedException, match='Wrong or outdated token'):
+        await kc_auth_middleware.authenticate_request(connection)
 
 
 async def test_kc_auth_middleware_positive(
         kc_auth_middleware,
         kc_userinfo_api_mock,
         kc_userinfo_response,
+        connection,
 ):
-    connection = Mock(spec_set=ASGIConnection)
-    connection.headers = {settings.KEYCLOAK_API_KEY_HEADER: 'i_am_a_fake_jwt_token'}
-
     auth_result = await kc_auth_middleware.authenticate_request(connection)
 
     assert isinstance(auth_result, AuthenticationResult)

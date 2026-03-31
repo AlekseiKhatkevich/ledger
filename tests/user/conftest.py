@@ -4,7 +4,7 @@ from typing import Any
 
 import msgspec
 import pytest
-from litestar.status_codes import HTTP_201_CREATED
+from litestar.status_codes import HTTP_201_CREATED, HTTP_200_OK
 from polyfactory.pytest_plugin import register_fixture
 from pytest_httpx import HTTPXMock
 
@@ -104,10 +104,12 @@ def kc_get_token_api_mock(httpx_mock: HTTPXMock, kc_get_token_response: dict[str
     )
 
 @pytest.fixture
-def kc_userinfo_api_mock(httpx_mock: HTTPXMock, kc_userinfo_response: dict[str, Any]) -> None:
+def kc_userinfo_api_mock(httpx_mock: HTTPXMock, kc_userinfo_response: dict[str, Any], request) -> None:
+    status = getattr(request, 'param', HTTP_200_OK)
     httpx_mock.add_response(
         url=f'{KEYCLOAK_BASE_API_URL}userinfo',
         json=kc_userinfo_response,
+        status_code=status,
     )
 
 @pytest.fixture
