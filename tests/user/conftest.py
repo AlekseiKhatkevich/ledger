@@ -29,6 +29,9 @@ def kc_auth() -> KeyCloakAuth:
     )
     return auth
 
+@pytest.fixture
+def user_uuid() -> uuid.UUID:
+    return uuid.uuid4()
 
 @pytest.fixture(scope='session')
 def kc_get_token_response() -> dict[str, Any]:
@@ -121,8 +124,11 @@ def user_create_in(user_create_in_factory: UserCreateInFactory) -> UserCreateIn:
     return user_create_in_factory.build()
 
 @pytest.fixture
-def user_from_get_user(created_user_out_factory: CreatedUserOutFactory) -> CreatedUserOut:
-    return created_user_out_factory.build()
+def user_from_get_user(
+        created_user_out_factory: CreatedUserOutFactory,
+        user_uuid: uuid.UUID,
+) -> CreatedUserOut:
+    return created_user_out_factory.build(id=user_uuid)
 
 @pytest.fixture
 def kc_get_user_return_data(user_create_in: UserCreateIn) -> dict[str, Any]:
@@ -155,14 +161,13 @@ def kc_get_user_return_data(user_create_in: UserCreateIn) -> dict[str, Any]:
     }
 
 @pytest.fixture
-def kc_create_new_user_api_mock(httpx_mock: HTTPXMock) -> uuid.UUID:
+def kc_create_new_user_api_mock(httpx_mock: HTTPXMock, user_uuid) -> uuid.UUID:
     kc_url = f'{settings.KEYCLOAK_SERVER_URL}admin/realms/{settings.KEYCLOAK_REALM}/users'
-    random_user_uuid = uuid.uuid4()
     httpx_mock.add_response(
         status_code=HTTP_201_CREATED,
         url=kc_url,
         headers={
-            'location': f'{kc_url}/{random_user_uuid}',
+            'location': f'{kc_url}/{user_uuid}',
             'referrer-policy': 'no-referrer',
             'strict-transport-security': 'max-age=31536000; includeSubDomains',
             'x-content-type-options': 'nosniff',
@@ -171,7 +176,7 @@ def kc_create_new_user_api_mock(httpx_mock: HTTPXMock) -> uuid.UUID:
             'content-length': '0',
         }
     )
-    return random_user_uuid
+    return user_uuid
 
 @pytest.fixture
 def kc_get_user_api_mock(httpx_mock: HTTPXMock, user_from_get_user: CreatedUserOut) -> uuid.UUID:

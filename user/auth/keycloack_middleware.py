@@ -25,7 +25,7 @@ class KeyCloakAuthenticationMiddleware(AbstractAuthenticationMiddleware):
         if not auth_header:
             raise NotAuthorizedException(detail='No token provided',)
         try:
-            user = User(** await self._keycloak_auth_provider.verify_token(auth_header))
+            user = User(**await self._keycloak_auth_provider.verify_token(auth_header))
         except KeycloakAuthenticationError:
             raise NotAuthorizedException(
                 detail='Wrong or outdated token',

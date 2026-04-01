@@ -5,15 +5,19 @@ import pytest
 
 from litestar.testing import TestClient
 
-from main import app
+from main import app as ls_app
 
 if TYPE_CHECKING:
     from litestar import Litestar
 
-app.debug = True
+ls_app.debug = True
 
 
-@pytest.fixture(scope='function')
-def test_client() -> Iterator[TestClient[Litestar]]:
+@pytest.fixture(scope='session')
+def test_client(app) -> Iterator[TestClient[Litestar]]:
     with TestClient(app=app) as client:
         yield client
+
+@pytest.fixture(scope='session')
+def app() -> Litestar:
+    return ls_app
