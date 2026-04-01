@@ -6,7 +6,6 @@ import msgspec
 import pytest
 from litestar.status_codes import HTTP_201_CREATED, HTTP_200_OK
 from polyfactory.pytest_plugin import register_fixture
-from polyfactory.utils.predicates import is_optional
 from pytest_httpx import HTTPXMock
 
 from config import settings
