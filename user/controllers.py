@@ -59,7 +59,7 @@ class UserController(Controller):
         return await KeyCloakLoginUseCase().execute(str(data.email), data.password.get_secret_value(),)
 
     @post(
-        '/refresh',
+        '/refresh/via-backend',
         exclude_from_auth=True,
         return_dto=UserLoginReturnDTO,
         status_code=HTTP_200_OK,
