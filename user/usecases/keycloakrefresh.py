@@ -1,10 +1,10 @@
 from aux.helpers.serialization import convert_dash_to_underscore
 
 from user.auth.keycloak_based import KeyCloakAuth
-from user.usecases.keycloak_base import KCBaseUseCase
+from user.usecases.keycloak_base import KeyCloakBaseUseCase
 
 
-class KeyCloakRefreshUseCase(KCBaseUseCase):
+class KeyCloakRefreshUseCase(KeyCloakBaseUseCase):
     """To refresh KeyCloak token"""
 
     @staticmethod
