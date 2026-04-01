@@ -9,6 +9,7 @@ from user.usecases.keycloak_create_user import KeyCloakCreateUserUseCase
 def usecase(kc_auth) -> KeyCloakCreateUserUseCase:
     return KeyCloakCreateUserUseCase(auth_provider=kc_auth)
 
+
 async def test_kc_create_user_usecase_positive(
     kc_create_new_user_api_mock,
     user_create_in,
