@@ -9,19 +9,29 @@ from polyfactory.pytest_plugin import register_fixture
 from pytest_httpx import HTTPXMock
 
 from config import settings
-from tests.user.auth.factories import UserCreateInFactory, CreatedUserOutFactory
+from tests.user.auth.factories import UserCreateInFactory, CreatedUserOutFactory, UserFactory
 from user.auth.keycloak_based import KeyCloakAuth
-from user.domain import UserCreateIn, CreatedUserOut
+from user.domain import UserCreateIn, CreatedUserOut, User
 
 register_fixture(UserCreateInFactory)
 register_fixture(CreatedUserOutFactory)
+register_fixture(UserFactory)
 
 
 KEYCLOAK_BASE_API_URL = f'{settings.KEYCLOAK_SERVER_URL}realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/'
 
 
 @pytest.fixture
+def user(user_factory: UserFactory) -> User:
+    return user_factory.build()
+
+
+@pytest.fixture
 def kc_auth() -> KeyCloakAuth:
+    """
+    KeyCloakAuth is singletone, hence using this fixture in any test would change auth behavior.
+    Good candidate for autouse...
+    """
     auth = KeyCloakAuth()
     #  avoid extra api call to /refresh
     auth.keycloak_admin.connection._expires_at = (

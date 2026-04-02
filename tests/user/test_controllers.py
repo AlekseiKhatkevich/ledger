@@ -1,8 +1,12 @@
 import msgspec
+import pytest
 from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED
 
 from user.controllers import UserController
 from user.domain import CreatedUserOut
+
+
+pytestmark = pytest.mark.usefixtures('kc_auth')
 
 
 def test_userinfo(test_client, kc_userinfo_response, kc_userinfo_api_mock):
@@ -18,7 +22,6 @@ def test_create_user(
         user_create_in,
         kc_create_new_user_api_mock,
         kc_get_user_api_mock,
-        kc_auth,
 ):
     response = test_client_no_auth.post(
         UserController.path + '/create',
