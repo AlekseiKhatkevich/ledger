@@ -6,6 +6,9 @@ from config import settings
 
 from collections import OrderedDict
 
+from interservice.handlers import PeerDiscoveryHandler
+
+
 class FixedSizeSet:
     def __init__(self, capacity=100):
         self.cap = capacity
@@ -28,10 +31,10 @@ class FixedSizeSet:
 class Node:
     def __init__(self):
         self._listener: pynng.Listener | None = None
-        self.sock: pynng.Bus0 = self.init_sock()
         self.is_entrypoint = False
         self.peers = set()
-        self.seen_messages = set()
+        self.seen_messages = FixedSizeSet(capacity=settings.NNG_KNOWN_MESSAGES_QTY)
+        self.sock: pynng.Bus0 = self.init_sock()
 
     def init_sock(self) -> pynng.Bus0:
         sock = pynng.Bus0()
@@ -58,4 +61,9 @@ class Node:
         if not self.is_entrypoint:
             self.sock.dial(settings.NNG_BASE_ENTRYPOINT_ADR)
         await asyncio.sleep(settings.NNG_INIT_TIME_INTERVAL)
-        await self.sock.asend()
+
+        await PeerDiscoveryHandler(self).send_peers()
+
+        while True:
+            msg = await self.sock.arecv_msg()
+            print(f'{self.name}: RECEIVED "{msg.bytes.decode()}" FROM BUS')
