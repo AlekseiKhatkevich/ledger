@@ -4,6 +4,26 @@ import pynng
 
 from config import settings
 
+from collections import OrderedDict
+
+class FixedSizeSet:
+    def __init__(self, capacity=100):
+        self.cap = capacity
+        self.d = OrderedDict()
+
+    def add(self, x):
+        if x in self.d:
+            return
+        elif len(self.d) >= self.cap:
+            self.d.popitem(last=False)
+        self.d[x] = None
+
+    def __contains__(self, x) -> bool:
+        return x in self.d
+
+    def __repr__(self) -> str:
+        return str(self.d)
+
 
 class Node:
     def __init__(self):
@@ -11,6 +31,7 @@ class Node:
         self.sock: pynng.Bus0 = self.init_sock()
         self.is_entrypoint = False
         self.peers = set()
+        self.seen_messages = set()
 
     def init_sock(self) -> pynng.Bus0:
         sock = pynng.Bus0()

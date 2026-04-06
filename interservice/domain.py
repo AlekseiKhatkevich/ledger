@@ -21,4 +21,5 @@ class PeerDiscoveryBody(msgspec.Struct):
 class Message[T](msgspec.Struct):
     header: Header
     body: T
+# msgspec.json.decode(e, type=Message[PeerDiscoveryBody])
 # 2. Delaying decoding of part of a message
