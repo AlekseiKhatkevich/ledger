@@ -12,6 +12,7 @@ dependencies = [
     "litestar[opentelemetry,standard]>=2.20.0",
     "opentelemetry-exporter-otlp>=1.40.0",
     "pydantic-settings>=2.13.1",
+    "pynng>=0.9.0",
     "python-keycloak>=7.1.1",
     "sqlalchemy[asyncio]>=2.0.46",
     "structlog>=25.5.0",

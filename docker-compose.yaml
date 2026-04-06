@@ -42,6 +42,9 @@ services:
         - action: sync+restart
           path: ./docker-compose.yaml
           target: ./app/docker-compose.yaml
+        - action: sync+restart
+          path: ./pyproject.toml
+          target: ./app/pyproject.toml
 
 #  ---
 

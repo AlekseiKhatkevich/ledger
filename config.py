@@ -56,11 +56,16 @@ class KeycloakSettings:
 class ApiSettings:
     API_SCHEMA_ENDPOINT: str = '/docs'
 
+
+class NNGSettings:
+    NNG_BASE_ENTRYPOINT_ADR: str = 'abstract://entrypoint_socket'
+
 @cache
 class Settings(
     ApiSettings,
     PostgresSettings,
     KeycloakSettings,
+    NNGSettings,
     BaseSettings,
 ):
     """Combined settings"""
