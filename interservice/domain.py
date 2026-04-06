@@ -32,4 +32,4 @@ class PeerDiscoveryMessage(Message[PeerDiscoveryBody]):
 # dec.decode(e)
 
 
-messages_type = Union[PeerDiscoveryMessage, Message]
+messages_types = Union[PeerDiscoveryMessage, Message]

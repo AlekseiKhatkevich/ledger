@@ -1,11 +1,13 @@
 import asyncio
 
+import msgspec.msgpack
 import pynng
 
 from config import settings
 
 from collections import OrderedDict
 
+from interservice.domain import messages_types
 from interservice.handlers import PeerDiscoveryHandler
 
 
@@ -35,6 +37,7 @@ class Node:
         self.peers = set()
         self.seen_messages = FixedSizeSet(capacity=settings.NNG_KNOWN_MESSAGES_QTY)
         self.sock: pynng.Bus0 = self.init_sock()
+        self.decoder = msgspec.msgpack.Decoder(messages_types)
 
     def init_sock(self) -> pynng.Bus0:
         sock = pynng.Bus0()
@@ -57,13 +60,27 @@ class Node:
     def name(self) -> str:
         return self._listener.local_address.name
 
+    def decode_message(self, message: bytes) -> messages_types:
+        return self.decoder.decode(message)
+
     async def run(self):
-        if not self.is_entrypoint:
-            self.sock.dial(settings.NNG_BASE_ENTRYPOINT_ADR)
-        await asyncio.sleep(settings.NNG_INIT_TIME_INTERVAL)
+        try:
+            with self.sock:
+                if not self.is_entrypoint:
+                    self.sock.dial(settings.NNG_BASE_ENTRYPOINT_ADR)
+                await asyncio.sleep(settings.NNG_INIT_TIME_INTERVAL)
 
-        await PeerDiscoveryHandler(self).send_peers()
+                await PeerDiscoveryHandler(self).send_peers()
 
-        while True:
-            msg = await self.sock.arecv_msg()
-            print(f'{self.name}: RECEIVED "{msg.bytes.decode()}" FROM BUS')
+                while True:
+                    print('Starting working')
+                    msg = await self.sock.arecv_msg()
+                    decoded = self.decode_message(msg.bytes)
+                    print(f'{self.name}: RECEIVED "{decoded}" FROM BUS')
+                    print('Message type', type(decoded))
+                    self.seen_messages.add(decoded.header.id)
+
+        finally:
+                if self._listener is not None:
+                    self._listener.close()
+                self.sock.close()
