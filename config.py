@@ -62,6 +62,8 @@ class NNGSettings:
     NNG_INIT_TIME_INTERVAL: float = 0.2
     NNG_KNOWN_MESSAGES_QTY: PositiveInt = 300
     NNG_RECV_TIMEOUT: PositiveInt = 500
+    NNG_SURVEY_ADDR: str = 'abstract://survey'
+    NNG_SURVEY_INTERVAL: float = 1.0
 
 @cache
 class Settings(

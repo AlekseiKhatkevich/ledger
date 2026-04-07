@@ -1,13 +1,13 @@
 import enum
 import uuid
-from typing import Union
+from typing import Union, Literal
 
 import msgspec
 
 
 class MessageSubject(enum.StrEnum):
     PEERDISCOVERY = 'PEERDISCOVERY'
-    KEEPALIVE = 'KEEPALIVE'
+    SURVEY = 'SURVEY'
 
 
 class Header(msgspec.Struct, forbid_unknown_fields=True):
@@ -19,6 +19,8 @@ class Header(msgspec.Struct, forbid_unknown_fields=True):
 class PeerDiscoveryBody(msgspec.Struct, forbid_unknown_fields=True):
     peers: set[str]
 
+class SurveyBody(msgspec.Struct, forbid_unknown_fields=True):
+    status: Literal['OK', 'BAD']
 
 class Message[T](msgspec.Struct, tag=True, forbid_unknown_fields=True):
     header: Header
@@ -27,5 +29,12 @@ class Message[T](msgspec.Struct, tag=True, forbid_unknown_fields=True):
 class PeerDiscoveryMessage(Message[PeerDiscoveryBody]):
     pass
 
+class SurveyMessage(Message[SurveyBody]):
+    pass
 
-messages_types = Union[PeerDiscoveryMessage, Message]
+
+messages_types = Union[
+    PeerDiscoveryMessage,
+    SurveyMessage,
+    Message,
+]

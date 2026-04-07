@@ -1,15 +1,19 @@
 import abc
 import asyncio
+import contextlib
 from functools import cache
 from typing import TYPE_CHECKING, Coroutine
+
+import pynng
 import structlog
 import msgspec
 
+from config import settings
 from interservice.domain import (
     PeerDiscoveryMessage,
     Header,
     MessageSubject,
-    PeerDiscoveryBody, messages_types,
+    PeerDiscoveryBody, messages_types, SurveyMessage, SurveyBody,
 )
 
 if TYPE_CHECKING:
@@ -37,6 +41,35 @@ class AbstractNNGHandler(abc.ABC):
         pass
 
 @cache
+class SurveyHandler(AbstractNNGHandler):
+
+    async def respondent(self) -> None:
+        await self.log.ainfo('Starting survey responder', addr=settings.NNG_SURVEY_ADDR)
+        with pynng.Respondent0(recv_timeout=settings.NNG_RECV_TIMEOUT) as sock:
+            sock.dial(settings.NNG_SURVEY_ADDR)
+            while not self.node.stop_event.is_set():
+                with contextlib.suppress(pynng.exceptions.Timeout):
+                    await sock.arecv_msg()
+                    await self.log.ainfo('Got survey request')
+                    message = SurveyMessage(
+                        header=Header(
+                            from_addr=self.node.local_addr,
+                            subject=MessageSubject.SURVEY,
+                        ),
+                        body=SurveyBody(
+                            status='OK',
+                        )
+                    )
+                    await self.send_message(message)
+
+    def start_survey_respondent(self) -> None:
+        self.create_nonblocking_task(self.respondent())
+
+    async def process_message(self, message: messages_types) -> None:
+       pass
+
+
+@cache
 class PeerDiscoveryHandler(AbstractNNGHandler):
 
     # noinspection PyProtectedMember
@@ -47,7 +80,7 @@ class PeerDiscoveryHandler(AbstractNNGHandler):
             await self.log.ainfo('New received peers', new_peers=new_peers)
 
             for peer in new_peers:
-                if peer != self.node.local_addr:
+                if peer not in {self.node.local_addr, settings.NNG_BASE_ENTRYPOINT_ADR}:
                     self.node.sock.dial(peer)
 
             self.create_nonblocking_task(self.send_peers())
@@ -61,7 +94,6 @@ class PeerDiscoveryHandler(AbstractNNGHandler):
                 node_peers = self.node.peers,
                 incomming_peers = message.body.peers,
             )
-
 
     async def send_peers(self):
         if self.node.peers:

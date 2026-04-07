@@ -8,7 +8,7 @@ import structlog
 from aux.helpers.datastructures import FixedSizeSet
 from config import settings
 from interservice.domain import messages_types
-from interservice.handlers import PeerDiscoveryHandler
+from interservice.handlers import PeerDiscoveryHandler, SurveyHandler
 from interservice.message_router import IncomingMessageRouter
 
 log = structlog.get_logger()
@@ -16,7 +16,7 @@ log = structlog.get_logger()
 
 
 class Node:
-    def __init__(self):
+    def __init__(self, survey: bool = True) -> None:
         self._listener: pynng.Listener | None = None
         self.is_entrypoint = False
         self.peers = set()
@@ -27,10 +27,12 @@ class Node:
         self.message_router = IncomingMessageRouter()
         self.log = log.bind(name=self.name)
         self._running_tasks = set()
+        self.survey = survey
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         self.stop_event.set()
         self.sock.close()
+        await asyncio.sleep(settings.NNG_RECV_TIMEOUT)
 
     def init_sock(self) -> pynng.Bus0:
         sock = pynng.Bus0(recv_timeout=settings.NNG_RECV_TIMEOUT)
@@ -44,6 +46,10 @@ class Node:
         self.peers.add(self.local_addr)
 
         return sock
+
+    @property
+    def dialers(self) -> dict[str, pynng.Dialer]:  #  dialer.close()
+        return {dialer.url: dialer for dialer in self.sock.dialers}
 
     @property
     def local_addr(self) -> str:
@@ -64,6 +70,10 @@ class Node:
         self.seen_messages.add(message.header.id)
 
     async def run(self) -> None:
+
+        if self.survey:
+            SurveyHandler(self).start_survey_respondent()
+
         with self.sock:
             if not self.is_entrypoint:
                 self.sock.dial(settings.NNG_BASE_ENTRYPOINT_ADR)
