@@ -1,35 +1,18 @@
 import asyncio
 import contextlib
-from collections.abc import Hashable
 
 import msgspec.msgpack
 import pynng
+import structlog
 
+from aux.helpers.datastructures import FixedSizeSet
 from config import settings
-
-from collections import OrderedDict
-
 from interservice.domain import messages_types
 from interservice.handlers import PeerDiscoveryHandler
+from interservice.message_router import IncomingMessageRouter
 
+log = structlog.get_logger()
 
-class FixedSizeSet:
-    def __init__(self, capacity:int = 100) -> None:
-        self.cap = capacity
-        self.d = OrderedDict()
-
-    def add(self, x: Hashable) -> None:
-        if x in self.d:
-            return
-        elif len(self.d) >= self.cap:
-            self.d.popitem(last=False)
-        self.d[x] = None
-
-    def __contains__(self, x: Hashable) -> bool:
-        return x in self.d
-
-    def __repr__(self) -> str:
-        return str(self.d)
 
 
 class Node:
@@ -41,6 +24,9 @@ class Node:
         self.sock: pynng.Bus0 = self.init_sock()
         self.decoder = msgspec.msgpack.Decoder(messages_types)
         self.stop_event = asyncio.Event()
+        self.message_router = IncomingMessageRouter()
+        self.log = log.bind(name=self.name)
+        self._running_tasks = set()
 
     def stop(self) -> None:
         self.stop_event.set()
@@ -67,8 +53,10 @@ class Node:
     def name(self) -> str:
         return self._listener.local_address.name
 
-    def decode_message(self, message: bytes) -> messages_types:
-        return self.decoder.decode(message)
+    async def decode_message(self, message: bytes) -> messages_types:
+        decoded = self.decoder.decode(message)
+        await self.log.ainfo('Decoded message', message=message)
+        return decoded
 
     def handle_incoming_message(self, message: messages_types) -> None:
         pass
@@ -81,14 +69,16 @@ class Node:
 
             await PeerDiscoveryHandler(self).send_peers()
 
-            print('Start working')
+            await self.log.ainfo('Start working')
             while not self.stop_event.is_set():
                 with contextlib.suppress(pynng.exceptions.Timeout):
-                    msg = await self.sock.arecv_msg()
-                    decoded = self.decode_message(msg.bytes)
-                    if decoded.header.id not in self.seen_messages:
-                        print(f'{self.name}: RECEIVED "{decoded}" FROM BUS')
-                        print('Message type', type(decoded))
-                        self.seen_messages.add(decoded.header.id)
+                    message = await self.sock.arecv_msg()  #  here periodic timeout occurrence
+                    decoded_message = await self.decode_message(message.bytes)
+                    if decoded_message.header.id not in self.seen_messages:
+                        handler = await self.message_router.choose_handler(decoded_message)
+                        await handler(self).process_message(decoded_message)
+                        self.seen_messages.add(decoded_message.header.id)
+                    else:
+                        await self.log.ainfo('Message was found in seen messages', message=decoded_message)
 
-            print(f'Exiting, event is set -- {self.stop_event.is_set()}')
+            await self.log.ainfo(f'Exiting, event is set -- {self.stop_event.is_set()}')

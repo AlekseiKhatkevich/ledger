@@ -1,4 +1,5 @@
 import abc
+import asyncio
 from functools import cache
 from typing import TYPE_CHECKING
 import structlog
@@ -8,7 +9,7 @@ from interservice.domain import (
     PeerDiscoveryMessage,
     Header,
     MessageSubject,
-    PeerDiscoveryBody,
+    PeerDiscoveryBody, messages_types,
 )
 
 if TYPE_CHECKING:
@@ -26,8 +27,32 @@ class AbstractNNGHandler(abc.ABC):
         await self.node.sock.asend(msgspec.msgpack.encode(message))
         self.node.seen_messages.add(message.header.id)
 
+    @abc.abstractmethod
+    async def process_message(self, message: messages_types) -> None:
+        pass
+
 @cache
 class PeerDiscoveryHandler(AbstractNNGHandler):
+
+    # noinspection PyProtectedMember
+    async def process_message(self, message: PeerDiscoveryMessage) -> None:
+        if not message.body.peers.issubset(node_peers := self.node.peers):  # have new incoming peers
+            self.node.peers.union(message.body.peers)
+
+            task = asyncio.create_task(self.send_peers())
+            self.node._running_tasks.add(task)
+            task.add_done_callback(self.node._running_tasks.discard)
+            await self.log.ainfo(
+                'Sending all know peer to everyone',
+                peers=node_peers,
+            )
+        else:
+            await self.log.ainfo(
+                'We know all these peers already. Not gonna resend them',
+                node_peers = node_peers,
+                incomming_peers = message.body.peers,
+            )
+
 
     async def send_peers(self):
         if self.node.peers:
