@@ -1,7 +1,7 @@
 import abc
 import asyncio
 from functools import cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Coroutine
 import structlog
 import msgspec
 
@@ -27,6 +27,11 @@ class AbstractNNGHandler(abc.ABC):
         await self.node.sock.asend(msgspec.msgpack.encode(message))
         self.node.seen_messages.add(message.header.id)
 
+    def create_nonblocking_task(self, awaitable: Coroutine) -> None:
+        task = asyncio.create_task(awaitable)
+        self.node._running_tasks.add(task)
+        task.add_done_callback(self.node._running_tasks.discard)
+
     @abc.abstractmethod
     async def process_message(self, message: messages_types) -> None:
         pass
@@ -36,20 +41,24 @@ class PeerDiscoveryHandler(AbstractNNGHandler):
 
     # noinspection PyProtectedMember
     async def process_message(self, message: PeerDiscoveryMessage) -> None:
-        if not message.body.peers.issubset(node_peers := self.node.peers):  # have new incoming peers
-            self.node.peers.union(message.body.peers)
+        new_peers = message.body.peers -  self.node.peers  # have new incoming peers
+        if new_peers:
+            self.node.peers |= new_peers
+            await self.log.ainfo('New received peers', new_peers=new_peers)
 
-            task = asyncio.create_task(self.send_peers())
-            self.node._running_tasks.add(task)
-            task.add_done_callback(self.node._running_tasks.discard)
+            for peer in new_peers:
+                if peer != self.node.local_addr:
+                    self.node.sock.dial(peer)
+
+            self.create_nonblocking_task(self.send_peers())
             await self.log.ainfo(
                 'Sending all know peer to everyone',
-                peers=node_peers,
+                peers=self.node.peers,
             )
         else:
             await self.log.ainfo(
                 'We know all these peers already. Not gonna resend them',
-                node_peers = node_peers,
+                node_peers = self.node.peers,
                 incomming_peers = message.body.peers,
             )
 

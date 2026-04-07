@@ -55,11 +55,13 @@ class Node:
 
     async def decode_message(self, message: bytes) -> messages_types:
         decoded = self.decoder.decode(message)
-        await self.log.ainfo('Decoded message', message=message)
+        await self.log.ainfo('Decoded message', message=decoded)
         return decoded
 
-    def handle_incoming_message(self, message: messages_types) -> None:
-        pass
+    async def handle_incoming_message(self, message: messages_types) -> None:
+        handler = await self.message_router.choose_handler(message)
+        await handler(self).process_message(message)
+        self.seen_messages.add(message.header.id)
 
     async def run(self) -> None:
         with self.sock:
@@ -74,10 +76,8 @@ class Node:
                 with contextlib.suppress(pynng.exceptions.Timeout):
                     message = await self.sock.arecv_msg()  #  here periodic timeout occurrence
                     decoded_message = await self.decode_message(message.bytes)
-                    if decoded_message.header.id not in self.seen_messages:
-                        handler = await self.message_router.choose_handler(decoded_message)
-                        await handler(self).process_message(decoded_message)
-                        self.seen_messages.add(decoded_message.header.id)
+                    if decoded_message.header.id not in self.seen_messages:  # new uuid !!!
+                        await self.handle_incoming_message(decoded_message)
                     else:
                         await self.log.ainfo('Message was found in seen messages', message=decoded_message)
 

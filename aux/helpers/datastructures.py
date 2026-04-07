@@ -19,3 +19,6 @@ class FixedSizeSet:
 
     def __repr__(self) -> str:
         return str(self.d)
+
+    def __len__(self) -> int:
+        return len(self.d)
