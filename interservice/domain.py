@@ -26,10 +26,6 @@ class Message[T](msgspec.Struct, tag=True, forbid_unknown_fields=True):
 
 class PeerDiscoveryMessage(Message[PeerDiscoveryBody]):
     pass
-# msgspec.json.decode(e, type=Message[PeerDiscoveryBody])
-# 2. Delaying decoding of part of a message
-# dec = msgspec.json.Decoder(Union[PeerDiscoveryMessage, Message])
-# dec.decode(e)
 
 
 messages_types = Union[PeerDiscoveryMessage, Message]

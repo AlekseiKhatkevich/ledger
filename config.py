@@ -61,6 +61,7 @@ class NNGSettings:
     NNG_BASE_ENTRYPOINT_ADR: str = 'abstract://entrypoint_socket'
     NNG_INIT_TIME_INTERVAL: float = 0.2
     NNG_KNOWN_MESSAGES_QTY: PositiveInt = 300
+    NNG_RECV_TIMEOUT: PositiveInt = 500
 
 @cache
 class Settings(

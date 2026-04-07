@@ -1,19 +1,30 @@
 import abc
 from functools import cache
 from typing import TYPE_CHECKING
-
+import structlog
 import msgspec
 
-from interservice.domain import PeerDiscoveryMessage, Header, MessageSubject, PeerDiscoveryBody
+from interservice.domain import (
+    PeerDiscoveryMessage,
+    Header,
+    MessageSubject,
+    PeerDiscoveryBody,
+)
 
 if TYPE_CHECKING:
     from interservice.worker import Node
+    from interservice.domain import Message
 
+log = structlog.get_logger()
 
 class AbstractNNGHandler(abc.ABC):
     def __init__(self, node: Node) -> None:
         self.node = node
+        self.log = log.bind(name=self.node.name)
 
+    async def send_message(self, message: Message) -> None:
+        await self.node.sock.asend(msgspec.msgpack.encode(message))
+        self.node.seen_messages.add(message.header.id)
 
 @cache
 class PeerDiscoveryHandler(AbstractNNGHandler):
@@ -30,5 +41,7 @@ class PeerDiscoveryHandler(AbstractNNGHandler):
                     peers=self.node.peers,
                 )
             )
-            await self.node.sock.asend(msgspec.msgpack.encode(message))
-            self.node.seen_messages.add(message.header.id)
+            await self.send_message(message)
+            await self.log.ainfo('sending message', message=message)
+        else:
+            await self.log.awarning('no peers, skipping send')
