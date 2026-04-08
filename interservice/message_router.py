@@ -15,6 +15,8 @@ class IncomingMessageRouter:
         match message.header.subject:
             case MessageSubject.PEERDISCOVERY:
                 handler = PeerDiscoveryHandler
+            case MessageSubject.SURVEY:
+                pass
             case _:
                 raise TypeError(f'Can not find proper handler for the message {message}')
 

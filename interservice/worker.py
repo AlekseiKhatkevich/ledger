@@ -32,7 +32,7 @@ class Node:
     async def stop(self) -> None:
         self.stop_event.set()
         self.sock.close()
-        await asyncio.sleep(settings.NNG_RECV_TIMEOUT)
+        # await asyncio.sleep(settings.NNG_RECV_TIMEOUT)
 
     def init_sock(self) -> pynng.Bus0:
         sock = pynng.Bus0(recv_timeout=settings.NNG_RECV_TIMEOUT)
@@ -70,7 +70,6 @@ class Node:
         self.seen_messages.add(message.header.id)
 
     async def run(self) -> None:
-
         if self.survey:
             SurveyHandler(self).start_survey_respondent()
 
@@ -84,9 +83,9 @@ class Node:
             await self.log.ainfo('Start working')
             while not self.stop_event.is_set():
                 with contextlib.suppress(pynng.exceptions.Timeout):
-                    message = await self.sock.arecv_msg()  #  here periodic timeout occurrence
+                    message = await self.sock.arecv_msg()  #  here periodic timeout occurrences
                     decoded_message = await self.decode_message(message.bytes)
-                    if decoded_message.header.id not in self.seen_messages:  # new uuid !!!
+                    if decoded_message.header.id not in self.seen_messages:
                         await self.handle_incoming_message(decoded_message)
                     else:
                         await self.log.ainfo('Message was found in seen messages', message=decoded_message)

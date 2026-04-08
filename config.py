@@ -32,6 +32,7 @@ class PostgresSettings:
         )
 
 
+# noinspection HttpUrlsUsage
 class KeycloakSettings:
     """Keycloak auth server settings"""
     KEYCLOAK_REALM: str

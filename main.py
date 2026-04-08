@@ -37,6 +37,7 @@ app: Litestar = Litestar(
     debug=settings.DEBUG,
     on_startup=lifespan.on_startup,
     on_shutdown=lifespan.on_shutdown,
+    lifespan=lifespan.lifespan,
     middleware=[auth_mw, ],
     dependencies={'kc_user': Provide(keycloak_user)},
     openapi_config=OpenAPIConfig(

@@ -45,11 +45,13 @@ class SurveyHandler(AbstractNNGHandler):
 
     async def respondent(self) -> None:
         await self.log.ainfo('Starting survey responder', addr=settings.NNG_SURVEY_ADDR)
-        with pynng.Respondent0(recv_timeout=settings.NNG_RECV_TIMEOUT) as sock:
-            sock.dial(settings.NNG_SURVEY_ADDR)
+        with pynng.Respondent0(
+                dial=settings.NNG_SURVEY_ADDR,
+                block_on_dial=False
+        ) as respondent:
+            await asyncio.sleep(settings.NNG_INIT_TIME_INTERVAL)
             while not self.node.stop_event.is_set():
-                with contextlib.suppress(pynng.exceptions.Timeout):
-                    await sock.arecv_msg()
+                    await respondent.arecv_msg()
                     await self.log.ainfo('Got survey request')
                     message = SurveyMessage(
                         header=Header(
@@ -60,7 +62,8 @@ class SurveyHandler(AbstractNNGHandler):
                             status='OK',
                         )
                     )
-                    await self.send_message(message)
+                    await respondent.asend(msgspec.msgpack.encode(message))
+                    await self.log.ainfo('Sent message to surveyor', mesage=message)
 
     def start_survey_respondent(self) -> None:
         self.create_nonblocking_task(self.respondent())
