@@ -11,14 +11,13 @@ log = structlog.get_logger()
 class IncomingMessageRouter:
 
     @staticmethod
-    async def choose_handler(message: messages_types) -> Type[AbstractNNGHandler]:
+    def choose_handler(message: messages_types) -> Type[AbstractNNGHandler]:
         match message.header.subject:
             case MessageSubject.PEERDISCOVERY:
                 handler = PeerDiscoveryHandler
-            case MessageSubject.SURVEY:
-                pass
+            # case MessageSubject.SURVEY:
+            #     pass
             case _:
                 raise TypeError(f'Can not find proper handler for the message {message}')
 
-        await log.ainfo('Chosen handler for message', handler=handler, message=message)
         return handler

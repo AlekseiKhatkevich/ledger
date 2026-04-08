@@ -48,7 +48,7 @@ class Node:
         return sock
 
     @property
-    def dialers(self) -> dict[str, pynng.Dialer]:  #  dialer.close()
+    def dialers(self) -> dict[str, pynng.Dialer]:
         return {dialer.url: dialer for dialer in self.sock.dialers}
 
     @property
@@ -65,7 +65,7 @@ class Node:
         return decoded
 
     async def handle_incoming_message(self, message: messages_types) -> None:
-        handler = await self.message_router.choose_handler(message)
+        handler = self.message_router.choose_handler(message)
         await handler(self).process_message(message)
         self.seen_messages.add(message.header.id)
 
