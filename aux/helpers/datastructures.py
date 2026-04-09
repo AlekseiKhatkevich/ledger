@@ -23,3 +23,5 @@ class FixedSizeSet:
     def __len__(self) -> int:
         return len(self.d)
 
+    def as_set(self) -> set[Hashable]:
+        return {k for k in self.d.keys()}

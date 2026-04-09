@@ -17,7 +17,7 @@ services:
       GRANIAN_METRICS_ENABLED: 1
       GRANIAN_RESPAWN_FAILED_WORKERS: 1
       GRANIAN_PROCESS_NAME: "granian"
-      GRANIAN_WORKERS: 1
+#      GRANIAN_WORKERS: 1
       GRANIAN_LOOP: "asyncio"  #  "auto" in prod. "asyncio" suitable for debuging with @Evaluate Async Code@
       UV_NO_DEV: 0
       ALEMBIC_CONFIG: alembic/alembic.ini

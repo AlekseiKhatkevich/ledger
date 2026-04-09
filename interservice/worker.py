@@ -70,10 +70,11 @@ class Node:
         self.seen_messages.add(message.header.id)
 
     async def run(self) -> None:
-        if self.survey:
-            SurveyHandler(self).start_survey_respondent()
+        # if self.survey:
+        #     SurveyHandler(self).start_survey_respondent()
 
         with self.sock:
+            await asyncio.sleep(settings.NNG_INIT_TIME_INTERVAL)
             if not self.is_entrypoint:
                 self.sock.dial(settings.NNG_BASE_ENTRYPOINT_ADR)
             await asyncio.sleep(settings.NNG_INIT_TIME_INTERVAL)
