@@ -4,9 +4,19 @@ import enum
 import uuid
 from typing import Annotated
 
-from sqlalchemy import BIGINT, Identity, String, ForeignKey, Computed, Index, UniqueConstraint, CheckConstraint
+from sqlalchemy import (
+    func,
+    BIGINT,
+    Identity,
+    String,
+    ForeignKey,
+    Computed,
+    Index,
+    UniqueConstraint,
+    CheckConstraint,
+)
 from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database.postgres.base import Base
 
@@ -28,7 +38,13 @@ class UserAssetAddress(Base):
 
 class AssetTicker(Base):
     __tablename__ = 'asset_tickers'
-    name: Mapped[Annotated[str, mapped_column(String(10), primary_key=True)]]
+    name: Mapped[Annotated[
+            str, mapped_column(String(10), primary_key=True)
+        ]]
+
+    __table_args__ = (
+        CheckConstraint('name = upper(name)', name='name_is_upper'),
+    )
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.name = })'
@@ -42,24 +58,25 @@ class UserAssetOperation(Base):
     type: Mapped[Annotated[enum.Enum, mapped_column(ENUM(AssetOperationType, name='asset_operation_type'))]]
     user_asset_id: Mapped[
         Annotated[int, mapped_column(ForeignKey('user_assets.id', ondelete='CASCADE'))]
-    ] # index
+    ]
     quantity: Mapped[decimal.Decimal]
     unit_price: Mapped[decimal.Decimal]
     summ: Mapped[Annotated[decimal.Decimal, mapped_column(Computed('unit_price * quantity'))]]
     address: Mapped[
-        Annotated[int, mapped_column(ForeignKey('user_asset_address.id', ondelete='RESTRICT'))]
+        Annotated[int, mapped_column(ForeignKey('user_asset_addresses.id', ondelete='RESTRICT'))]
     ]
 
-    # parent = relationship("Parent", back_populates="children")
+    asset = relationship('UserAsset', back_populates='operations')
 
     __table_args__ = (
         Index('ix_user_asset_id', 'user_asset_id'),
         CheckConstraint('quantity > 0', name='asset_qty_gt_0'),
-        CheckConstraint('unit+price > 0', name='unit_price_gt_0'),
+        CheckConstraint('unit_price > 0', name='unit_price_gt_0'),
     )
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.user_asset_id = })'
+
 
 class UserAsset(Base):
     __tablename__ = 'user_assets'
@@ -76,12 +93,11 @@ class UserAsset(Base):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.name})'
 
-    # children = relationship(
-    #     "Child",
-    #     back_populates="parent",
-    #     cascade="all, delete",
-    #     passive_deletes=True,
-    # )
+    operations = relationship(
+        UserAssetOperation,
+        back_populates='asset',
+        passive_deletes=True,
+    )
 
     # todo
     # @hybrid property
