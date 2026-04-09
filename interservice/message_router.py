@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, assert_never
 
 import structlog
 
@@ -17,7 +17,7 @@ class IncomingMessageRouter:
                 handler = PeerDiscoveryHandler
             # case MessageSubject.SURVEY:
             #     pass
-            case _:
-                raise TypeError(f'Can not find proper handler for the message {message}')
+            case _ as unreachable:
+                assert_never(unreachable)
 
         return handler

@@ -11,6 +11,7 @@ from database.postgres.base import Base
 
 # do not delete import below !
 from user import *
+from logic.db_models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 import asyncio
+from typing import AsyncGenerator
+
 from litestar import Litestar
 
 from config import settings
@@ -12,7 +14,7 @@ def set_settings(app:Litestar) -> None:
 
 
 @asynccontextmanager
-async def nng_node(app:Litestar):
+async def nng_node(app:Litestar) -> AsyncGenerator[None]:
     n = Node(survey=False)
     app.state.nng_node = n
 
