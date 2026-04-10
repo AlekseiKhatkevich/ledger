@@ -116,3 +116,4 @@ secrets
 *.crt
 /.python_history
 /.ipython
+/pyconsole.py

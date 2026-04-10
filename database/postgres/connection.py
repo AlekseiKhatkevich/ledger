@@ -17,6 +17,10 @@ if TYPE_CHECKING:
 
 log = structlog.get_logger()
 
+__all__ = (
+    'db',
+)
+
 
 @cache
 class DB:

@@ -2,12 +2,13 @@ import enum
 from typing import Literal
 
 from sqlalchemy import TEXT
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 import datetime
 from sqlalchemy.dialects import postgresql
 
 
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, MappedAsDataclass, DeclarativeBase):
     type_annotation_map = {
         datetime.datetime: postgresql.TIMESTAMP(timezone=True),
         str: TEXT,
