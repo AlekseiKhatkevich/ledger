@@ -16,10 +16,10 @@
     health_timeout 1s
 }
 
-(headers_for_caddy) {
+(headers_for_keycloak) {
     header_up X-Forwarded-For {remote}
-#           as backend uses http connection to KeyCloak internally we have 2 use it too here
-#           in order to have same ISS field inside JWT
+#   as backend uses http connection to KeyCloak internally we have 2 use it too here
+#   in order to have same ISS field inside JWT
     header_up X-Forwarded-Proto http
 
     header_up X-Forwarded-Host {$KEYCLOAK_DOMAIN}
@@ -56,11 +56,19 @@
             lb_policy header Bearer {
                 fallback least_conn
             }
-            import headers_for_caddy
+            import headers_for_keycloak
             }
         }
 
     handle * {
+
+        forward_auth keycloak:8080 {
+        uri /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect/userinfo
+#        header_up Authorization {>Authorization}
+            import headers_for_keycloak
+            #  нужно поменять везде на Authorization: Bearer {token}
+}
+
         reverse_proxy backend-api:8000 {
             import ledger_healthcheck
                 }
@@ -71,6 +79,6 @@
 :8080, :8443 {
     reverse_proxy keycloak:8080 {
         import keykloack_healthcheck
-        import headers_for_caddy
+        import headers_for_keycloak
 }
 }
