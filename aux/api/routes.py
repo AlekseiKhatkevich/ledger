@@ -11,7 +11,7 @@ async def health() -> HealthCheckStatus :
     return HealthCheckStatus(status='OK')
 
 
-@get('/nng_node/info', exclude_from_auth=True)
+@get('/nng_node/info')
 async def nng_node_info(state: State) -> NNGNodeInfo:
     """State of nng node"""
     n = state.nng_node

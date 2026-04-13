@@ -69,13 +69,20 @@ class UserController(Controller):
         # noinspection PyTypeChecker
         return await KeyCloakRefreshUseCase().execute(data.refresh_token)
 
-    @get('/')
+    # todo переделать через Кади
+    @get('/', deprecated=True)
     async def userinfo(self, kc_user: KC_User) -> KC_User:
         """Information about current request user"""
         return kc_user
 
-
-    @post('/create', dto=UserCreateInDTO, return_dto=CreatedUserOutDTO, exclude_from_auth=True,)
+    # todo переделать через Кади
+    @post(
+        '/create',
+        dto=UserCreateInDTO,
+        return_dto=CreatedUserOutDTO,
+        exclude_from_auth=True,
+        deprecated=True,
+    )
     async def create_user(self, data: UserCreateIn) -> CreatedUserOut:
         # noinspection PyTypeChecker
         return await KeyCloakCreateUserUseCase().execute(data)

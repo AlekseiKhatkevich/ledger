@@ -28,6 +28,12 @@
 
 }
 
+(ledger_reverce_proxy) {
+    reverse_proxy backend-api:8000 {
+            import ledger_healthcheck
+                }
+            }
+
 # Caddy self healthcheck
 :8001 {
     @ready path /_caddy_ready
@@ -63,6 +69,15 @@
             }
         }
 
+    @exclude_from_auth {
+        method GET HEAD TRACE
+        path /aux/health /docs
+    }
+    handle @exclude_from_auth {
+        import ledger_reverce_proxy
+    }
+
+
     handle  * {
         reverse_proxy keycloak:8080 {
             method GET
@@ -73,9 +88,7 @@
 
             @good_auth status 200
             handle_response @good_auth {
-                reverse_proxy backend-api:8000 {
-                    import ledger_healthcheck
-                }
+                import ledger_reverce_proxy
             }
 
             @bad_auth status 401
