@@ -63,15 +63,30 @@
             }
         }
 
-    handle * {
-        forward_auth keycloak:8080 {
-        uri {vars.KC_BASE_URL}/userinfo
-        import headers_for_keycloak
-        }
+    handle  * {
 
-        reverse_proxy backend-api:8000 {
-            import ledger_healthcheck
+        reverse_proxy keycloak:8080 {
+            method GET
+            rewrite  {vars.KC_BASE_URL}/userinfo
+            header_up X-Forwarded-Method {method}
+	        header_up X-Forwarded-Uri {uri}
+            import headers_for_keycloak
+
+            @good_auth status 200
+            handle_response @good_auth {
+                reverse_proxy backend-api:8000 {
+                    import ledger_healthcheck
                 }
+            }
+
+            @bad_auth status 401
+            handle_response @bad_auth {
+                respond "Token is invalid or outdated" 401
+                copy_response_headers * {
+                    include Www-Authenticate
+                }
+            }
+        }
     }
 }
 
