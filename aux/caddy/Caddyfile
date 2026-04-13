@@ -38,17 +38,20 @@
 
 # ledger backend
 :8000 {
-#   valid until 24.03.27
+    vars {
+            KC_BASE_URL /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect/
+        }
+
+    #   valid until 24.03.27
     tls /etc/caddy/certificate.pem /etc/caddy/privatekey.pem
 
     @login+refresh {
         method POST
         path /user/login /user/refresh
     }
-
 #   Proxying token sourcing and refreshing to keykloack endpoint. Both operation use same EP.
     handle @login+refresh {
-        rewrite * /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect/token
+        rewrite * {http.vars.KC_BASE_URL}token
 
         reverse_proxy keycloak:8080 {
             import keykloack_healthcheck
@@ -61,14 +64,10 @@
         }
 
     handle * {
-
         forward_auth keycloak:8080 {
-        uri /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect/userinfo
-#        header_up Authorization {>Authorization}
-            import headers_for_keycloak
-            #  нужно поменять везде на Authorization: Bearer {token}
+        uri {http.vars.KC_BASE_URL}userinfo
+        import headers_for_keycloak
 }
-
         reverse_proxy backend-api:8000 {
             import ledger_healthcheck
                 }

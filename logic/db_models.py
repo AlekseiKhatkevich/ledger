@@ -68,14 +68,20 @@ class UserAssetOperation(Base):
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     time: Mapped[datetime.datetime]
-    type: Mapped[Annotated[enum.Enum, mapped_column(ENUM(AssetOperationType, name='asset_operation_type'))]]
-    user_asset_id: Mapped[
-        Annotated[int, mapped_column(ForeignKey('user_assets.id', ondelete='CASCADE'))]
-    ]
+    type: Mapped[enum.Enum] = mapped_column(
+        ENUM(AssetOperationType, name='asset_operation_type'),
+    )
+    user_asset_id: Mapped[int] = mapped_column(
+        ForeignKey('user_assets.id', ondelete='CASCADE'),
+    )
     quantity: Mapped[decimal.Decimal]
     unit_price: Mapped[decimal.Decimal]
-    summ: Mapped[decimal.Decimal] = mapped_column(Computed('unit_price * quantity'), init=False)
-    address_id: Mapped[int] = mapped_column(ForeignKey('user_asset_addresses.id', ondelete='RESTRICT'))
+    summ: Mapped[decimal.Decimal] = mapped_column(
+        Computed('unit_price * quantity'), init=False
+    )
+    address_id: Mapped[int] = mapped_column(
+        ForeignKey('user_asset_addresses.id', ondelete='RESTRICT')
+    )
 
     asset: Mapped[UserAsset] = relationship(
         'UserAsset',
