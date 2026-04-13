@@ -39,7 +39,7 @@
 # ledger backend
 :8000 {
     vars {
-            KC_BASE_URL /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect/
+            KC_BASE_URL /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect
         }
 
     #   valid until 24.03.27
@@ -51,7 +51,7 @@
     }
 #   Proxying token sourcing and refreshing to keykloack endpoint. Both operation use same EP.
     handle @login+refresh {
-        rewrite * {http.vars.KC_BASE_URL}token
+        rewrite * {vars.KC_BASE_URL}/token
 
         reverse_proxy keycloak:8080 {
             import keykloack_healthcheck
@@ -65,13 +65,14 @@
 
     handle * {
         forward_auth keycloak:8080 {
-        uri {http.vars.KC_BASE_URL}userinfo
+        uri {vars.KC_BASE_URL}/userinfo
         import headers_for_keycloak
-}
+        }
+
         reverse_proxy backend-api:8000 {
             import ledger_healthcheck
                 }
-            }
+    }
 }
 
 # all keycloak (admin, etc))
