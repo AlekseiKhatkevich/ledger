@@ -64,7 +64,6 @@
         }
 
     handle  * {
-
         reverse_proxy keycloak:8080 {
             method GET
             rewrite  {vars.KC_BASE_URL}/userinfo

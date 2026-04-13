@@ -40,6 +40,7 @@ class KeycloakSettings:
     KEYCLOAK_CLIENT_SECRET: str
     KEYCLOAK_POOL_MAXSIZE: PositiveInt
     KEYCLOAK_API_KEY_HEADER: str
+    KEYCLOAK_API_KEY_HEADER_PREFIX: str
     KEYCLOAK_DOMAIN: str
     KEYCLOAK_PORT: PositiveInt
     KEYCLOAK_SCHEME: str

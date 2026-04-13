@@ -8,11 +8,11 @@ from litestar.openapi.spec import Components, SecurityScheme
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
-from api import lifespan
 
+from api import lifespan
 from aux.api.routes import aux_router
 from config import settings
-from user.auth.keycloack_middleware import KeyCloakAuthenticationMiddleware
+from user.auth.keycloack_middleware import JWTAuthenticationMiddleware
 from user.controllers import UserController
 from user.dependencies import keycloak_user
 
@@ -21,7 +21,7 @@ provider = TracerProvider(resource=resource)
 open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
 
 auth_mw = DefineMiddleware(
-    KeyCloakAuthenticationMiddleware,
+    JWTAuthenticationMiddleware,
     exclude='/docs',
 )
 
@@ -38,7 +38,7 @@ app: Litestar = Litestar(
     on_startup=lifespan.on_startup,
     on_shutdown=lifespan.on_shutdown,
     lifespan=lifespan.lifespan,
-    # middleware=[auth_mw, ],
+    middleware=[auth_mw, ],
     dependencies={'kc_user': Provide(keycloak_user)},
     openapi_config=OpenAPIConfig(
         title='Ledger',
