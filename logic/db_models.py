@@ -12,7 +12,9 @@ from sqlalchemy import (
     UniqueConstraint,
     CheckConstraint,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database.postgres.base import Base
@@ -37,8 +39,8 @@ class UserAssetAddress(Base):
     __tablename__ = 'user_asset_addresses'
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
-    public_key: Mapped[str]  # todo unique
-    wallet_name: Mapped[str | None] = mapped_column(default=None)  # todo array of wallet names
+    public_key: Mapped[str]
+    wallet_name: Mapped[list[str] | None] = mapped_column(Mutable.as_mutable(ARRAY(String(50))), default=None)
 
     linked_operations: Mapped[list[UserAssetOperation]] = relationship(
         'UserAssetOperation',
