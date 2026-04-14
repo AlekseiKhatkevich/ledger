@@ -15,10 +15,6 @@ from user.domain import KeyCloakToken, User
 
 class KeyCloakAuthenticationMiddlewareBase(AbstractAuthenticationMiddleware):
 
-    def __init__(self, auth_provider: Any | None = None, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._keycloak_auth_provider = auth_provider or KeyCloakAuth()
-
     @staticmethod
     def get_token(headers: Headers) -> str:
         auth_header = headers.get(settings.KEYCLOAK_API_KEY_HEADER)
@@ -32,7 +28,6 @@ class JWTAuthenticationMiddleware(KeyCloakAuthenticationMiddlewareBase):
     """
     This MW just gets a user info from Caddy. Caddy should validate token with KC by itself beforehand.
     """
-
     async def authenticate_request(self, connection: ASGIConnection) -> AuthenticationResult:
         auth_header = self.get_token(connection.headers)
         try:
@@ -46,14 +41,17 @@ class JWTAuthenticationMiddleware(KeyCloakAuthenticationMiddlewareBase):
         user = msgspec.json.decode(payload, type=User)
         return AuthenticationResult(user=user, auth=KeyCloakToken(api_key=auth_header))
 
-# todo отзыв токен после изменения юзера
+
 class KeyCloakAuthenticationMiddleware(KeyCloakAuthenticationMiddlewareBase):
+
+    def __init__(self, auth_provider: Any | None = None, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._keycloak_auth_provider = auth_provider or KeyCloakAuth()
 
     async def authenticate_request(self, connection: ASGIConnection) -> AuthenticationResult:
         """
         Given a request, parse the request api key stored in the header and
         retrieve the user correlating to the token from the DB"""
-
         auth_header = self.get_token(connection.headers)
         try:
             user = User(**await self._keycloak_auth_provider.verify_token(auth_header))

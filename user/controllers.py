@@ -69,8 +69,7 @@ class UserController(Controller):
         # noinspection PyTypeChecker
         return await KeyCloakRefreshUseCase().execute(data.refresh_token)
 
-    # todo переделать через Кади
-    @get('/', deprecated=True)
+    @get('/via-backend', deprecated=True)
     async def userinfo(self, kc_user: KC_User) -> KC_User:
         """Information about current request user"""
         return kc_user

@@ -34,6 +34,16 @@
                 }
             }
 
+(handle_401_response) {
+     @bad_auth status 401
+    handle_response @bad_auth {
+        respond "Token is invalid or outdated" 401
+        copy_response_headers * {
+                    include Www-Authenticate
+                }
+    }
+}
+
 # Caddy self healthcheck
 :8001 {
     @ready path /_caddy_ready
@@ -61,10 +71,6 @@
 
         reverse_proxy keycloak:8080 {
             import keykloack_healthcheck
-#           proxy same client with same openid token to a same pod
-            lb_policy header Bearer {
-                fallback least_conn
-            }
             import headers_for_keycloak
             }
         }
@@ -77,35 +83,38 @@
         import ledger_reverce_proxy
     }
 
+    @userinfo {
+        method GET
+        path /user
+    }
+    handle @userinfo {
+       reverse_proxy keycloak:8080 {
+           rewrite {vars.KC_BASE_URL}/userinfo
+           import headers_for_keycloak
+           import handle_401_response
+        }
+    }
 
+# todo udx on Granian
     handle  * {
         reverse_proxy keycloak:8080 {
             method GET
-            rewrite  {vars.KC_BASE_URL}/userinfo
+            rewrite {vars.KC_BASE_URL}/userinfo
             header_up X-Forwarded-Method {method}
 	        header_up X-Forwarded-Uri {uri}
             import headers_for_keycloak
 
             @good_auth status 200
             handle_response @good_auth {
-                import ledger_reverce_proxy
+                reverse_proxy backend-api:8000 {
+                    import ledger_healthcheck
+    #                proxy same client with same openid token to a same pod
+                    lb_policy header Bearer {
+                        fallback least_conn
+                        }
+                    }
             }
-
-            @bad_auth status 401
-            handle_response @bad_auth {
-                respond "Token is invalid or outdated" 401
-                copy_response_headers * {
-                    include Www-Authenticate
-                }
-            }
+            import handle_401_response
         }
     }
-}
-
-# all keycloak (admin, etc))
-:8080, :8443 {
-    reverse_proxy keycloak:8080 {
-        import keykloack_healthcheck
-        import headers_for_keycloak
-}
 }

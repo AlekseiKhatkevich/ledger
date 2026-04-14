@@ -121,8 +121,10 @@ services:
     expose:
 #     for health checking
       - "9000"
-      - "8080"
+#      - "8080"
       - "8443"
+    ports:
+      - "8080:8080"
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
       DB_VENDOR: postgres
@@ -161,8 +163,8 @@ services:
     ports:
       - "8000:8000"
       - "8001:8001"
-      - "8080:8080"
-      - "8443:8443"
+#      - "8080:8080"
+#      - "8443:8443"
     volumes:
       - ./aux/caddy:/etc/caddy:ro
       - ./site:/srv:ro
