@@ -1,6 +1,7 @@
 from faker import Faker
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
+from database.postgres.connection import db
 from logic.db_models import UserAssetAddress
 
 
@@ -11,6 +12,7 @@ class CustomFactory[T](SQLAlchemyFactory[T]):
     __min_collection_length__ = 1
     __max_collection_length__ = 2
     __check_model__ = True
+    __async_session__ = db.session
 
 
 class UserAssetAddressFactory(CustomFactory[UserAssetAddress]):

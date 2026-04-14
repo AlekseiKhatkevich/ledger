@@ -37,8 +37,8 @@ class UserAssetAddress(Base):
     __tablename__ = 'user_asset_addresses'
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
-    public_key: Mapped[str]
-    wallet_name: Mapped[str | None] = mapped_column(default=None)
+    public_key: Mapped[str]  # todo unique
+    wallet_name: Mapped[str | None] = mapped_column(default=None)  # todo array of wallet names
 
     linked_operations: Mapped[list[UserAssetOperation]] = relationship(
         'UserAssetOperation',
