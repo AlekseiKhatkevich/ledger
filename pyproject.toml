@@ -37,4 +37,4 @@ filterwarnings = [
     "ignore:Core Pydantic V1 functionality",
 ]
 asyncio_mode = "auto"
-addopts = "-v"
+addopts = "-vv"

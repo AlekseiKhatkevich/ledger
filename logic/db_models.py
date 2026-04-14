@@ -45,6 +45,7 @@ class UserAssetAddress(Base):
         back_populates='address',
         passive_deletes=True,
         default_factory=list,
+        lazy='write_only'
     )
 
     def __repr__(self) -> str:
