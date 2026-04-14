@@ -51,7 +51,7 @@ class DB:
         async with aclosing(self._maker()) as session:
             yield session
 
-    async def close(self) -> None:
+    async def close(self, *args, **kwargs) -> None:
         await self.engine.dispose()
         await log.ainfo('Sqlalchemy engine has disposed')
 

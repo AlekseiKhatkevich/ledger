@@ -95,7 +95,6 @@
         }
     }
 
-# todo udx on Granian
     handle  * {
         reverse_proxy keycloak:8080 {
             method GET

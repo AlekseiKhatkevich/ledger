@@ -100,11 +100,11 @@ def kc_get_token_response() -> dict[str, Any]:
 @pytest.fixture(scope='session')
 def kc_userinfo_response() -> dict[str, Any]:
     return {
-    "name": "Test User",
-    "preferred_username": "test_user",
-    "given_name": "Test",
-    "family_name": "User",
-    "email": "test@disroot.org",
+    "name": "Aleksei Khatkevich",
+    "preferred_username": "hardcase",
+    "given_name": "Aleksei",
+    "family_name": "Khatkevich",
+    "email": "qwerty12345@disroot.org",
     "email_verified": True,
     "sub": "7f4296f5-ba32-434e-9c18-2ad2e40b9526"
 }

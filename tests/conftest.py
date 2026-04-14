@@ -19,27 +19,9 @@ def test_client_no_auth(app) -> Iterator[TestClient[Litestar]]:
 
 
 @pytest.fixture
-def test_client(kc_userinfo_api_mock, test_client_no_auth) -> Iterator[TestClient[Litestar]]:
+def test_client(test_client_no_auth) -> Iterator[TestClient[Litestar]]:
         test_client_no_auth.headers = {
-        'Bearer': 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkbHB5NkliMGZOR21WMExTR'
-                  'URDSWs0SUFsZXdsaUc5enI1VGhWY0I5emFvIn0.eyJleHAiOjE3NzUwNDY3MTgsImlhdCI6MT'
-                  'c3NTA0NDkxOCwianRpIjoib25ydHJvOjgxMzE3YjEwLTEyOTMtMzZkYS00NDBjLTdkNjlhMWE'
-                  '5OGZkNyIsImlzcyI6Imh0dHA6Ly9rZXljbG9hazo4MDgwL3JlYWxtcy90ZXN0IiwiYXVkIjoi'
-                  'YWNjb3VudCIsInN1YiI6IjdmNDI5NmY1LWJhMzItNDM0ZS05YzE4LTJhZDJlNDBiOTUyNiIsI'
-                  'nR5cCI6IkJlYXJlciIsImF6cCI6ImZhc3RhcGkta2V5Y2xvYWsiLCJzaWQiOiJkTlQ1SVM3WE'
-                  '1Ca0xrYWRNanBWaHpCLWgiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVh'
-                  'bG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtdGVzdCIsIm9mZmxpbmVfYWNjZX'
-                  'NzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7I'
-                  'nJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXBy'
-                  'b2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBlbWFpbCBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQ'
-                  'iOnRydWUsIm5hbWUiOiJBbGVrc2VpIEtoYXRrZXZpY2giLCJwcmVmZXJyZWRfdXNlcm5hbWUiOi'
-                  'JoYXJkY2FzZSIsImdpdmVuX25hbWUiOiJBbGVrc2VpIiwiZmFtaWx5X25hbWUiOiJLaGF0a2V2a'
-                  'WNoIiwiZW1haWwiOiJxd2VydHkxMjM0NUBkaXNyb290Lm9yZyJ9.YiWV9w5vEJq-FFHgXUILv89'
-                  'I62QujSLY3PMUsWicXlP4fGbLE9wpVkb7cgF-RzKK4PS9iphyGMk6hIcmSKLz2ysCwzwHy5pMAq8'
-                  'QJtZ3ymSs4tWMf4LKCtUOJf4_IlIyOx60mYQbgqTNPkgLdwZghALjb-9b41RppTSZTp_QplOZpq'
-                  '-3mh6wb-NFbiATB5-cUmkFgX_2fghs6FCcKzNzNJrCUgFImWd0UhPBjFFJ3b9I2JxSKXFFeUNS5'
-                  'iWSmSNm21jAhru2ffZcJvQjACDyq2SPHXgKVb7g1Ay0LoNrj4_G4EJaQd28YJ3nxIyu53qEUvL_'
-                  'xjzYvGVauwMp1tFIMw'
+        'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkbHB5NkliMGZOR21WMExTRURDSWs0SUFsZXdsaUc5enI1VGhWY0I5emFvIn0.eyJleHAiOjE3NzYxNjU1MzksImlhdCI6MTc3NjE2MTkzOSwianRpIjoib25ydHJvOjQ3N2VkODY3LTcyNzctZWM1Ny04MGJmLTFmNDA5MzNhMmZhNyIsImlzcyI6Imh0dHA6Ly9rZXljbG9hazo4MDgwL3JlYWxtcy90ZXN0IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjdmNDI5NmY1LWJhMzItNDM0ZS05YzE4LTJhZDJlNDBiOTUyNiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImZhc3RhcGkta2V5Y2xvYWsiLCJzaWQiOiJoUFIzN1U4aVN6UGhJRXo1ZDdnS2RZdFQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtdGVzdCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBlbWFpbCBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJBbGVrc2VpIEtoYXRrZXZpY2giLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJoYXJkY2FzZSIsImdpdmVuX25hbWUiOiJBbGVrc2VpIiwiZmFtaWx5X25hbWUiOiJLaGF0a2V2aWNoIiwiZW1haWwiOiJxd2VydHkxMjM0NUBkaXNyb290Lm9yZyJ9.mtkKo5Ps18Ao0TtLjfOacYCggr4q78ki08qi6Jq5YQQWN_m-Z0E6W7yWca8yfwPXkSSEdhWx-ExQtQioYCK7f2zaaUbGrTLPhQZ5pTq7xUukOkTgi8Xz3Gcbt8fL9NLln_4iWEBg0y0E0G0_SFHAVR7XjGpKbMftuaadUyu1R-BJEZhY8IsMnabIoY0gHw4S401HdGZ6_yTxi15YS1-htvR3VPZ_wdqIHF8bNAm407gie1N78mc2QUlArzyzVcoTRVPy_bb-fADTNzGkkIWPIw5_37-G1NQZYTmj2nGqTaikiZ8TpqQ0eKiPGg5kecKRRPBjd4DsgCZlcZu4avMnsg'
     }
         yield test_client_no_auth
 

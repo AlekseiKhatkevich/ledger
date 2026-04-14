@@ -29,6 +29,6 @@ async def nng_node(app:Litestar) -> AsyncGenerator[None]:
 
 on_startup = [set_settings,]
 
-on_shutdown = [lambda app: db.close(),]
+on_shutdown = [db.close]
 
 lifespan = [nng_node, ]
