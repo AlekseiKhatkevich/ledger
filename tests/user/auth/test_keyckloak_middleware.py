@@ -19,7 +19,7 @@ def kc_auth_middleware(kc_auth: KeyCloakAuth) -> KeyCloakAuthenticationMiddlewar
 @pytest.fixture
 def connection() -> Mock:
     connection = Mock(spec_set=ASGIConnection)
-    connection.headers = {settings.KEYCLOAK_API_KEY_HEADER: 'i_am_a_fake_jwt_token'}
+    connection.headers = {settings.KEYCLOAK_API_KEY_HEADER: 'Bearer i_am_a_fake_jwt_token'}
     return connection
 
 

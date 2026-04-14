@@ -1,12 +1,8 @@
 import msgspec
-import pytest
 from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED
 
 from user.controllers import UserController
 from user.domain import CreatedUserOut
-
-
-# pytestmark = pytest.mark.usefixtures('kc_auth')
 
 
 def test_userinfo(test_client, kc_userinfo_response):
