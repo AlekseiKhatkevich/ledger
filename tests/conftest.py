@@ -9,7 +9,10 @@ from main import app as ls_app
 if TYPE_CHECKING:
     from litestar import Litestar
 
-pytest_plugins = ['tests.user.fixtures']
+pytest_plugins = [
+    'tests.user.fixtures',
+    'tests.logic.db_models.fixtures',
+]
 
 
 @pytest.fixture
