@@ -8,4 +8,4 @@ async def test_user_asset_address_positive(
         pg_user_asset_repo,
 ):
     address_from_db = await pg_user_asset_repo.get_by_pubkey(user_asset_address_factory_in_db.public_key)
-    assert address_from_db == user_asset_address_factory_in_db
+    assert address_from_db.as_fields_dict() == user_asset_address_factory_in_db.as_fields_dict()

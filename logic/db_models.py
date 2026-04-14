@@ -48,6 +48,10 @@ class UserAssetAddress(Base):
         lazy='write_only'
     )
 
+    __table_args__ = (
+        UniqueConstraint('public_key', ),
+    )
+
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.wallet_name = })'
 

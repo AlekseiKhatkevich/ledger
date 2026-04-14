@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 
-class Base(AsyncAttrs, MappedAsDataclass, DeclarativeBase, eq=False):
+class Base(AsyncAttrs, MappedAsDataclass, DeclarativeBase):
     type_annotation_map = {
         datetime.datetime: postgresql.TIMESTAMP(timezone=True),
         str: TEXT,
@@ -16,9 +16,6 @@ class Base(AsyncAttrs, MappedAsDataclass, DeclarativeBase, eq=False):
         Literal: postgresql.ENUM(validate_strings=True, native_enum=True),
     }
 
-    @staticmethod
-    def _asdict(instance) -> dict[str, Any]:
-        return {c.name: getattr(instance, c.name) for c in instance.__table__.columns}
-
-    def __eq__(self, other: Base) -> bool:
-        return self._asdict(self) == self._asdict(other)
+    def as_fields_dict(self) -> dict[str, Any]:
+        # noinspection PyTypeChecker
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
