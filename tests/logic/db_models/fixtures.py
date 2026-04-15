@@ -23,5 +23,5 @@ def pg_user_asset_repo() -> PostgresUserAssetAddressRepository:
     return PostgresUserAssetAddressRepository()
 
 @pytest.fixture
-async def user_asset_address_factory_in_db(user_asset_address_factory: UserAssetAddressFactory) -> UserAssetAddress:
+async def user_asset_address_in_db(user_asset_address_factory: UserAssetAddressFactory) -> UserAssetAddress:
     return await user_asset_address_factory.create_async()

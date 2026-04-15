@@ -6,5 +6,3 @@ class PostgresBaseRepository[T, bound=Base]:
 
     def __init__(self, db: DB = _db) -> None:
         self.db = db
-
-

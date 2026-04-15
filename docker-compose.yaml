@@ -18,7 +18,7 @@ services:
       GRANIAN_RESPAWN_FAILED_WORKERS: 1
       GRANIAN_PROCESS_NAME: "granian"
 #      GRANIAN_WORKERS: 1
-      GRANIAN_LOOP: "asyncio"  #  "auto" in prod. "asyncio" suitable for debugging with @Evaluate Async Code@
+      GRANIAN_LOOP: "rloop"  #  "auto" in prod. "asyncio" suitable for debugging with @Evaluate Async Code@
       UV_NO_DEV: 0
       ALEMBIC_CONFIG: alembic/alembic.ini
       PGHOSTADDR: postgres

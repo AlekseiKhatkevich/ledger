@@ -14,10 +14,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database.postgres.base import Base
+from database.postgres.model_types import bigint_pk
 
 __all__ = (
     'AssetOperationType',
@@ -27,7 +28,7 @@ __all__ = (
     'UserAsset',
 )
 
-from database.postgres.model_types import bigint_pk
+
 
 
 class AssetOperationType(enum.StrEnum):
@@ -40,7 +41,10 @@ class UserAssetAddress(Base):
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     public_key: Mapped[str]
-    wallet_name: Mapped[list[str] | None] = mapped_column(Mutable.as_mutable(ARRAY(String(50))), default=None)
+    wallet_name: Mapped[list[str] | None] = mapped_column(
+        MutableList.as_mutable(ARRAY(String(50))),
+        default=None,
+    )
 
     linked_operations: Mapped[list[UserAssetOperation]] = relationship(
         'UserAssetOperation',
@@ -84,7 +88,8 @@ class UserAssetOperation(Base):
     quantity: Mapped[decimal.Decimal]
     unit_price: Mapped[decimal.Decimal]
     summ: Mapped[decimal.Decimal] = mapped_column(
-        Computed('unit_price * quantity'), init=False
+        Computed('unit_price * quantity'),
+        init=False,
     )
     address_id: Mapped[int] = mapped_column(
         ForeignKey('user_asset_addresses.id', ondelete='RESTRICT')
@@ -118,7 +123,9 @@ class UserAsset(Base):
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     name: Mapped[str]
-    ticker: Mapped[Annotated[str, mapped_column(ForeignKey('asset_tickers.name', ondelete='RESTRICT'))]]
+    ticker: Mapped[Annotated[str, mapped_column(
+        ForeignKey('asset_tickers.name', ondelete='RESTRICT'))]
+    ]
     user_id: Mapped[uuid.UUID]  # from KeyCloak
 
     __table_args__ = (
