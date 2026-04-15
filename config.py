@@ -1,6 +1,6 @@
 from functools import cached_property, cache
 
-from pydantic import computed_field, PositiveInt, PositiveFloat, AnyHttpUrl
+from pydantic import computed_field, PositiveInt, PositiveFloat
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -20,8 +20,7 @@ class PostgresSettings:
     ECHO_POOL: bool = True
 
     @computed_field
-    @property
-    # @cached_property
+    @cached_property
     def PG_DSN(self) -> URL:
         """Reading Postgres credentials from docker secrets or env."""
         return URL.create(
@@ -49,7 +48,7 @@ class KeycloakSettings:
     KEYCLOAK_ADMIN_PASSWORD: str
 
     @computed_field
-    # @cached_property
+    @cached_property
     def KEYCLOAK_SERVER_URL(self) -> str:
         """Url to Keycloak auth server"""
         #  From inside always use http as we have ssl termination inside Caddy proxy
@@ -68,7 +67,7 @@ class NNGSettings:
     NNG_SURVEY_ADDR: str = 'abstract://survey'
     NNG_SURVEY_INTERVAL: float = 1.0
 
-# @cache
+@cache
 class Settings(
     ApiSettings,
     PostgresSettings,

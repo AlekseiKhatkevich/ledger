@@ -5,4 +5,4 @@ class PostgresBaseRepository[T, bound=Base]:
     model: T
 
     def __init__(self, db: DB = _db) -> None:
-        self.db = DB()
+        self.db = db
