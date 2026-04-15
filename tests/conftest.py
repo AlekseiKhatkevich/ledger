@@ -2,7 +2,9 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 import pytest
+import pytest_asyncio
 from litestar.testing import TestClient
+from pydantic_settings import SettingsConfigDict
 
 from main import app as ls_app
 
@@ -14,6 +16,9 @@ pytest_plugins = [
     'tests.logic.db_models.fixtures',
 ]
 
+# https://stackoverflow.com/questions/61582142/test-pydantic-settings-in-fastapi
+from dotenv import load_dotenv
+load_dotenv("secrets/postgres/test.env", override=True)
 
 @pytest.fixture
 def test_client_no_auth(app) -> Iterator[TestClient[Litestar]]:
@@ -48,3 +53,12 @@ def test_client(test_client_no_auth, good_jwt_token_str) -> Iterator[TestClient[
 def app() -> Litestar:
     ls_app.debug = True
     return ls_app
+
+@pytest.fixture(autouse=True)
+def foo(monkeypatch):
+    monkeypatch.setenv('PGDATABASE', 'ledger-db-test')
+    monkeypatch.setattr('config.Settings.model_config', SettingsConfigDict(
+        env_ignore_empty=True,
+        env_file=('secrets/postgres/.env', 'secrets/postgres/test.env', 'secrets/keycloak/.env', ),
+        extra='ignore',
+    ))
