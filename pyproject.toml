@@ -24,6 +24,7 @@ dev = [
     "pydevd-pycharm~=253.30387.173",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
+    "pytest-env>=1.6.0",
     "pytest-httpx>=0.36.0",
     "pytest-randomly>=4.0.1",
     "remote-pdb>=2.1.0",
@@ -38,3 +39,6 @@ filterwarnings = [
 ]
 asyncio_mode = "auto"
 addopts = "-vv"
+
+[tool.pytest_env]
+PGDATABASE = "ledger-db-test"
