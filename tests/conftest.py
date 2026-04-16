@@ -49,7 +49,7 @@ def app() -> Litestar:
     ls_app.debug = True
     return ls_app
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def db() -> DB:
     return _db
 

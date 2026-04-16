@@ -1,3 +1,4 @@
+import asyncio
 
 
 async def test_user_asset_address_positive(
@@ -6,3 +7,8 @@ async def test_user_asset_address_positive(
 ):
     address_from_db = await pg_user_asset_repo.get_by_pubkey(user_asset_address_in_db.public_key)
     assert address_from_db.as_fields_dict() == user_asset_address_in_db.as_fields_dict()
+
+
+
+async def test_sdfsd():
+    await asyncio.sleep(0.01)

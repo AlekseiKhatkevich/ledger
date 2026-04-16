@@ -26,22 +26,39 @@ __all__ = (
 class DB:
     def __init__(self, url: URL | None = None, finalize: bool = False) -> None:
         self.outer_connection: AsyncConnection | None = None
-        self.engine = create_async_engine(
-            url or settings.PG_DSN,
-            echo=settings.POSTGRES_ECHO,
-            echo_pool=settings.ECHO_POOL,
-            pool_pre_ping=settings.POOL_PRE_PING,
-            pool_timeout=settings.POOL_TIMEOUT,
-            pool_size=settings.POOL_SIZE,
-            max_overflow=settings.POOL_MAX_OVERFLOW,
-            pool_use_lifo=settings.POOL_USE_LIFO,
-            json_serializer=encode_json,
-            json_deserializer=decode_json,
-            execution_options={'logging_token': f'connect#: {secrets.token_hex(3)}',},
-            connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
-        )
-        if finalize:
-            self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
+        # self.engine = create_async_engine(
+        #     url or settings.PG_DSN,
+        #     echo=settings.POSTGRES_ECHO,
+        #     echo_pool=settings.ECHO_POOL,
+        #     pool_pre_ping=settings.POOL_PRE_PING,
+        #     pool_timeout=settings.POOL_TIMEOUT,
+        #     pool_size=settings.POOL_SIZE,
+        #     max_overflow=settings.POOL_MAX_OVERFLOW,
+        #     pool_use_lifo=settings.POOL_USE_LIFO,
+        #     json_serializer=encode_json,
+        #     json_deserializer=decode_json,
+        #     execution_options={'logging_token': f'connect#: {secrets.token_hex(3)}',},
+        #     connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
+        # )
+        # if finalize:
+        #     self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
+
+    @property
+    def engine(self):
+        return create_async_engine(
+        settings.PG_DSN,
+        echo=settings.POSTGRES_ECHO,
+        echo_pool=settings.ECHO_POOL,
+        pool_pre_ping=settings.POOL_PRE_PING,
+        pool_timeout=settings.POOL_TIMEOUT,
+        pool_size=settings.POOL_SIZE,
+        max_overflow=settings.POOL_MAX_OVERFLOW,
+        pool_use_lifo=settings.POOL_USE_LIFO,
+        json_serializer=encode_json,
+        json_deserializer=decode_json,
+        execution_options={'logging_token': f'connect#: {secrets.token_hex(3)}', },
+        connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
+    )
 
     @asynccontextmanager
     async def make_outer_connection(self) -> AsyncGenerator[AsyncConnection]:
@@ -61,7 +78,7 @@ class DB:
             await self.outer_connection.close()
             self.outer_connection = None
 
-    @cached_property
+    @property
     def _maker(self) -> async_sessionmaker:
         maker = async_sessionmaker(
             self.engine,
