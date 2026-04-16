@@ -8,7 +8,13 @@ from typing import AsyncGenerator
 import anyio
 import structlog
 from litestar.serialization import decode_json, encode_json
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncConnection
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
+    AsyncConnection,
+    AsyncEngine,
+)
 
 from config import settings
 
@@ -27,7 +33,7 @@ class DB:
             self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
 
     @staticmethod
-    def _make_engine():
+    def _make_engine() -> AsyncEngine:
         return create_async_engine(
             settings.PG_DSN,
             echo=settings.POSTGRES_ECHO,
@@ -44,7 +50,7 @@ class DB:
     )
 
     @cached_property
-    def engine(self):
+    def engine(self) -> AsyncEngine:
         return self._make_engine()
 
     @asynccontextmanager

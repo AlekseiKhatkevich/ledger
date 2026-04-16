@@ -57,8 +57,8 @@ caddy-reload:
 
 #  run tests
 [group('pytest')]
-test path='':
-    docker compose exec {{backend_name}} bash -c "uv run pytest {{path}}"
+test path='' skip_arg='--skip-alembic':
+    docker compose exec {{backend_name}} bash -c "uv run pytest {{skip_arg}} {{path}}"
 
 # open api docs
 [group('api')]

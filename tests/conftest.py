@@ -1,8 +1,11 @@
+import subprocess
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, AsyncGenerator
 
 import pytest
+from _pytest.fixtures import FixtureRequest
 from litestar.testing import TestClient
+from sqlalchemy.util import greenlet_spawn
 
 from database.postgres.connection import db as _db, DB
 from main import app as ls_app
@@ -57,3 +60,15 @@ def db() -> DB:
 async def wrap_db_transactions_in_savepoint(db) -> AsyncGenerator[None]:
     async with db.make_outer_connection():
         yield
+
+def pytest_addoption(parser):
+    parser.addoption("--skip-alembic", action="store_true", help="Skip running alembic migrations")
+
+
+# noinspection PyInconsistentReturns
+@pytest.fixture(scope='session', autouse=True)
+async def apply_alembic_migrations(request: FixtureRequest) -> None:
+    if request.config.getoption("--skip-alembic"):
+        return None
+    else:
+        await greenlet_spawn(lambda: subprocess.Popen(['alembic', 'upgrade', 'head']).wait())
