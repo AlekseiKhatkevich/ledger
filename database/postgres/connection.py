@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, AsyncGenerator
 import anyio
 import structlog
 from litestar.serialization import decode_json, encode_json
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncConnection
 
 from config import settings
 
@@ -25,6 +25,7 @@ __all__ = (
 @cache
 class DB:
     def __init__(self, url: URL | None = None, finalize: bool = False) -> None:
+        self.outer_connection: AsyncConnection | None = None
         self.engine = create_async_engine(
             url or settings.PG_DSN,
             echo=settings.POSTGRES_ECHO,
@@ -42,9 +43,35 @@ class DB:
         if finalize:
             self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
 
+    @asynccontextmanager
+    async def make_outer_connection(self) -> AsyncGenerator[AsyncConnection]:
+        """
+        https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#
+        joining-a-session-into-an-external-transaction-such-as-for-test-suites
+
+        Makes outer transaction and joins current session inside it as a savepoint.
+        This behavior is similar to Django test suit.
+        """
+        self.outer_connection = await self.engine.connect()
+        transaction = await self.outer_connection.begin()
+        try:
+            yield self.outer_connection
+        finally:
+            await transaction.rollback()
+            await self.outer_connection.close()
+            self.outer_connection = None
+
     @cached_property
     def _maker(self) -> async_sessionmaker:
-        return async_sessionmaker(self.engine, expire_on_commit=False)
+        maker = async_sessionmaker(
+            self.engine,
+            expire_on_commit=False,
+            join_transaction_mode='create_savepoint',
+        )
+        if self.outer_connection is not None:
+            maker.configure(bind=self.outer_connection)
+
+        return maker
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession]:

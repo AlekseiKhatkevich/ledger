@@ -1,9 +1,10 @@
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncGenerator
 
 import pytest
 from litestar.testing import TestClient
 
+from database.postgres.connection import db as _db, DB
 from main import app as ls_app
 
 if TYPE_CHECKING:
@@ -47,3 +48,12 @@ def test_client(test_client_no_auth, good_jwt_token_str) -> Iterator[TestClient[
 def app() -> Litestar:
     ls_app.debug = True
     return ls_app
+
+@pytest.fixture(scope='session')
+def db() -> DB:
+    return _db
+
+@pytest.fixture(autouse=True)
+async def wrap_db_transactions_in_savepoint(db) -> AsyncGenerator[None]:
+    async with db.make_outer_connection():
+        yield

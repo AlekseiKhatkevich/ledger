@@ -59,7 +59,7 @@
         }
 
     #   valid until 24.03.27
-    tls /etc/caddy/certificate.pem /etc/caddy/privatekey.pem
+    tls /etc/caddy/ncert.pem /etc/caddy/nkey.pem
 
     @login+refresh {
         method POST
