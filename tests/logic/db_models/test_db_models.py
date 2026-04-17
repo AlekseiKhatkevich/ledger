@@ -26,4 +26,9 @@ async def test_asset_ticker_positive(asset_ticker_in_db, pg_asset_ticker_repo):
     ticker_from_db = await pg_asset_ticker_repo.get_by_name(asset_ticker_in_db.name)
     assert ticker_from_db.as_fields_dict() == asset_ticker_in_db.as_fields_dict()
 
-    # todo negetive one
+
+async def test_asset_ticker_negative_lower(asset_ticker_factory):
+    with pytest.raises(IntegrityError) as excinfo:
+        await asset_ticker_factory.create_async(name='lower')
+
+    assert excinfo.value.orig.pgcode == '23514'

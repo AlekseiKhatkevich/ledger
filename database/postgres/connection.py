@@ -28,7 +28,7 @@ __all__ = (
 class DB:
     def __init__(self, finalize: bool = False) -> None:
         self.outer_connection: AsyncConnection | None = None
-        self._maker: async_sessionmaker |  None = None
+        self._cached_maker: async_sessionmaker |  None = None
         if finalize:
             self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
 
@@ -71,7 +71,7 @@ class DB:
         https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#
         joining-a-session-into-an-external-transaction-such-as-for-test-suites
 
-        Makes outer transaction and joins current session inside it as a savepoint.
+        Makes outer transaction and merges current session inside it as a savepoint.
         This behavior is similar to Django test suit.
         """
         self.outer_connection = await self.engine.connect()
@@ -84,16 +84,16 @@ class DB:
             self.outer_connection = None
 
     @property
-    def _sessionmaker(self) -> async_sessionmaker:
-        if self._maker is None:
-            self._maker = async_sessionmaker(
+    def _sessionmaker(self) -> async_sessionmaker[AsyncSession]:
+        if self._cached_maker is None:
+            self._cached_maker = async_sessionmaker(
                 self.engine,
                 expire_on_commit=False,
                 join_transaction_mode='create_savepoint',
             )
         if self.outer_connection is not None:
-            self._maker.configure(bind=self.outer_connection)
-        return self._maker
+            self._cached_maker.configure(bind=self.outer_connection)
+        return self._cached_maker
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession]:
