@@ -1,5 +1,4 @@
 import pytest
-from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 
@@ -21,3 +20,10 @@ async def test_user_asset_address_negative_pub_key_non_unique(
         await user_asset_address_factory.create_async(public_key=existing_pub_key)
 
     assert excinfo.value.orig.pgcode == '23505'
+
+
+async def test_asset_ticker_positive(asset_ticker_in_db, pg_asset_ticker_repo):
+    ticker_from_db = await pg_asset_ticker_repo.get_by_name(asset_ticker_in_db.name)
+    assert ticker_from_db.as_fields_dict() == asset_ticker_in_db.as_fields_dict()
+
+    # todo negetive one

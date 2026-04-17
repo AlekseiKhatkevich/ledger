@@ -12,5 +12,4 @@ class PostgresUserAssetAddressRepository(BaseUserAssetAddressRepository, Postgre
     model = UserAssetAddress
 
     async def get_by_pubkey(self, pkey: str) -> UserAssetAddress:
-        async with self.db.session() as session:
-            return await session.scalar(select(self.model).where(self.model.public_key == pkey))
+        return await self._get_by_field_name(field_name='public_key', value=pkey)
