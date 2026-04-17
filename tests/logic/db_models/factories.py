@@ -12,7 +12,7 @@ class CustomFactory[T](SQLAlchemyFactory[T]):
     __min_collection_length__ = 1
     __max_collection_length__ = 2
     __check_model__ = True
-    __async_session__ = db.session
+    # __async_session__ = db.session
 
 
 class UserAssetAddressFactory(CustomFactory[UserAssetAddress]):

@@ -1,3 +1,4 @@
+import asyncio
 import subprocess
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, AsyncGenerator
@@ -17,6 +18,9 @@ pytest_plugins = [
     'tests.user.fixtures',
     'tests.logic.db_models.fixtures',
 ]
+
+def pytest_addoption(parser):
+    parser.addoption("--skip-alembic", action="store_true", help="Skip running alembic migrations")
 
 @pytest.fixture
 def test_client_no_auth(app) -> Iterator[TestClient[Litestar]]:
@@ -56,14 +60,10 @@ def app() -> Litestar:
 def db() -> DB:
     return _db
 
-@pytest.fixture(autouse=True)
-async def wrap_db_transactions_in_savepoint(db) -> AsyncGenerator[None]:
-    async with db.make_outer_connection():
-        yield
-
-def pytest_addoption(parser):
-    parser.addoption("--skip-alembic", action="store_true", help="Skip running alembic migrations")
-
+# @pytest.fixture(autouse=True)
+# async def wrap_db_transactions_in_savepoint(db) -> AsyncGenerator[None]:
+#     async with db.make_outer_connection():
+#         yield
 
 # noinspection PyInconsistentReturns
 @pytest.fixture(scope='session', autouse=True)

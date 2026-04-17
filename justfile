@@ -1,6 +1,7 @@
 #!/usr/bin/env just --justfile
 
 set dotenv-filename := "secrets/just/.env"
+set lazy
 
 backend_name := 'backend-api'
 
@@ -9,6 +10,7 @@ default:
 
 alias up := up-dev
 alias down := down-dev
+alias pytest := test
 
 #  start container
 [group('docker')]
@@ -56,12 +58,12 @@ caddy-reload:
     docker compose --profile main kill  -sUSR1 caddy
 
 #  run tests
+[arg('skip-alembic', help='skip alembic migration before testrun')]
 [group('pytest')]
-test path='' skip_arg='--skip-alembic':
-    docker compose exec {{backend_name}} bash -c "uv run pytest {{skip_arg}} {{path}}"
+test path='' skip-alembic='--skip-alembic' *flags:
+    docker compose exec {{backend_name}} bash -c "uv run pytest {{skip-alembic}} {{path}} {{flags}}"
 
 # open api docs
 [group('api')]
 api-docs:
     xdg-open https://localhost:8000/docs
-

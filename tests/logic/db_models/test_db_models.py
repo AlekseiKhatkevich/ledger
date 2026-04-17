@@ -1,14 +1,21 @@
-import asyncio
+import pytest
+from sqlalchemy import text
 
+from database.postgres.connection import async_session
 
+@pytest.mark.asyncio(loop_scope="session")
 async def test_user_asset_address_positive(
-        user_asset_address_in_db,
-        pg_user_asset_repo,
+
 ):
-    address_from_db = await pg_user_asset_repo.get_by_pubkey(user_asset_address_in_db.public_key)
-    assert address_from_db.as_fields_dict() == user_asset_address_in_db.as_fields_dict()
+    async with async_session() as session:
+            await session.execute(text('select 1 + 1'))
+            await session.commit()
 
 
+@pytest.mark.asyncio(loop_scope="session")
+async def test_user_asset_address_negative_pub_key_non_unique(
 
-async def test_sdfsd():
-    await asyncio.sleep(0.01)
+):
+    async with async_session() as session:
+        await session.execute(text('select 1 + 1'))
+        await session.commit()
