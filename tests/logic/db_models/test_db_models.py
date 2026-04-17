@@ -1,21 +1,23 @@
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 
-
-# @pytest.mark.asyncio(loop_scope="session")
 async def test_user_asset_address_positive(
-    db
+        user_asset_address_in_db,
+        pg_user_asset_repo,
 ):
-    async with db.session() as session:
-            await session.execute(text('select 1 + 1'))
-            await session.commit()
+    address_from_db = await pg_user_asset_repo.get_by_pubkey(user_asset_address_in_db.public_key)
+    assert address_from_db.as_fields_dict() == user_asset_address_in_db.as_fields_dict()
 
 
-# @pytest.mark.asyncio(loop_scope="session")
 async def test_user_asset_address_negative_pub_key_non_unique(
-    db
+    user_asset_address_in_db,
+    user_asset_address_factory,
 ):
-    async with db.session() as session:
-        await session.execute(text('select 1 + 1'))
-        await session.commit()
+    existing_pub_key = user_asset_address_in_db.public_key
+
+    with pytest.raises(IntegrityError) as excinfo:
+        await user_asset_address_factory.create_async(public_key=existing_pub_key)
+
+    assert excinfo.value.orig.pgcode == '23505'

@@ -1,8 +1,9 @@
 from functools import cached_property, cache
+from typing import Literal
 
 from pydantic import computed_field, PositiveInt, PositiveFloat
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy import URL
+from sqlalchemy import URL, QueuePool, AsyncAdaptedQueuePool
 
 
 class PostgresSettings:
@@ -18,6 +19,7 @@ class PostgresSettings:
     POOL_MAX_OVERFLOW: PositiveInt = 20
     POOL_USE_LIFO: bool = True
     ECHO_POOL: bool = True
+    POOL_CLASS: Literal['null', 'async'] = 'async'
 
     @computed_field
     @cached_property

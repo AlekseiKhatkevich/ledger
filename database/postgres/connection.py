@@ -2,17 +2,18 @@ import os
 import secrets
 import weakref
 from contextlib import asynccontextmanager
-from functools import cache
+from functools import cache, cached_property
 from typing import AsyncGenerator
 
 import anyio
 import structlog
 from litestar.serialization import decode_json, encode_json
+from sqlalchemy import NullPool, AsyncAdaptedQueuePool
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncConnection,
-    AsyncEngine,
+    AsyncEngine, AsyncSession,
 )
 
 from config import settings
@@ -23,7 +24,7 @@ __all__ = (
     'db',
 )
 
-# @cache
+@cache
 class DB:
     def __init__(self, finalize: bool = False) -> None:
         self.outer_connection: AsyncConnection | None = None
@@ -32,27 +33,39 @@ class DB:
 
     @staticmethod
     def _make_engine() -> AsyncEngine:
-        return create_async_engine(
-            settings.PG_DSN,
+        # use NullPool for tests only
+        match settings.POOL_CLASS:
+            case 'null':
+                pool_class = NullPool
+            case 'async':
+                pool_class = AsyncAdaptedQueuePool
+
+        engine_kwargs = dict(
+            url=settings.PG_DSN,
             echo=settings.POSTGRES_ECHO,
             echo_pool=settings.ECHO_POOL,
-            pool_pre_ping=settings.POOL_PRE_PING,
-            pool_timeout=settings.POOL_TIMEOUT,
-            pool_size=settings.POOL_SIZE,
-            max_overflow=settings.POOL_MAX_OVERFLOW,
-            pool_use_lifo=settings.POOL_USE_LIFO,
+            poolclass=pool_class,
             json_serializer=encode_json,
             json_deserializer=decode_json,
             execution_options={'logging_token': f'connect#: {secrets.token_hex(3)}', },
             connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
-    )
+        )
+        if pool_class is AsyncAdaptedQueuePool:
+            engine_kwargs |= dict (
+                pool_pre_ping=settings.POOL_PRE_PING,
+                pool_timeout=settings.POOL_TIMEOUT,
+                pool_size=settings.POOL_SIZE,
+                max_overflow=settings.POOL_MAX_OVERFLOW,
+                pool_use_lifo=settings.POOL_USE_LIFO,
+            )
+        return create_async_engine(**engine_kwargs)
 
-    @property
+    @cached_property
     def engine(self) -> AsyncEngine:
         return self._make_engine()
 
     @asynccontextmanager
-    async def make_outer_connection(self) -> AsyncGenerator[AsyncConnection]:
+    async def make_outer_connection(self) -> AsyncGenerator[None]:
         """
         https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#
         joining-a-session-into-an-external-transaction-such-as-for-test-suites
@@ -69,15 +82,15 @@ class DB:
             await self.outer_connection.close()
             self.outer_connection = None
 
-    @property
-    def session(self) :
+    @cached_property
+    def session(self) -> async_sessionmaker[AsyncSession]:
         return async_sessionmaker(
             bind=self.outer_connection or self.engine,
             expire_on_commit=False,
             join_transaction_mode='create_savepoint',
         )
 
-    async def close(self, *args, **kwargs) -> None:
+    async def close(self, *_, **__) -> None:
         await self.engine.dispose()
         await log.ainfo('Sqlalchemy engine has disposed')
 
@@ -85,8 +98,8 @@ class DB:
     def pool_status(self) -> str:
         return self.engine.pool.status()
 
-db: DB = DB()
-# def __getattr__(name: str) -> DB:
-#     if name == 'db':
-#         return DB()
-#     raise AttributeError(f'Module {__name__} has no attribute {name}')
+db: DB
+def __getattr__(name: str) -> DB:
+    if name == 'db':
+        return DB()
+    raise AttributeError(f'Module {__name__} has no attribute {name}')
