@@ -60,10 +60,10 @@ def app() -> Litestar:
 def db() -> DB:
     return _db
 
-# @pytest.fixture(autouse=True)
-# async def wrap_db_transactions_in_savepoint(db) -> AsyncGenerator[None]:
-#     async with db.make_outer_connection():
-#         yield
+@pytest.fixture(autouse=True)
+async def wrap_db_transactions_in_savepoint(db) -> AsyncGenerator[None]:
+    async with db.make_outer_connection():
+        yield
 
 # noinspection PyInconsistentReturns
 @pytest.fixture(scope='session', autouse=True)

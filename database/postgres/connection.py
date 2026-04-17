@@ -23,7 +23,7 @@ __all__ = (
     'db',
 )
 
-@cache
+# @cache
 class DB:
     def __init__(self, finalize: bool = False) -> None:
         self.outer_connection: AsyncConnection | None = None
@@ -60,11 +60,10 @@ class DB:
         Makes outer transaction and joins current session inside it as a savepoint.
         This behavior is similar to Django test suit.
         """
-        outer_engine = self._make_engine()
-        self.outer_connection = await outer_engine.connect()
+        self.outer_connection = await self.engine.connect()
         transaction = await self.outer_connection.begin()
         try:
-            yield self.outer_connection
+            yield
         finally:
             await transaction.rollback()
             await self.outer_connection.close()
@@ -86,8 +85,8 @@ class DB:
     def pool_status(self) -> str:
         return self.engine.pool.status()
 
-db: DB
-def __getattr__(name: str) -> DB:
-    if name == 'db':
-        return DB()
-    raise AttributeError(f'Module {__name__} has no attribute {name}')
+db: DB = DB()
+# def __getattr__(name: str) -> DB:
+#     if name == 'db':
+#         return DB()
+#     raise AttributeError(f'Module {__name__} has no attribute {name}')

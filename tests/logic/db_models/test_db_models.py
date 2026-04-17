@@ -3,7 +3,7 @@ from sqlalchemy import text
 
 
 
-@pytest.mark.asyncio(loop_scope="session")
+# @pytest.mark.asyncio(loop_scope="session")
 async def test_user_asset_address_positive(
     db
 ):
@@ -12,7 +12,7 @@ async def test_user_asset_address_positive(
             await session.commit()
 
 
-@pytest.mark.asyncio(loop_scope="session")
+# @pytest.mark.asyncio(loop_scope="session")
 async def test_user_asset_address_negative_pub_key_non_unique(
     db
 ):
