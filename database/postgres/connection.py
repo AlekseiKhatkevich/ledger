@@ -1,7 +1,7 @@
 import os
 import secrets
 import weakref
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, aclosing
 from functools import cache, cached_property
 from typing import AsyncGenerator
 
@@ -28,6 +28,7 @@ __all__ = (
 class DB:
     def __init__(self, finalize: bool = False) -> None:
         self.outer_connection: AsyncConnection | None = None
+        self._maker: async_sessionmaker |  None = None
         if finalize:
             self._finalizer = weakref.finalize(self, lambda: anyio.run(self.close))
 
@@ -82,13 +83,22 @@ class DB:
             await self.outer_connection.close()
             self.outer_connection = None
 
-    @cached_property
-    def session(self) -> async_sessionmaker[AsyncSession]:
-        return async_sessionmaker(
-            bind=self.outer_connection or self.engine,
-            expire_on_commit=False,
-            join_transaction_mode='create_savepoint',
-        )
+    @property
+    def _sessionmaker(self) -> async_sessionmaker:
+        if self._maker is None:
+            self._maker = async_sessionmaker(
+                self.engine,
+                expire_on_commit=False,
+                join_transaction_mode='create_savepoint',
+            )
+        if self.outer_connection is not None:
+            self._maker.configure(bind=self.outer_connection)
+        return self._maker
+
+    @asynccontextmanager
+    async def session(self) -> AsyncGenerator[AsyncSession]:
+        async with aclosing(self._sessionmaker()) as async_session:
+                yield async_session
 
     async def close(self, *_, **__) -> None:
         await self.engine.dispose()
