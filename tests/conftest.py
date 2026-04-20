@@ -1,4 +1,3 @@
-import asyncio
 import subprocess
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, AsyncGenerator

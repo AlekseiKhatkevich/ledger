@@ -4,9 +4,9 @@ from sqlalchemy.exc import IntegrityError
 
 async def test_user_asset_address_positive(
         user_asset_address_in_db,
-        pg_user_asset_repo,
+        pg_user_asset_address_repo,
 ):
-    address_from_db = await pg_user_asset_repo.get_by_pubkey(user_asset_address_in_db.public_key)
+    address_from_db = await pg_user_asset_address_repo.get_by_pubkey(user_asset_address_in_db.public_key)
     assert address_from_db.as_fields_dict() == user_asset_address_in_db.as_fields_dict()
 
 
@@ -32,3 +32,9 @@ async def test_asset_ticker_negative_lower(asset_ticker_factory):
         await asset_ticker_factory.create_async(name='lower')
 
     assert excinfo.value.orig.pgcode == '23514'
+
+
+async def test_user_asset_positive(user_asset_in_db, pg_user_asset_repo):
+    user_asset_from_db = await pg_user_asset_repo.get_by_id(user_asset_in_db.id)
+
+    assert user_asset_from_db.as_fields_dict() == user_asset_from_db.as_fields_dict()

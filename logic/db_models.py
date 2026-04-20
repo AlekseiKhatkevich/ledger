@@ -123,13 +123,13 @@ class UserAsset(Base):
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     name: Mapped[str]
-    ticker: Mapped[Annotated[str, mapped_column(
+    ticker_id: Mapped[Annotated[str, mapped_column(
         ForeignKey('asset_tickers.name', ondelete='RESTRICT'))]
     ]
     user_id: Mapped[uuid.UUID]  # from KeyCloak
 
     __table_args__ = (
-        UniqueConstraint('user_id', 'ticker', ),
+        UniqueConstraint('user_id', 'ticker_id', ),
     )
 
     def __repr__(self) -> str:
@@ -141,6 +141,11 @@ class UserAsset(Base):
         passive_deletes=True,
         init=False,
         default_factory=list,
+    )
+    ticker: Mapped[AssetTicker] = relationship(
+        AssetTicker,
+        passive_deletes=True,
+        init=False
     )
 
     # todo

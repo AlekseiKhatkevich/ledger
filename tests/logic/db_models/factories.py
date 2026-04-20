@@ -1,8 +1,9 @@
 from faker import Faker
+from polyfactory import Use
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
 from database.postgres.connection import db
-from logic.db_models import UserAssetAddress, AssetTicker
+from logic.db_models import UserAssetAddress, AssetTicker, UserAsset
 
 
 class CustomFactory[T](SQLAlchemyFactory[T]):
@@ -13,11 +14,12 @@ class CustomFactory[T](SQLAlchemyFactory[T]):
     __max_collection_length__ = 2
     __check_model__ = True
     __async_session__ = db.session
+    __set_relationships__ = False
+    __allow_none_optionals__ = False
 
 
 class UserAssetAddressFactory(CustomFactory[UserAssetAddress]):
-    __set_relationships__ = False
-    __allow_none_optionals__ = False
+    pass
 
 
 class AssetTickerFactory(CustomFactory[AssetTicker]):
@@ -25,3 +27,7 @@ class AssetTickerFactory(CustomFactory[AssetTicker]):
     @classmethod
     def name(cls) -> str:
         return cls.__faker__.pystr(max_chars=10).upper()
+
+
+class UserAssetFactory(CustomFactory[UserAsset]):
+    pass
