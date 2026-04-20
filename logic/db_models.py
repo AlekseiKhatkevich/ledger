@@ -156,6 +156,7 @@ class UserAsset(Base):
             start=decimal.Decimal(0)
         )
 
+    # noinspection PyNestedDecorators
     @balance.inplace.expression
     @classmethod
     def _balance_expression(cls) -> SQLColumnExpression[decimal.Decimal]:
@@ -166,29 +167,11 @@ class UserAsset(Base):
                 (UserAssetOperation.type == 'PURCHASE', UserAssetOperation.summ),
                     else_= - UserAssetOperation.summ,
                     )
-                )
+                ),
+                decimal.Decimal(0),
             ),
         ).where(
             UserAssetOperation.user_asset_id == cls.id,
         ).label(
             'balance_in_usdt',
         )
-
-"""
-with cte as (
-    select
-    user_asset_id,
-    sum(quantity) as sum_qnt,
-    sum(
-        case when type = 'PURCHASE' then summ else -summ end
-    ) as balance
-    from user_asset_operations
-    group by user_asset_id
-)
-
-select
-    user_assets.*, coalesce(cte.balance, 0) as balance_in_usdt, cte.sum_qnt as quantity
-from user_assets
-left join cte on cte.user_asset_id = user_assets.id
-and user_id = '019daab7-5f62-77f3-82ef-dddbdb2a8bf5'
-"""
