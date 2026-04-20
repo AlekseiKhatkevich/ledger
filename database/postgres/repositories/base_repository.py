@@ -17,5 +17,5 @@ class PostgresBaseRepository[T, bound=Base]:
         async with self.db.session() as session:
             return await session.scalar(select(self.model).where(field == value))
 
-    async def get_by_id(self, _id: str) -> T:
+    async def get_by_id(self, /, _id: int) -> T:
         return await self._get_by_field_name('id', _id)
