@@ -74,7 +74,6 @@ class UserController(Controller):
         """Information about current request user"""
         return kc_user
 
-    # todo переделать через Кади
     @post(
         '/create',
         dto=UserCreateInDTO,

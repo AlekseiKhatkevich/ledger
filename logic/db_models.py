@@ -10,10 +10,11 @@ from sqlalchemy import (
     Computed,
     Index,
     UniqueConstraint,
-    CheckConstraint,
+    CheckConstraint, SQLColumnExpression, select, func, case,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
@@ -148,8 +149,46 @@ class UserAsset(Base):
         init=False
     )
 
-    # todo
-    # @hybrid property
-    # create and updated mixins
-    # env from named pipe
+    @hybrid_property
+    def balance(self) -> decimal.Decimal:
+        return sum(
+            (op.summ if op.type == AssetOperationType.PURCHASE else - op.summ for op in self.operations),
+            start=decimal.Decimal(0)
+        )
 
+    @balance.inplace.expression
+    @classmethod
+    def _balance_expression(cls) -> SQLColumnExpression[decimal.Decimal]:
+        return select(
+            func.coalesce(
+            func.sum(
+                case(
+                (UserAssetOperation.type == 'PURCHASE', UserAssetOperation.summ),
+                    else_= - UserAssetOperation.summ,
+                    )
+                )
+            ),
+        ).where(
+            UserAssetOperation.user_asset_id == cls.id,
+        ).label(
+            'balance_in_usdt',
+        )
+
+"""
+with cte as (
+    select
+    user_asset_id,
+    sum(quantity) as sum_qnt,
+    sum(
+        case when type = 'PURCHASE' then summ else -summ end
+    ) as balance
+    from user_asset_operations
+    group by user_asset_id
+)
+
+select
+    user_assets.*, coalesce(cte.balance, 0) as balance_in_usdt, cte.sum_qnt as quantity
+from user_assets
+left join cte on cte.user_asset_id = user_assets.id
+and user_id = '019daab7-5f62-77f3-82ef-dddbdb2a8bf5'
+"""
