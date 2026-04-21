@@ -2,6 +2,12 @@ version = 1
 revision = 3
 requires-python = ">=3.14"
 
+[manifest]
+members = [
+    "etl",
+    "ledger",
+]
+
 [[package]]
 name = "aiofiles"
 version = "25.1.0"
@@ -285,6 +291,17 @@ sdist = { url = "https://files.pythonhosted.org/packages/88/3a/a61d9a1f319a186b0
 wheels = [
     { url = "https://files.pythonhosted.org/packages/96/fd/a40c621ff207f3ce8e484aa0fc8ba4eb6e3ecf52e15b42ba764b457a9550/editorconfig-0.17.1-py3-none-any.whl", hash = "sha256:1eda9c2c0db8c16dbd50111b710572a5e6de934e39772de1959d41f64fc17c82", size = 16360, upload-time = "2025-06-09T08:21:35.654Z" },
 ]
+
+[[package]]
+name = "etl"
+version = "0.1.0"
+source = { virtual = "etl" }
+dependencies = [
+    { name = "temporalio" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "temporalio", specifier = ">=1.26.0" }]
 
 [[package]]
 name = "executing"

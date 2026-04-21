@@ -44,3 +44,8 @@ addopts = "-vv --pytest-env-verbose"
 [tool.pytest_env]
 PGDATABASE = "ledger-db-test"
 POOL_CLASS = "null"
+
+[tool.uv.workspace]
+members = [
+    "etl",
+]

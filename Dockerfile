@@ -21,6 +21,7 @@ ENV GRANIAN_RELOAD=$GRANIAN_RELOAD
 ENV GRANIAN_INTERFACE='asgi'
 ENV GRANIAN_LOOP='uvloop'
 ENV GRANIAN_HOST='0.0.0.0'
+
 ENV HOME=/app
 
 RUN groupadd --system --gid 1000 nonroot \
