@@ -16,6 +16,7 @@ dependencies = [
     "python-keycloak>=7.1.1",
     "sqlalchemy[asyncio]>=2.0.46",
     "structlog>=25.5.0",
+    "temporalio>=1.26.0",
 ]
 
 [dependency-groups]

@@ -183,6 +183,7 @@ services:
       start_period: 2s
 
   #  ---
+
   temporal:
     image: temporalio/auto-setup
     container_name: temporal
@@ -205,6 +206,39 @@ services:
       - "7233:7233"  # todo expose
     volumes:
       - ./dynamicconfig:/etc/temporal/config/dynamicconfig
+
+   #  ---
+
+  temporal-admin-tools:
+    container_name: temporal-admin-tools
+    profiles: [main]
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    image: temporalio/admin-tools
+    networks:
+      [ ledger-network ]
+    stdin_open: true
+    tty: true
+
+     #  ---
+
+  temporal-ui:
+    container_name: temporal-ui
+    profiles: [main]
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+      - TEMPORAL_UI_PORT=8081
+    image: temporalio/ui
+    networks:
+      [ ledger-network ]
+    ports:
+      - "8081:8081"  # todo expose
 
 networks:
     ledger-network:
