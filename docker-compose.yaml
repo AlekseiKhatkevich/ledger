@@ -183,6 +183,28 @@ services:
       start_period: 2s
 
   #  ---
+  temporal:
+    image: temporalio/auto-setup
+    container_name: temporal
+    profiles: [main]
+    depends_on:
+      - postgres
+    environment:
+    - DB=postgres12
+    - DB_PORT=5432
+    - POSTGRES_USER=postgres228
+    - POSTGRES_SEEDS=postgres
+    - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    - TEMPORAL_ADDRESS=temporal:7233
+    - TEMPORAL_CLI_ADDRESS=temporal:7233
+    env_file:
+      - ./secrets/temporal-server/.env
+    networks:
+      [ ledger-network ]
+    ports:
+      - "7233:7233"  # todo expose
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
 
 networks:
     ledger-network:

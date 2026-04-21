@@ -117,3 +117,4 @@ secrets
 /.python_history
 /.ipython
 /pyconsole.py
+/dynamicconfig/
