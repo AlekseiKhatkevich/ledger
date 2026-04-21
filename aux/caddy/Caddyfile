@@ -117,3 +117,8 @@
         }
     }
 }
+
+#  temporal web ui
+:8081 {
+    reverse_proxy temporal-ui:8081
+}

@@ -4,6 +4,11 @@ x-environment: &common_env
   KEYCLOAK_SCHEME: https
   KEYCLOACK_LEDGER_REALM: test
 
+x-extra: &temporal_env
+  TEMPORAL_ADDRESS: temporal:7233
+  TEMPORAL_CLI_ADDRESS: temporal:7233
+
+
 
 services:
   backend-api:
@@ -11,7 +16,9 @@ services:
     expose:
       - '8000'
     environment:
-      <<: *common_env
+      <<:
+        -  *common_env
+        -  *temporal_env
       GRANIAN_RELOAD: 1
       GRANIAN_WORKERS_LIFETIME: 60
       GRANIAN_METRICS_ENABLED: 1
@@ -163,6 +170,7 @@ services:
     ports:
       - "8000:8000"
       - "8001:8001"
+      - "8081:8081" # temporal-ui
 #      - "8080:8080"
 #      - "8443:8443"
     volumes:
@@ -191,13 +199,12 @@ services:
     depends_on:
       - postgres
     environment:
-    - DB=postgres12
-    - DB_PORT=5432
-    - POSTGRES_USER=postgres228
-    - POSTGRES_SEEDS=postgres
-    - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
-    - TEMPORAL_ADDRESS=temporal:7233
-    - TEMPORAL_CLI_ADDRESS=temporal:7233
+      <<: *temporal_env
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: postgres228
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
     env_file:
       - ./secrets/temporal-server/.env
     networks:
@@ -215,13 +222,13 @@ services:
     depends_on:
       - temporal
     environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CLI_ADDRESS=temporal:7233
+      <<: *temporal_env
     image: temporalio/admin-tools
     networks:
       [ ledger-network ]
     stdin_open: true
     tty: true
+    stop_grace_period: 4s
 
      #  ---
 
@@ -231,14 +238,14 @@ services:
     depends_on:
       - temporal
     environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-      - TEMPORAL_UI_PORT=8081
+      <<: *temporal_env
+      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+      TEMPORAL_UI_PORT: 8081
     image: temporalio/ui
     networks:
       [ ledger-network ]
-    ports:
-      - "8081:8081"  # todo expose
+    expose:
+      - "${TEMPORAL_UI_PORT}"
 
 networks:
     ledger-network:
