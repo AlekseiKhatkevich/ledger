@@ -118,3 +118,4 @@ secrets
 /.ipython
 /pyconsole.py
 /dynamicconfig/
+/etl/.python_history

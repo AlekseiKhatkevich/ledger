@@ -230,7 +230,7 @@ services:
     tty: true
     stop_grace_period: 4s
 
-     #  ---
+  #  ---
 
   temporal-ui:
     container_name: temporal-ui
@@ -246,6 +246,23 @@ services:
       [ ledger-network ]
     expose:
       - "${TEMPORAL_UI_PORT}"
+
+  #  ---
+
+  temporal-worker:
+    build: etl/.
+    container_name: temporal-worker
+    profiles: [main]
+    depends_on:
+      - temporal
+    environment:
+      <<: *temporal_env
+    networks:
+      [ ledger-network ]
+    restart: on-failure
+    volumes:
+      - ./etl:/app:Z
+
 
 networks:
     ledger-network:

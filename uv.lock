@@ -297,11 +297,17 @@ name = "etl"
 version = "0.1.0"
 source = { virtual = "etl" }
 dependencies = [
+    { name = "httpx" },
+    { name = "pydantic-settings" },
     { name = "temporalio" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "temporalio", specifier = ">=1.26.0" }]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic-settings", specifier = ">=2.13.1" },
+    { name = "temporalio", specifier = ">=1.26.0" },
+]
 
 [[package]]
 name = "executing"
