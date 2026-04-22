@@ -72,3 +72,10 @@ api-docs:
 [group('temporal')]
 temporal-ui:
     nohup xdg-open 'http://localhost:8081/' >/dev/null 2>&1 &
+
+#  build temporal worker
+[group('temporal')]
+[working-directory: 'etl']
+temporal-worker-build:
+    docker build  -t temporal-worker .
+

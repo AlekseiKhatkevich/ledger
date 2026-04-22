@@ -11,19 +11,19 @@ class TemporalSettings:
     TEMPORAL_ADDRESS: str = 'temporal:7233'
 
 
-class ExternalUrlSettings:
+class ExternalUrlsSettings:
     EXTERNAL_URL_COINS_LIST: HttpUrl
 
 
 @cache
 class Settings(
     TemporalSettings,
-    ExternalUrlSettings,
+    ExternalUrlsSettings,
     BaseSettings,
 ):
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
-        env_file=('etl/secrets/ext_url/.env',  ),
+        env_file=('secrets/ext_url/.env',  ),
         extra='ignore',
     )
 
