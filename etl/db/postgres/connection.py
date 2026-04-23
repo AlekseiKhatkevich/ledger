@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
+from sqlalchemy.ext.automap import AutomapBase
 
 from aux.mixins import Finalizable
 from config import settings, BasePostgresSettings
@@ -93,6 +94,10 @@ class DB(Finalizable):
     @property
     async def finalize(self) -> None:
         await self.close()
+
+    async def prepare_automap(self, base: AutomapBase) -> None:
+        async with self.engine.begin() as conn:
+            await conn.run_sync(lambda sync_conn: base.prepare(autoload_with=sync_conn))
 
 
 ledger_db: DB[T]
