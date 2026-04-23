@@ -1,35 +1,32 @@
 import os
 import secrets
-import weakref
 from contextlib import asynccontextmanager, aclosing
 from functools import cache, cached_property
 from typing import AsyncGenerator
-
-import anyio
 
 from sqlalchemy import NullPool, AsyncAdaptedQueuePool
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncConnection,
-    AsyncEngine, AsyncSession,
+    AsyncEngine,
+    AsyncSession,
 )
 
-from config import settings
-
+from config import settings, BasePostgresSettings
 
 __all__ = (
-    'db',
+    'ledger_db',
 )
 
 @cache
 class DB:
-    def __init__(self) -> None:
+    def __init__(self, db_settings: BasePostgresSettings) -> None:
+        self.db_settings = db_settings
         self.outer_connection: AsyncConnection | None = None
         self._cached_maker: async_sessionmaker |  None = None
 
-    @staticmethod
-    def _make_engine() -> AsyncEngine:
+    def _make_engine(self) -> AsyncEngine:
         # use NullPool for tests only
         match settings.POOL_CLASS:
             case 'null':
@@ -38,20 +35,20 @@ class DB:
                 pool_class = AsyncAdaptedQueuePool
 
         engine_kwargs = dict(
-            url=settings.PG_DSN,
-            echo=settings.POSTGRES_ECHO,
-            echo_pool=settings.ECHO_POOL,
+            url=self.db_settings.PG_DSN,
+            echo=self.db_settings.POSTGRES_ECHO,
+            echo_pool=self.db_settings.ECHO_POOL,
             poolclass=pool_class,
             execution_options={'logging_token': f'connect#: {secrets.token_hex(3)}', },
             connect_args={'server_settings': {'application_name': f'{settings.APP_NAME}:{os.getpid()}'}},
         )
         if pool_class is AsyncAdaptedQueuePool:
             engine_kwargs |= dict (
-                pool_pre_ping=settings.POOL_PRE_PING,
-                pool_timeout=settings.POOL_TIMEOUT,
-                pool_size=settings.POOL_SIZE,
-                max_overflow=settings.POOL_MAX_OVERFLOW,
-                pool_use_lifo=settings.POOL_USE_LIFO,
+                pool_pre_ping=self.db_settings.POOL_PRE_PING,
+                pool_timeout=self.db_settings.POOL_TIMEOUT,
+                pool_size=self.db_settings.POOL_SIZE,
+                max_overflow=self.db_settings.POOL_MAX_OVERFLOW,
+                pool_use_lifo=self.db_settings.POOL_USE_LIFO,
             )
         return create_async_engine(**engine_kwargs)
 
@@ -61,13 +58,6 @@ class DB:
 
     @asynccontextmanager
     async def make_outer_connection(self) -> AsyncGenerator[None]:
-        """
-        https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#
-        joining-a-session-into-an-external-transaction-such-as-for-test-suites
-
-        Makes outer transaction and merges current session inside it as a savepoint.
-        This behavior is similar to Django test suit.
-        """
         self.outer_connection = await self.engine.connect()
         transaction = await self.outer_connection.begin()
         try:
@@ -98,8 +88,8 @@ class DB:
         await self.engine.dispose()
 
 
-db: DB
+ledger_db: DB
 def __getattr__(name: str) -> DB:
-    if name == 'db':
-        return DB()
+    if name == 'ledger_db':
+        return DB(db_settings=settings.DB.LEDGER)
     raise AttributeError(f'Module {__name__} has no attribute {name}')

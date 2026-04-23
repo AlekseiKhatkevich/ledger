@@ -7,6 +7,7 @@ from sqlalchemy import URL
 
 __all__ = (
     'settings',
+    'BasePostgresSettings',
 )
 
 
@@ -46,21 +47,11 @@ class BasePostgresSettings:
 
 
 class LedgerPostgresSettings(BasePostgresSettings, BaseSettings):
-    pass
-    # model_config = SettingsConfigDict(
-    #     env_ignore_empty=True,
-    #     env_file=('secrets/db/ledger/.env',),
-    #     extra='ignore',
-    # )
+    model_config = SettingsConfigDict(frozen=True)
+
 
 class DbSettings(BaseSettings):
     LEDGER: LedgerPostgresSettings
-
-    # model_config = SettingsConfigDict(
-    #     env_ignore_empty=True,
-    #     env_file=('secrets/db/ledger/.env',),
-    #     extra='ignore',
-    # )
 
 @cache
 class Settings(
@@ -69,6 +60,7 @@ class Settings(
     BaseSettings,
 ):
     DB: DbSettings
+    APP_NAME: str = 'temporal_worker'
 
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
