@@ -1,7 +1,7 @@
 import asyncstdlib
 
 from repositories.external_urls import ExternalUrlsRepository
-
+from db.postgres.connection import ledger_db
 
 
 class UpsertCryptoTickersInDbUseCase:

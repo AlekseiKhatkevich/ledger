@@ -297,21 +297,23 @@ name = "etl"
 version = "0.1.0"
 source = { virtual = "etl" }
 dependencies = [
+    { name = "asyncpg" },
     { name = "asyncstdlib" },
     { name = "httpx" },
     { name = "ijson" },
     { name = "pydantic-settings" },
-    { name = "sqlalchemy" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "temporalio" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "asyncstdlib", specifier = ">=3.13.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ijson", specifier = ">=3.5.0" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
-    { name = "sqlalchemy", extras = ["async"], specifier = ">=2.0.46" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.46" },
     { name = "temporalio", specifier = ">=1.26.0" },
 ]
 
