@@ -1,7 +1,7 @@
 import asyncstdlib
 
+from db.postgres.models import LedgerModels
 from repositories.external_urls import ExternalUrlsRepository
-from db.postgres.connection import ledger_db
 
 
 class UpsertCryptoTickersInDbUseCase:
@@ -9,6 +9,7 @@ class UpsertCryptoTickersInDbUseCase:
     def __init__(self):
         self.batch_size = 1000
         self.ext_url_service = ExternalUrlsRepository()
+        # self.ledger_models = LedgerModels()
 
 
     async def execute(self) -> None:
