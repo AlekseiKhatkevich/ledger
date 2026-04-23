@@ -5,8 +5,10 @@ description = "Temporal ETL inner project"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "asyncstdlib>=3.13.1",
     "httpx>=0.28.1",
     "ijson>=3.5.0",
     "pydantic-settings>=2.13.1",
+    "sqlalchemy[async]>=2.0.46",
     "temporalio>=1.26.0",
 ]
