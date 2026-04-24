@@ -12,10 +12,10 @@ alias up := up-dev
 alias down := down-dev
 alias pytest := test
 
-#  start container
+#  start container, start without temporal -- just up main, start few profiles -- just up profile1,profile2,...
 [group('docker')]
-up-dev profile="main":
-    docker compose --profile {{profile}} up --watch
+up-dev *profiles="*": && down-dev
+    COMPOSE_PROFILES={{profiles}} docker compose up --watch
 
 #  force recreate container
 [group('docker')]
@@ -24,8 +24,8 @@ force-recreate:
 
 #  stop container
 [group('docker')]
-down-dev profile="main":
-    docker compose --profile {{profile}} down
+down-dev *profiles="*":
+    COMPOSE_PROFILES={{profiles}} docker compose down --remove-orphans
 
 #  build container
 [group('docker')]

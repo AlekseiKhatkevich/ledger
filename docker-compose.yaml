@@ -61,7 +61,7 @@ services:
     image: postgres:18
     container_name: my_postgres
     restart: unless-stopped
-    profiles: [main]
+    profiles: [main, temporal]
     command: [
       "postgres",
       "-c", "shared_buffers=8GB",
@@ -195,7 +195,7 @@ services:
   temporal:
     image: temporalio/auto-setup
     container_name: temporal
-    profiles: [main]
+    profiles: [temporal]
     depends_on:
       - postgres
     environment:
@@ -218,7 +218,7 @@ services:
 
   temporal-admin-tools:
     container_name: temporal-admin-tools
-    profiles: [main]
+    profiles: [temporal]
     depends_on:
       - temporal
     environment:
@@ -234,7 +234,7 @@ services:
 
   temporal-ui:
     container_name: temporal-ui
-    profiles: [main]
+    profiles: [temporal]
     depends_on:
       - temporal
     environment:
@@ -245,14 +245,14 @@ services:
     networks:
       [ ledger-network ]
     expose:
-      - "${TEMPORAL_UI_PORT}"
+      - 8081
 
   #  ---
 
   temporal-worker:
     build: etl/.
     container_name: temporal-worker
-    profiles: [main]
+    profiles: [temporal]
     depends_on:
       - temporal
     environment:
