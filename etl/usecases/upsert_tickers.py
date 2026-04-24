@@ -7,8 +7,8 @@ from repositories.external_urls import ExternalUrlsRepository
 
 class UpsertCryptoTickersInDbUseCase:
 
-    def __init__(self) -> None:
-        self.batch_size = 1000
+    def __init__(self, batch_size: int = 1000) -> None:
+        self.batch_size = batch_size
         self.ext_url_service = ExternalUrlsRepository()
         self.db_repository = LedgerDbRepository()
 

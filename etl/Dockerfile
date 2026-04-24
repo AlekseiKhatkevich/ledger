@@ -39,6 +39,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 
 # add uv run befor in case of env troubles, might help...
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "python3", "workers/ledger.py"]
 
 
