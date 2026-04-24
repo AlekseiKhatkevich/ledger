@@ -29,6 +29,7 @@ class DB(Finalizable):
         self.db_settings: T = db_settings
         self.outer_connection: AsyncConnection | None = None
         self._cached_maker: async_sessionmaker |  None = None
+        self._automap_completed: bool = False
 
     def _make_engine(self) -> AsyncEngine:
         # use NullPool for tests only
@@ -91,13 +92,16 @@ class DB(Finalizable):
     async def close(self, *_, **__) -> None:
         await self.engine.dispose()
 
-    @property
     async def finalize(self) -> None:
         await self.close()
 
-    async def prepare_automap(self, base: AutomapBase) -> None:
-        async with self.engine.begin() as conn:
-            await conn.run_sync(lambda sync_conn: base.prepare(autoload_with=sync_conn))
+    @asynccontextmanager
+    async def prepare_automap(self, base: AutomapBase) -> AsyncGenerator[bool]:
+        if not self._automap_completed:
+            async with self.engine.begin() as conn:
+                await conn.run_sync(lambda sync_conn: base.prepare(autoload_with=sync_conn))
+            self._automap_completed = True
+        yield self._automap_completed
 
 
 ledger_db: DB[T]

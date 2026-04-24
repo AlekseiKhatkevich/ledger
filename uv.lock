@@ -317,6 +317,9 @@ requires-dist = [
     { name = "temporalio", specifier = ">=1.26.0" },
 ]
 
+[package.metadata.requires-dev]
+dev = []
+
 [[package]]
 name = "executing"
 version = "2.2.1"

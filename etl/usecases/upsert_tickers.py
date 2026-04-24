@@ -1,15 +1,16 @@
+import anyio
 import asyncstdlib
 
-from db.postgres.models import LedgerModels
+from repositories.database.ledger import LedgerDbRepository
 from repositories.external_urls import ExternalUrlsRepository
 
 
 class UpsertCryptoTickersInDbUseCase:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.batch_size = 1000
         self.ext_url_service = ExternalUrlsRepository()
-        # self.ledger_models = LedgerModels()
+        self.db_repository = LedgerDbRepository()
 
 
     async def execute(self) -> None:
@@ -17,5 +18,8 @@ class UpsertCryptoTickersInDbUseCase:
                 self.ext_url_service.get_coins_list(),
                 self.batch_size,
         ):
-                pass
+                await self.db_repository.upsert_tickers(frozenset(batch))
 
+
+if __name__ == '__main__':
+    anyio.run(UpsertCryptoTickersInDbUseCase().execute)

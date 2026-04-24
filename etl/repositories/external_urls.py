@@ -8,6 +8,7 @@ from config import settings
 
 class ExternalUrlsRepository:
 
+# todo check etag , json backends
     @staticmethod
     async def get_coins_list() -> AsyncGenerator[str]:
         """Get list of crypto symbols (tickers). Seems like it might contain duplicates"""
@@ -16,5 +17,5 @@ class ExternalUrlsRepository:
                 resp.raise_for_status()
                 f = ijson.from_iter(resp.aiter_bytes())
                 objects = ijson.items(f, 'item.symbol')
-                async for symbol in (obj async for obj in objects):
+                async for symbol in objects:
                     yield symbol

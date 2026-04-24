@@ -65,7 +65,7 @@ class UserAssetAddress(Base):
 class AssetTicker(Base):
     __tablename__ = 'asset_tickers'
 
-    name: Mapped[Annotated[str, mapped_column(String(10), primary_key=True)]]
+    name: Mapped[Annotated[str, mapped_column(String(50), primary_key=True)]]
 
     __table_args__ = (
         CheckConstraint('name = upper(name)', name='name_is_upper'),
