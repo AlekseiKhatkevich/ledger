@@ -2,7 +2,7 @@ import os
 import secrets
 from contextlib import asynccontextmanager, aclosing
 from functools import cache, cached_property
-from typing import AsyncGenerator, TypeVar
+from typing import AsyncGenerator, Literal
 
 from sqlalchemy import NullPool, AsyncAdaptedQueuePool
 from sqlalchemy.ext.asyncio import (
@@ -21,10 +21,8 @@ __all__ = (
     'ledger_db',
 )
 
-T = TypeVar('T', bound=BasePostgresSettings)
-
 @cache
-class DB(Finalizable):
+class DB[T, bound=BasePostgresSettings](Finalizable):
     def __init__(self, db_settings: T) -> None:
         self.db_settings: T = db_settings
         self.outer_connection: AsyncConnection | None = None
@@ -95,8 +93,9 @@ class DB(Finalizable):
     async def finalize(self) -> None:
         await self.close()
 
+    # noinspection PyTypeChecker
     @asynccontextmanager
-    async def prepare_automap(self, base: AutomapBase) -> AsyncGenerator[bool]:
+    async def prepare_automap(self, base: AutomapBase) -> AsyncGenerator[Literal[True]]:
         if not self._automap_completed:
             async with self.engine.begin() as conn:
                 await conn.run_sync(lambda sync_conn: base.prepare(autoload_with=sync_conn))
@@ -104,8 +103,8 @@ class DB(Finalizable):
         yield self._automap_completed
 
 
-ledger_db: DB[T]
-def __getattr__(name: str) -> DB[T]:
+ledger_db: DB
+def __getattr__(name: str) -> DB:
     if name == 'ledger_db':
         return DB(db_settings=settings.DB.LEDGER)
     raise AttributeError(f'Module {__name__} has no attribute {name}')

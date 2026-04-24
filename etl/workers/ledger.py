@@ -11,13 +11,12 @@ with workflow.unsafe.imports_passed_through():
 
 
 async def main() -> None:
-
     worker_data = WorkerData(
         task_queue=LEDGER_TASK_QUEUE,
         workflows=[UpsertTicketsWorkflow, ],
         activities=[upsert_tickers, ],
     )
-    await start_worker(worker_data)
+    await start_worker(worker_data, True)
 
 
 if __name__ == "__main__":
