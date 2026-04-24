@@ -8,7 +8,7 @@ from config import settings
 
 class ExternalUrlsRepository:
 
-# todo check etag , json backends
+# todo check etag
     @staticmethod
     async def get_coins_list() -> AsyncGenerator[str]:
         """Get list of crypto symbols (tickers). Seems like it might contain duplicates"""

@@ -17,7 +17,9 @@ ENV PYTHONPATH=/app
 ENV HOME=/app
 
 RUN groupadd --system --gid 1000 nonroot \
-  && useradd --system --gid 1000 --uid 1000 --create-home nonroot
+  && useradd --system --gid 1000 --uid 1000 --create-home nonroot \
+  && apt-get update && apt-get install -y --no-install-recommends libyajl2\
+  && rm -rf /var/lib/apt/lists/*
 
 USER nonroot
 

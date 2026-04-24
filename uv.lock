@@ -299,6 +299,7 @@ source = { virtual = "etl" }
 dependencies = [
     { name = "asyncpg" },
     { name = "asyncstdlib" },
+    { name = "cffi" },
     { name = "httpx" },
     { name = "ijson" },
     { name = "pydantic-settings" },
@@ -310,6 +311,7 @@ dependencies = [
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "asyncstdlib", specifier = ">=3.13.1" },
+    { name = "cffi", specifier = ">=2.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ijson", specifier = ">=3.5.0" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
