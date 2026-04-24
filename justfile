@@ -76,6 +76,6 @@ temporal-ui:
 #  build temporal worker
 [group('temporal')]
 [working-directory: 'etl']
-temporal-worker-build:
-    docker build  -t temporal-worker .
+temporal-worker-rebuild:
+    docker compose build --no-cache temporal-worker
 
