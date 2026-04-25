@@ -9,7 +9,6 @@ x-extra: &temporal_env
   TEMPORAL_CLI_ADDRESS: temporal:7233
 
 
-
 services:
   backend-api:
     build: .
@@ -133,8 +132,9 @@ services:
     depends_on:
       - postgres
     ports:
-      - "5432:5432"
       - "9090:9090"
+    expose:
+      - "5432"
     env_file: secrets/pgcache/.env
     environment:
       NUM_WORKERS: 4
@@ -144,14 +144,25 @@ services:
       PGCACHE_TELEMETRY: off
 
   #  ---
+  haproxy:
+    image: haproxy:alpine
+    container_name: haproxy
+    restart: unless-stopped
+    profiles: [main, temporal]
+    volumes:
+      - ./aux/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5432:5432"
+      - "8404:8404"
+    networks: [ledger-network]
+    env_file:
+      - ./secrets/haproxy/.env
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     profiles: [main]
     expose:
-#     for health checking
-      - "9000"
-#      - "8080"
+      - "9000" #  for health checking
       - "8443"
     ports:
       - "8080:8080"
@@ -194,8 +205,6 @@ services:
       - "8000:8000"
       - "8001:8001"
       - "8081:8081" # temporal-ui
-#      - "8080:8080"
-#      - "8443:8443"
     volumes:
       - ./aux/caddy:/etc/caddy:ro
       - ./site:/srv:ro
@@ -219,6 +228,7 @@ services:
     image: temporalio/auto-setup
     container_name: temporal
     profiles: [temporal]
+    restart: unless-stopped
     depends_on:
       - postgres
     environment:
@@ -232,8 +242,10 @@ services:
       - ./secrets/temporal-server/.env
     networks:
       [ ledger-network ]
-    ports:
-      - "7233:7233"  # todo expose
+#    ports:
+#      - "7233:7233"  # todo expose
+    expose:
+      - "7233"
     volumes:
       - ./dynamicconfig:/etc/temporal/config/dynamicconfig
 
@@ -242,6 +254,7 @@ services:
   temporal-admin-tools:
     container_name: temporal-admin-tools
     profiles: [temporal]
+    restart: unless-stopped
     depends_on:
       - temporal
     environment:
@@ -258,6 +271,7 @@ services:
   temporal-ui:
     container_name: temporal-ui
     profiles: [temporal]
+    restart: unless-stopped
     depends_on:
       - temporal
     environment:

@@ -84,3 +84,8 @@ temporal-ui:
 temporal-worker-rebuild:
     docker compose build --no-cache temporal-worker
 
+#  HAProxy web UI (admin, 1q2w3e)
+[group('haproxy')]
+haproxy-web-ui:
+    nohup xdg-open http://localhost:8404/haproxy?stats >/dev/null 2>&1 &
+
