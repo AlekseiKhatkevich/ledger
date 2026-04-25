@@ -38,11 +38,6 @@ services:
       retries: 2
       start_period: 1s
     restart: unless-stopped
-#    depends_on:
-#      - postgres
-#      - caddy
-#      postgres:
-#        condition: service_healthy
     volumes:
       - ./alembic:/app/alembic:z
       - .:/app:Z
@@ -59,7 +54,7 @@ services:
 
   postgres:
     image: postgres:18
-    container_name: my_postgres
+    container_name: postgres
     restart: unless-stopped
     profiles: [main, temporal]
     command: [
@@ -133,6 +128,10 @@ services:
     container_name: pgcache
     restart: unless-stopped
     networks: [ ledger-network]
+    volumes:
+      - pgcache_data:/var/lib/postgresql
+    depends_on:
+      - postgres
     ports:
       - "5432:5432"
       - "9090:9090"
@@ -141,6 +140,8 @@ services:
       NUM_WORKERS: 4
       PUBLICATION: pgcache_pub
       SLOT: pgcache_slot
+      LOG_LEVEL: debug
+      PGCACHE_TELEMETRY: off
 
   #  ---
 
@@ -292,6 +293,7 @@ networks:
 
 volumes:
   postgres_data:
+  pgcache_data:
   keycloak_data:
   caddy_data:
   caddy_config:
