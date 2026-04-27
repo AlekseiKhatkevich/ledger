@@ -13,6 +13,7 @@ __all__ = (
 
 class TemporalSettings:
     TEMPORAL_ADDRESS: str = 'temporal:7233'
+    TEMPORAL_NAMESPACE: str = 'default'
 
 
 class ExternalUrlsSettings:

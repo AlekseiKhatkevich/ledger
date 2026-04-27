@@ -9,7 +9,6 @@ with workflow.unsafe.imports_passed_through():
     from workers.base import start_worker, WorkerData
 
 
-
 async def main() -> None:
     worker_data = WorkerData(
         task_queue=LEDGER_TASK_QUEUE,

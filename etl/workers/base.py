@@ -2,6 +2,7 @@ import contextlib
 import datetime
 from concurrent.futures import ThreadPoolExecutor, Executor
 from dataclasses import dataclass, field, fields
+from functools import cache
 from typing import Callable
 
 from temporalio.client import Client, ScheduleAlreadyRunningError
@@ -27,8 +28,12 @@ class WorkerData:
     graceful_shutdown_timeout: datetime.timedelta = datetime.timedelta(seconds=60)
 
 
+@cache
+async def get_client(addr: str) -> Client:
+    return await Client.connect(addr)
+
 async def start_worker(worker_data: WorkerData, create_schedules: bool=False) -> None:
-    client = await Client.connect(settings.TEMPORAL_ADDRESS)
+    client = await get_client(settings.TEMPORAL_ADDRESS)
 
     worker = Worker(
         client,

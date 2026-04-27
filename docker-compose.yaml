@@ -259,6 +259,8 @@ services:
     container_name: temporal-admin-tools
     profiles: [temporal]
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "temporal operator cluster health 2>&1 | grep -Fxq 'SERVING' || exit 1" ]
     depends_on:
       - temporal
     environment:
@@ -276,6 +278,12 @@ services:
     container_name: temporal-ui
     profiles: [temporal]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q -T 5 --tries=1 http://temporal-ui:8081/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       - temporal
     environment:
@@ -294,6 +302,8 @@ services:
     build: etl/.
     container_name: temporal-worker
     profiles: [temporal]
+    healthcheck:
+      test: ["CMD-SHELL", "python3 workers/healtcheck/ledger.py || exit 1"]
     depends_on:
       - temporal
     environment:
