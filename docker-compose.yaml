@@ -103,8 +103,6 @@ services:
       "-c", "idle_session_timeout=5min"
     ]
     env_file: secrets/postgres/.env
-#    ports:
-#      - "5432:5432"
     expose:
       - "5432"
     volumes:
@@ -126,24 +124,25 @@ services:
     profiles: [main, temporal]
     container_name: pgcache
     restart: unless-stopped
-    networks: [ ledger-network]
+    networks: [ledger-network]
     volumes:
       - pgcache_data:/var/lib/postgresql
     depends_on:
       - postgres
-    ports:
-      - "9090:9090"
     expose:
       - "5432"
+      - "9090"
     env_file: secrets/pgcache/.env
     environment:
       NUM_WORKERS: 4
       PUBLICATION: pgcache_pub
       SLOT: pgcache_slot
-      LOG_LEVEL: debug
+      LOG_LEVEL: info
       PGCACHE_TELEMETRY: off
+      METRICS_PORT: 9090
 
   #  ---
+
   haproxy:
     image: haproxy:alpine
     container_name: haproxy
@@ -153,8 +152,11 @@ services:
       - ./aux/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "5432:5432"
-      - "8404:8404"
+    expose:
+      - "8404"
     networks: [ledger-network]
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q -T 2 http://haproxy:8404/healthz || exit 1"]
     env_file:
       - ./secrets/haproxy/.env
 
@@ -205,6 +207,7 @@ services:
       - "8000:8000"
       - "8001:8001"
       - "8081:8081" # temporal-ui
+      - "8404:8404" # HAproxy web ui
     volumes:
       - ./aux/caddy:/etc/caddy:ro
       - ./site:/srv:ro
@@ -229,6 +232,9 @@ services:
     container_name: temporal
     profiles: [temporal]
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "temporal operator cluster health 2>&1 | grep -Fxq 'SERVING' || exit 1" ]
+      start_period: 5s
     depends_on:
       - postgres
     environment:
@@ -242,8 +248,6 @@ services:
       - ./secrets/temporal-server/.env
     networks:
       [ ledger-network ]
-#    ports:
-#      - "7233:7233"  # todo expose
     expose:
       - "7233"
     volumes:

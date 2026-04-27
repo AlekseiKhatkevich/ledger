@@ -35,7 +35,7 @@
             }
 
 (handle_401_response) {
-     @bad_auth status 401
+    @bad_auth status 401
     handle_response @bad_auth {
         respond "Token is invalid or outdated" 401
         copy_response_headers * {
@@ -121,4 +121,9 @@
 #  temporal web ui
 :8081 {
     reverse_proxy temporal-ui:8081
+}
+
+#  HAproxy web ui
+:8404 {
+    reverse_proxy haproxy:8404
 }
