@@ -131,7 +131,8 @@ services:
       - postgres
     expose:
       - "5432"
-      - "9090"
+    ports:
+      - "9090:9090"
     env_file: secrets/pgcache/.env
     environment:
       NUM_WORKERS: 4
@@ -139,7 +140,7 @@ services:
       SLOT: pgcache_slot
       LOG_LEVEL: info
       PGCACHE_TELEMETRY: off
-      METRICS_PORT: 9090
+      METRICS_PORT: "9090"
 
   #  ---
 

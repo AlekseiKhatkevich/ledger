@@ -9,9 +9,10 @@ from user.domain import (UserLoginPayload,
                          Keycloak401Response,
                          User as KC_User,
                          KeyCloakRefreshToken,
-                         UserCreateIn, User, CreatedUserOut,
+                         UserCreateIn,
+                         CreatedUserOut,
                          )
-from user.dto import UserLoginReturnDTO, UserCreateInDTO, UserOutDTO, CreatedUserOutDTO
+from user.dto import UserLoginReturnDTO, UserCreateInDTO, CreatedUserOutDTO
 from user.usecases.keycloak_create_user import KeyCloakCreateUserUseCase
 from user.usecases.keycloaklogin import KeyCloakLoginUseCase
 from user.usecases.keycloakrefresh import KeyCloakRefreshUseCase
