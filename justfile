@@ -32,6 +32,11 @@ down-dev *profiles="*":
 build:
     docker compose build
 
+# restart ledger-api service
+[group('docker')]
+restart name="backend-api":
+    docker compose restart {{name}}
+
 #  remove dangling volumes
 [group('docker')]
 rm-volumes:

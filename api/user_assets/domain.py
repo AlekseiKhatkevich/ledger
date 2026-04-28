@@ -5,11 +5,13 @@ from litestar.dto import DataclassDTO, DTOConfig
 
 
 @dataclass
-class UserAsset:
+class UserAssetData:
     name: str
     ticker_id: str
     user_id: uuid.UUID
 
-class UserAssetDto(DataclassDTO[UserAsset]):
-    config = DTOConfig(exclude={ 'user_id', })
+    def __post_init__(self) -> str:
+        self.ticker_id = self.ticker_id.upper()
 
+class UserAssetDto(DataclassDTO[UserAssetData]):
+    config = DTOConfig(exclude={'user_id', })

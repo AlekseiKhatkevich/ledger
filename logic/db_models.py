@@ -130,7 +130,7 @@ class UserAsset(Base):
     user_id: Mapped[uuid.UUID]  # from KeyCloak
 
     __table_args__ = (
-        UniqueConstraint('user_id', 'ticker_id', ),
+        UniqueConstraint('user_id', 'ticker_id', name='user_asset_uq'),
     )
 
     def __repr__(self) -> str:
