@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from tests import constants
+import constants
 
 
 async def test_user_asset_address_positive(

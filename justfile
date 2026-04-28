@@ -76,12 +76,12 @@ test path='' skip-alembic='--skip-alembic' *flags:
 # open api docs
 [group('api')]
 api-docs:
-    xdg-open https://localhost:8000/docs
+    nohup xdg-open https://localhost:8000/docs >/dev/null 2>&1 &
 
 # open temporal web ui
 [group('temporal')]
 temporal-ui:
-    nohup xdg-open 'http://localhost:8081/' >/dev/null 2>&1 &
+    nohup xdg-open 'https://localhost:8081/' >/dev/null 2>&1 &
 
 #  build temporal worker
 [group('temporal')]
