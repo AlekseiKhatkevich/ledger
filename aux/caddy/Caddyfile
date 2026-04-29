@@ -74,7 +74,6 @@
             }
         }
 
-
     @login+refresh {
         method POST
         path /user/login /user/refresh

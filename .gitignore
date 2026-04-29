@@ -111,7 +111,6 @@ patroni
 secrets
 /data/
 /fastapi-keycloak/
-/site/
 *.pem
 *.crt
 /.python_history

@@ -38,7 +38,7 @@ app: Litestar = Litestar(
     plugins=[
         OpenTelemetryPlugin(open_telemetry_config),
         StructlogPlugin(),
-        ProblemDetailsPlugin(ProblemDetailsConfig()),
+        ProblemDetailsPlugin(ProblemDetailsConfig(enable_for_all_http_exceptions=True)),
     ],
     debug=settings.DEBUG,
     on_startup=lifespan.on_startup,

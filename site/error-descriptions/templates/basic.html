@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Problem: out-of-credit</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;max-width:780px;margin:36px auto;padding:18px;color:#111;background:#fff}
+    h1{margin:0 0 6px;font-size:1.6rem}
+    p.lead{margin:6px 0 18px;color:#444}
+    section{margin-top:18px}
+    pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto}
+    dl{display:grid;grid-template-columns:140px 1fr;gap:8px 16px}
+    dt{font-weight:600;color:#333}
+    dd{margin:0;color:#222}
+    .meta{font-size:0.95rem;color:#666;margin-top:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>out-of-credit</h1>
+    <p class="lead">The account does not have sufficient credit to complete the requested operation.</p>
+  </header>
+
+  <section>
+    <h2>Short details</h2>
+    <dl>
+      <dt>Summary</dt><dd>Insufficient funds on customer's account.</dd>
+      <dt>Suggested status</dt><dd>403 (Forbidden)</dd>
+      <dt>Severity</dt><dd>Medium</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Human-readable description</h2>
+    <p>
+      The request cannot be completed because the customer's balance is lower than the required amount.
+      Inform the user of their current balance and provide steps to top up or retry with a different payment method.
+    </p>
+  </section>
+
+  <section>
+    <h2>Actionable guidance</h2>
+    <ul>
+      <li>Show current balance and the required amount.</li>
+      <li>Offer actions: "Add funds", "Use different payment method", "Contact support".</li>
+      <li>Log this event with account ID and attempted charge amount.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Example (JSON snippet)</h2>
+    <pre>{
+  "type": "https://example.com/problems/out-of-credit",
+  "title": "You do not have enough credit.",
+  "status": 403,
+  "detail": "Your current balance is 30, but that costs 50.",
+  "balance": 30,
+  "required": 50
+}</pre>
+  </section>
+
+  <footer class="meta">
+    <p>Replace texts and values with your service-specific wording and links to payment/top-up flows.</p>
+  </footer>
+</body>
+</html>
