@@ -8,7 +8,7 @@ from litestar.plugins.problem_details import ProblemDetailsException
 from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
 
-from api.common_domain import CommonErrorResponse
+from api.common_domain import CommonErrorResponse, ProblemDetailResponse
 from api.user_assets.domain import UserAssetData, UserAssetDto
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
 from logic.usecases.user_asset_upsert import UserAssetUpsertUseCase
@@ -61,7 +61,7 @@ class UserAssetCrudController(Controller):
         http_method=["POST", "PUT",],
         responses={
             HTTP_400_BAD_REQUEST: ResponseSpec(
-                data_container=CommonErrorResponse,
+                data_container=ProblemDetailResponse,
                 description='Wrong or unknown ticker',
             )
         }
