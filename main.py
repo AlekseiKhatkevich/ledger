@@ -5,6 +5,7 @@ from litestar.middleware import DefineMiddleware
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.openapi.spec import Components, SecurityScheme
+from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetailsPlugin
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
@@ -16,7 +17,6 @@ from config import settings
 from user.auth.keycloack_middleware import JWTAuthenticationMiddleware
 from user.controllers import UserController
 from user.dependencies import keycloak_user
-from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetailsException, ProblemDetailsPlugin
 
 resource = Resource(attributes={SERVICE_NAME: settings.APP_NAME})
 provider = TracerProvider(resource=resource)

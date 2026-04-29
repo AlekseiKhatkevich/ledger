@@ -14,5 +14,5 @@ class BaseUserAssetRepository(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def upsert(self, data: UserAssetData) -> None:
+    async def upsert(self, data: UserAssetData) -> int | None:
         pass

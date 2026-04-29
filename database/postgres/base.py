@@ -16,6 +16,10 @@ class Base(AsyncAttrs, MappedAsDataclass, DeclarativeBase):
         Literal: postgresql.ENUM(validate_strings=True, native_enum=True),
     }
 
-    def as_fields_dict(self) -> dict[str, Any]:
+    def as_fields_dict(self, exclude: set | None = None) -> dict[str, Any]:
         # noinspection PyTypeChecker
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        exclude = exclude or set()
+        return {
+            c.name: getattr(self, c.name)
+            for c in self.__table__.columns if c.name not in exclude
+        }

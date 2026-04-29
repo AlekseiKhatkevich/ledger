@@ -13,13 +13,16 @@ from logic.repositories.user_asset import BaseUserAssetRepository
 class PostgresUserAssetRepository(PostgresBaseRepository, BaseUserAssetRepository):
     model = UserAsset
 
-    async def upsert(self, data: UserAssetData) -> None:
+    async def upsert(self, data: UserAssetData) ->  int | None:
         insert_stmt = insert(self.model).values(**asdict(data))
         on_conflict_stmt = insert_stmt.on_conflict_do_update(
             index_elements=['user_id', 'ticker_id',],
             set_=dict(name=insert_stmt.excluded.name),
             where=self.model.name.is_distinct_from(insert_stmt.excluded.name),
+        ).returning(
+            self.model.id,
         )
         async with self.db.session() as session:
-            await session.execute(on_conflict_stmt)
+            resp = await session.scalar(on_conflict_stmt)
             await session.commit()
+            return resp

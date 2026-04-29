@@ -4,5 +4,5 @@ from database.postgres.repositories.user_asset import PostgresUserAssetRepositor
 
 class UserAssetUpsertUseCase:
     @staticmethod
-    async def execute(data: UserAssetData) -> None:
+    async def execute(data: UserAssetData) ->  int | None:
         return await PostgresUserAssetRepository().upsert(data)

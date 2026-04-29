@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 pytest_plugins = [
     'tests.user.fixtures',
     'tests.logic.db_models.fixtures',
+    'tests.logic.domain.fixtures',
 ]
 
 def pytest_addoption(parser):
