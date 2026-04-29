@@ -1,10 +1,10 @@
 import subprocess
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, AsyncGenerator
+from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator
 
 import pytest
 from _pytest.fixtures import FixtureRequest
-from litestar.testing import TestClient
+from litestar.testing import TestClient, AsyncTestClient
 from sqlalchemy.util import greenlet_spawn
 
 from database.postgres.connection import db as _db, DB
@@ -23,8 +23,8 @@ def pytest_addoption(parser):
     parser.addoption("--skip-alembic", action="store_true", help="Skip running alembic migrations")
 
 @pytest.fixture
-def test_client_no_auth(app) -> Iterator[TestClient[Litestar]]:
-    with TestClient(app=app) as client:
+async def test_client_no_auth(app) -> AsyncIterator[AsyncTestClient[Litestar]]:
+    async with AsyncTestClient(app=app) as client:
         yield client
 
 @pytest.fixture(scope='session')
@@ -47,7 +47,7 @@ def good_jwt_token_str() -> str:
             'Bjd4DsgCZlcZu4avMnsg')
 
 @pytest.fixture
-def test_client(test_client_no_auth, good_jwt_token_str) -> Iterator[TestClient[Litestar]]:
+async def test_client(test_client_no_auth, good_jwt_token_str) -> AsyncIterator[AsyncTestClient[Litestar]]:
         test_client_no_auth.headers = {'Authorization': f'Bearer {good_jwt_token_str}'}
         yield test_client_no_auth
 

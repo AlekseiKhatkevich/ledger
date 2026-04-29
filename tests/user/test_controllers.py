@@ -5,22 +5,22 @@ from user.controllers import UserController
 from user.domain import CreatedUserOut
 
 
-def test_userinfo(test_client, kc_userinfo_response):
-    response = test_client.get(
+async def test_userinfo(test_client, kc_userinfo_response):
+    response = await test_client.get(
         UserController.path + '/via-backend',
     )
     assert response.status_code == HTTP_200_OK
     assert response.json() == kc_userinfo_response
 
 
-def test_create_user(
+async def test_create_user(
         test_client_no_auth,
         user_create_in,
         kc_create_new_user_api_mock,
         kc_get_user_api_mock,
         kc_auth,
 ):
-    response = test_client_no_auth.post(
+    response = await test_client_no_auth.post(
         UserController.path + '/create',
         json=msgspec.to_builtins(user_create_in),
     )
