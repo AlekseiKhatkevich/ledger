@@ -61,6 +61,20 @@
     #   valid until 24.03.27
     tls /etc/caddy/ncert.pem /etc/caddy/nkey.pem
 
+    # STATIC FILES
+    @static {
+        path /error-descriptions/* /assets/*
+        method GET HEAD
+        }
+
+    handle @static {
+        root * /srv
+        file_server {
+            hide /error-descriptions/templates/*
+            }
+        }
+
+
     @login+refresh {
         method POST
         path /user/login /user/refresh
