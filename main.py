@@ -16,6 +16,7 @@ from config import settings
 from user.auth.keycloack_middleware import JWTAuthenticationMiddleware
 from user.controllers import UserController
 from user.dependencies import keycloak_user
+from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetailsException, ProblemDetailsPlugin
 
 resource = Resource(attributes={SERVICE_NAME: settings.APP_NAME})
 provider = TracerProvider(resource=resource)
@@ -34,7 +35,11 @@ async def root() -> str:
 
 app: Litestar = Litestar(
     [root, aux_router, UserController, UserAssetCrudController],
-    plugins=[OpenTelemetryPlugin(open_telemetry_config), StructlogPlugin(),],
+    plugins=[
+        OpenTelemetryPlugin(open_telemetry_config),
+        StructlogPlugin(),
+        ProblemDetailsPlugin(ProblemDetailsConfig()),
+    ],
     debug=settings.DEBUG,
     on_startup=lifespan.on_startup,
     on_shutdown=lifespan.on_shutdown,

@@ -93,4 +93,3 @@ temporal-worker-rebuild:
 [group('haproxy')]
 haproxy-web-ui:
     nohup xdg-open http://localhost:8404/haproxy?stats >/dev/null 2>&1 &
-
