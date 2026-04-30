@@ -52,11 +52,11 @@ async def asset_ticker_in_db(asset_ticker_factory: AssetTickerFactory) -> AssetT
 async def user_asset_in_db(
         user_asset_factory: UserAssetFactory,
         asset_ticker_in_db: AssetTicker,
-        user: User,
+        jwt_user: User,
 ) -> UserAsset:
     return await user_asset_factory.create_async(
         ticker_id=asset_ticker_in_db.name,
-        user_id=user.id,
+        user_id=jwt_user.id,
     )
 
 @pytest.fixture

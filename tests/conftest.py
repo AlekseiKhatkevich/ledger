@@ -51,7 +51,7 @@ def good_jwt_token_str() -> str:
 
 
 @pytest.fixture(scope='session')
-def user(good_jwt_token_str) -> User:
+def jwt_user(good_jwt_token_str) -> User:
     jwt = JWT(jwt=good_jwt_token_str)
     payload = jwt.token.objects['payload']
     return msgspec.json.decode(payload, type=User)
