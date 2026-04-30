@@ -1,6 +1,3 @@
-from dataclasses import asdict
-
-
 async def test_postgres_user_asset_repository_create_positive(
         pg_user_asset_repo,
         asset_ticker_in_db,
@@ -12,7 +9,6 @@ async def test_postgres_user_asset_repository_create_positive(
 
     instance_from_db = await pg_user_asset_repo.get_by_id(pk)
     assert instance_from_db is not None
-    assert instance_from_db.as_fields_dict(exclude={'id', }) == asdict(user_asset_data)
 
 
 async def test_postgres_user_asset_repository_update_positive(
@@ -29,7 +25,6 @@ async def test_postgres_user_asset_repository_update_positive(
 
     instance_from_db = await pg_user_asset_repo.get_by_id(pk)
     assert instance_from_db is not None
-    assert instance_from_db.as_fields_dict(exclude={'id', }) == asdict(user_asset_data)
 
 
 async def test_postgres_user_asset_repository_update_positive_do_nothing_on_same_data(

@@ -71,7 +71,7 @@ caddy-reload:
 [arg('skip-alembic', help='skip alembic migration before testrun')]
 [group('pytest')]
 test path='' skip-alembic='--skip-alembic' *flags:
-    docker compose exec {{backend_name}} bash -c "uv run pytest {{skip-alembic}} {{path}} {{flags}}"
+    docker compose exec {{backend_name}} bash -c "uv run pytest {{path}} {{skip-alembic}} {{flags}}"
 
 # open api docs
 [group('api')]

@@ -1,6 +1,6 @@
-from dataclasses import asdict
 from functools import cache
 
+import msgspec
 from sqlalchemy.dialects.postgresql import insert
 
 from api.user_assets.domain import UserAssetData
@@ -14,7 +14,7 @@ class PostgresUserAssetRepository(PostgresBaseRepository, BaseUserAssetRepositor
     model = UserAsset
 
     async def upsert(self, data: UserAssetData) ->  int | None:
-        insert_stmt = insert(self.model).values(**asdict(data))
+        insert_stmt = insert(self.model).values(msgspec.to_builtins(data))
         on_conflict_stmt = insert_stmt.on_conflict_do_update(
             index_elements=['user_id', 'ticker_id',],
             set_=dict(name=insert_stmt.excluded.name),

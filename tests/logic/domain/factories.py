@@ -1,10 +1,10 @@
 from faker import Faker
-from polyfactory.factories import DataclassFactory
+from polyfactory.factories.msgspec_factory import MsgspecFactory
 
 from api.user_assets.domain import UserAssetData
 
 
-class CustomFactory[T](DataclassFactory[T]):
+class CustomFactory[T](MsgspecFactory[T]):
     __is_base_factory__ = True
     __faker__ = Faker(locale='ru_RU')
     __randomize_collection_length__ = True
