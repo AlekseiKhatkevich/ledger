@@ -160,8 +160,8 @@ services:
       - "5432:5432"
       - "8000:8000"
       - "8001:8001"
-    expose:
-      - "8404"
+      - "8404:8404"
+      - "8081:8081"
     networks: [ledger-network]
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q -T 2 http://haproxy:8404/healthz || exit 1"]
@@ -212,11 +212,6 @@ services:
   caddy:
     image: caddy:2.11-alpine
     restart: unless-stopped
-    ports:
-#      - "8000:8000"
-#      - "8001:8001"
-      - "8081:8081" # temporal-ui
-      - "8404:8404" # HAproxy web ui
     expose:
       - "8000"
       - "8001"
@@ -306,7 +301,7 @@ services:
     networks:
       [ ledger-network ]
     expose:
-      - 8081
+      - "8081"
 
   #  ---
 

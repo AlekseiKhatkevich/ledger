@@ -130,13 +130,3 @@
         }
     }
 }
-
-#  temporal web ui
-:8081 {
-    reverse_proxy temporal-ui:8081
-}
-
-#  HAproxy web ui
-:8404 {
-    reverse_proxy haproxy:8404
-}

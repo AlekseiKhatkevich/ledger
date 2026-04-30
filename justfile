@@ -81,7 +81,7 @@ api-docs:
 # open temporal web ui
 [group('temporal')]
 temporal-ui:
-    nohup xdg-open 'https://localhost:8081/' >/dev/null 2>&1 &
+    nohup xdg-open 'http://localhost:8081/' >/dev/null 2>&1 &
 
 #  build temporal worker
 [group('temporal')]
