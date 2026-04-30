@@ -40,6 +40,9 @@ services:
     volumes:
       - ./alembic:/app/alembic:z
       - .:/app:Z
+    depends_on:
+      keycloak:
+        condition: service_healthy
     develop:
       watch:
         - action: sync+restart
@@ -194,10 +197,11 @@ services:
         "CMD-SHELL",
         "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"
       ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
+      interval: 3s
+      start_interval: 1s
+      timeout: 1s
+      retries: 10
+      start_period: 20s
 
     #  ---
 
