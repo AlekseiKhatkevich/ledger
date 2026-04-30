@@ -59,7 +59,7 @@
         }
 
     #   valid until 24.03.27
-    tls /etc/caddy/ncert.pem /etc/caddy/nkey.pem
+#    tls /etc/caddy/ncert.pem /etc/caddy/nkey.pem
 
     # STATIC FILES
     @static {
@@ -119,7 +119,7 @@
             @good_auth status 200
             handle_response @good_auth {
                 reverse_proxy backend-api:8000 {
-                    import ledger_healthcheck
+#                    import ledger_healthcheck
     #                proxy same client with same openid token to a same pod
                     lb_policy header Bearer {
                         fallback least_conn

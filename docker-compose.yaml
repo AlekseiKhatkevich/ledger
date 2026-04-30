@@ -155,8 +155,11 @@ services:
     profiles: [main, temporal]
     volumes:
       - ./aux/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./aux/haproxy/certs/example.com.pem:/usr/local/etc/haproxy/example.com.pem:ro
     ports:
       - "5432:5432"
+      - "8000:8000"
+      - "8001:8001"
     expose:
       - "8404"
     networks: [ledger-network]
@@ -210,10 +213,13 @@ services:
     image: caddy:2.11-alpine
     restart: unless-stopped
     ports:
-      - "8000:8000"
-      - "8001:8001"
+#      - "8000:8000"
+#      - "8001:8001"
       - "8081:8081" # temporal-ui
       - "8404:8404" # HAproxy web ui
+    expose:
+      - "8000"
+      - "8001"
     volumes:
       - ./aux/caddy:/etc/caddy:ro
       - ./site:/srv:ro
