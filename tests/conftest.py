@@ -1,10 +1,10 @@
 import subprocess
-from collections.abc import Iterator
 from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator
 
+import httpx
 import pytest
 from _pytest.fixtures import FixtureRequest
-from litestar.testing import TestClient, AsyncTestClient
+from litestar.testing import AsyncTestClient
 from sqlalchemy.util import greenlet_spawn
 
 from database.postgres.connection import db as _db, DB
@@ -47,9 +47,23 @@ def good_jwt_token_str() -> str:
             'Bjd4DsgCZlcZu4avMnsg')
 
 @pytest.fixture
-async def test_client(test_client_no_auth, good_jwt_token_str) -> AsyncIterator[AsyncTestClient[Litestar]]:
+async def test_client(test_client_no_auth, good_jwt_token_str) -> AsyncIterator[AsyncTestClient[Litestar]] :
         test_client_no_auth.headers = {'Authorization': f'Bearer {good_jwt_token_str}'}
         yield test_client_no_auth
+
+@pytest.fixture
+async def httpx_test_client(app, good_jwt_token_str) -> AsyncIterator[httpx.AsyncClient]:
+    """
+    Default Litestar async test client uses Anyio blocking portal which starts everything in a separate thread.
+    This has a conflict with sa connection.begin method.
+    https://github.com/litestar-org/litestar/issues/1920
+
+    Note: it seems like Lifespan is not used in this scenario.
+    """
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url='http://testserver') as client:
+        client.headers = {'Authorization': f'Bearer {good_jwt_token_str}'}
+        yield client
 
 @pytest.fixture(scope='session')
 def app() -> Litestar:

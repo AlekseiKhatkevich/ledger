@@ -19,10 +19,9 @@ class PostgresUserAssetRepository(PostgresBaseRepository, BaseUserAssetRepositor
             index_elements=['user_id', 'ticker_id',],
             set_=dict(name=insert_stmt.excluded.name),
             where=self.model.name.is_distinct_from(insert_stmt.excluded.name),
-        ).returning(
-            self.model.id,
-        )
+        ).returning(self.model.id)
+
         async with self.db.session() as session:
             resp = await session.scalar(on_conflict_stmt)
             await session.commit()
-            return resp
+        return resp
