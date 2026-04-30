@@ -42,6 +42,10 @@ class User:
     email_verified: bool
     sub: uuid.UUID
 
+    @property
+    def id(self) -> uuid.UUID:
+        return self.sub
+
 @dataclass
 class UserCreateIn:
     email: str

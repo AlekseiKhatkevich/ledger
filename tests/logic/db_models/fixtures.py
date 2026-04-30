@@ -13,6 +13,7 @@ from tests.logic.db_models.factories import (
     UserAssetFactory,
     UserAssetOperationFactory,
 )
+from user.domain import User
 
 if TYPE_CHECKING:
     from logic.db_models import UserAssetAddress, AssetTicker, UserAsset, UserAssetOperation
@@ -48,8 +49,15 @@ async def asset_ticker_in_db(asset_ticker_factory: AssetTickerFactory) -> AssetT
     return await asset_ticker_factory.create_async()
 
 @pytest.fixture
-async def user_asset_in_db(user_asset_factory: UserAssetFactory, asset_ticker_in_db: AssetTicker) -> UserAsset:
-    return await user_asset_factory.create_async(ticker_id=asset_ticker_in_db.name)
+async def user_asset_in_db(
+        user_asset_factory: UserAssetFactory,
+        asset_ticker_in_db: AssetTicker,
+        user: User,
+) -> UserAsset:
+    return await user_asset_factory.create_async(
+        ticker_id=asset_ticker_in_db.name,
+        user_id=user.id,
+    )
 
 @pytest.fixture
 async def user_asset_operation_in_db(

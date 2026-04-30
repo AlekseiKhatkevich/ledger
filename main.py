@@ -32,8 +32,8 @@ auth_mw = DefineMiddleware(
 async def root() -> str:
     return "ROOT"
 
-
-app: Litestar = Litestar(
+def create_app() -> Litestar:
+    return Litestar(
     [root, aux_router, UserController, UserAssetCrudController],
     plugins=[
         OpenTelemetryPlugin(open_telemetry_config),
@@ -63,3 +63,5 @@ app: Litestar = Litestar(
         ),
     ),
 )
+
+app = create_app()

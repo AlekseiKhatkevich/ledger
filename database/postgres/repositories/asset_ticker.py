@@ -10,4 +10,4 @@ class PostgresAssetTickerRepository(BaseAssetTickerRepository, PostgresBaseRepos
     model = AssetTicker
 
     async def get_by_name(self, name: str) -> AssetTicker:
-        return await self._get_by_field_name(field_name='name', value=name)
+        return await self.get_by_field_names(field_name='name', value=name)

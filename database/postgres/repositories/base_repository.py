@@ -12,10 +12,9 @@ class PostgresBaseRepository[T, bound=Base]:
     def __init__(self, db: DB = _db) -> None:
         self.db = db
 
-    async def _get_by_field_name(self, field_name: str, value: Any) -> T:
-        field = getattr(self.model, field_name)
+    async def get_by_field_names(self, **conditions) -> T:
         async with self.db.session() as session:
-            return await session.scalar(select(self.model).where(field == value))
+            return await session.scalar(select(self.model).filter_by(**conditions))
 
     async def get_by_id(self, /, _id: int) -> T:
-        return await self._get_by_field_name('id', _id)
+        return await self.get_by_field_names(id=_id)

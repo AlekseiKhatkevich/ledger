@@ -2,13 +2,16 @@ import subprocess
 from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator
 
 import httpx
+import msgspec
 import pytest
 from _pytest.fixtures import FixtureRequest
+from jwcrypto.jwt import JWT
 from litestar.testing import AsyncTestClient
 from sqlalchemy.util import greenlet_spawn
 
 from database.postgres.connection import db as _db, DB
-from main import app as ls_app
+from main import create_app
+from user.domain import User
 
 if TYPE_CHECKING:
     from litestar import Litestar
@@ -46,6 +49,14 @@ def good_jwt_token_str() -> str:
             '7gie1N78mc2QUlArzyzVcoTRVPy_bb-fADTNzGkkIWPIw5_37-G1NQZYTmj2nGqTaikiZ8TpqQ0eKiPGg5kecKRRP'
             'Bjd4DsgCZlcZu4avMnsg')
 
+
+@pytest.fixture(scope='session')
+def user(good_jwt_token_str) -> User:
+    jwt = JWT(jwt=good_jwt_token_str)
+    payload = jwt.token.objects['payload']
+    return msgspec.json.decode(payload, type=User)
+
+
 @pytest.fixture
 async def test_client(test_client_no_auth, good_jwt_token_str) -> AsyncIterator[AsyncTestClient[Litestar]] :
         test_client_no_auth.headers = {'Authorization': f'Bearer {good_jwt_token_str}'}
@@ -65,10 +76,11 @@ async def httpx_test_client(app, good_jwt_token_str) -> AsyncIterator[httpx.Asyn
         client.headers = {'Authorization': f'Bearer {good_jwt_token_str}'}
         yield client
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def app() -> Litestar:
-    ls_app.debug = True
-    return ls_app
+    app = create_app()
+    app.debug = True
+    return app
 
 @pytest.fixture(scope='session')
 def db() -> DB:
