@@ -164,6 +164,7 @@ services:
       - "8404:8404"
       - "8081:8081"
       - "8080:8080"
+      - "9001:9001"
     networks: [ledger-network]
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q -T 2 http://haproxy:8404/healthz || exit 1"]
@@ -227,7 +228,7 @@ services:
     profiles: [main, caddy]
     environment:
       <<: *common_env
-      S3_EXT_FILES_BUCKET: "default-bucket"
+      S3_EXT_FILES_BUCKET: "ledger-ext-files"
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8001/_caddy_ready || exit 1" ]
       interval: 5s
@@ -335,9 +336,11 @@ services:
     volumes:
       - minio_data:/data
     restart: on-failure
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/ready || exit 1"]
+    expose:
+      - "9000"
+      - "9001"
 
 
 networks:

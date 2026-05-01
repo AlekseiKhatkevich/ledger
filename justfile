@@ -97,7 +97,7 @@ haproxy-ui:
 # HAProxy config hot reload
 [group('haproxy')]
 haproxy-reload:
-    docker compose --profile main kill  -s HUP haproxy
+    docker compose --profile main kill -s HUP haproxy
 
 # Minio web ui
 [group('minio')]
