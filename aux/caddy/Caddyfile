@@ -1,14 +1,6 @@
 {
     debug
     grace_period 10s
-    storage s3 {
-        host "s3.example.com"
-        bucket "my-cert-bucket"
-        access_id "Access ID"
-        secret_key "Secret Key"
-        prefix "ssl"
-        insecure false #disables SSL if true
-    }
 }
 
 (keykloack_healthcheck) {
@@ -80,6 +72,12 @@
             hide /error-descriptions/templates/*
             }
         }
+
+    # S3 files
+    handle_path /ext-files/* {
+        rewrite * /{$S3_EXT_FILES_BUCKET}{path}
+        reverse_proxy http://minio:9000
+    }
 
     @login+refresh {
         method POST

@@ -91,10 +91,16 @@ temporal-worker-rebuild:
 
 # HAProxy web UI (admin, 1q2w3e)
 [group('haproxy')]
-haproxy-web-ui:
+haproxy-ui:
     nohup xdg-open http://localhost:8404/haproxy?stats >/dev/null 2>&1 &
 
 # HAProxy config hot reload
 [group('haproxy')]
 haproxy-reload:
     docker compose --profile main kill  -s HUP haproxy
+
+# Minio web ui
+[group('minio')]
+minio-ui:
+    nohup xdg-open http://127.0.0.1:9001/browser >/dev/null 2>&1 &
+

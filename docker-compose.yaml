@@ -224,9 +224,10 @@ services:
       - caddy_config:/config
     networks:
       [ ledger-network ]
-    profiles: [main]
+    profiles: [main, caddy]
     environment:
       <<: *common_env
+      S3_EXT_FILES_BUCKET: "default-bucket"
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8001/_caddy_ready || exit 1" ]
       interval: 5s
