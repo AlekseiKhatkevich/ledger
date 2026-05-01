@@ -62,12 +62,12 @@ downgrade where='-1':
 keycloak:
     xdg-open http://localhost:8080/admin/master/console/#/test
 
-#  reloads caddy web server config file
+# reloads caddy web server config file
 [group('caddy')]
 caddy-reload:
     docker compose --profile main kill  -sUSR1 caddy
 
-#  run tests
+# run tests
 [arg('skip-alembic', help='skip alembic migration before testrun')]
 [group('pytest')]
 test path='' skip-alembic='--skip-alembic' *flags:
@@ -83,13 +83,18 @@ api-docs:
 temporal-ui:
     nohup xdg-open 'http://localhost:8081/' >/dev/null 2>&1 &
 
-#  build temporal worker
+# build temporal worker
 [group('temporal')]
 [working-directory: 'etl']
 temporal-worker-rebuild:
     docker compose build --no-cache temporal-worker
 
-#  HAProxy web UI (admin, 1q2w3e)
+# HAProxy web UI (admin, 1q2w3e)
 [group('haproxy')]
 haproxy-web-ui:
     nohup xdg-open http://localhost:8404/haproxy?stats >/dev/null 2>&1 &
+
+# HAProxy config hot reload
+[group('haproxy')]
+haproxy-reload:
+    docker compose --profile main kill  -s HUP haproxy

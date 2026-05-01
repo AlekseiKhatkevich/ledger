@@ -30,6 +30,7 @@ services:
       PGHOSTADDR: postgres
       DEBUG: ${DEBUG:-1}
     networks: [ ledger-network ]
+    profiles: [main, temporal]
     healthcheck:
       test: ["CMD-SHELL", "./aux/docker/healthcheck/backend_healthcheck.sh"]
       interval: 10s
@@ -322,6 +323,21 @@ services:
     volumes:
       - ./etl:/app:Z
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    profiles: [minio]
+    command: server /data --console-address ":9001"
+    env_file:
+      - secrets/minio/.env
+    networks: [ledger-network]
+    volumes:
+      - minio_data:/data
+    restart: on-failure
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
 
 networks:
     ledger-network:
@@ -333,3 +349,5 @@ volumes:
   keycloak_data:
   caddy_data:
   caddy_config:
+  minio_data:
+    driver: local
