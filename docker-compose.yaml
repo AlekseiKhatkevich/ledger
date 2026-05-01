@@ -162,6 +162,7 @@ services:
       - "8001:8001"
       - "8404:8404"
       - "8081:8081"
+      - "8080:8080"
     networks: [ledger-network]
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q -T 2 http://haproxy:8404/healthz || exit 1"]
@@ -174,8 +175,7 @@ services:
     expose:
       - "9000" #  for health checking
       - "8443"
-    ports:
-      - "8080:8080"
+      - "8080"
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
       DB_VENDOR: postgres
