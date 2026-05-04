@@ -354,4 +354,3 @@ volumes:
   caddy_data:
   caddy_config:
   minio_data:
-    driver: local
