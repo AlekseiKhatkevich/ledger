@@ -3,7 +3,7 @@ from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlu
 from litestar.di import Provide
 from litestar.middleware import DefineMiddleware
 from litestar.openapi.config import OpenAPIConfig
-from litestar.openapi.plugins import SwaggerRenderPlugin
+from litestar.openapi.plugins import RedocRenderPlugin
 from litestar.openapi.spec import Components, SecurityScheme
 from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetailsPlugin
 from litestar.plugins.structlog import StructlogPlugin
@@ -50,7 +50,7 @@ def create_app() -> Litestar:
         title='Ledger',
         description='FOSS ledger 4 your crypto assets, you know...',
         version="0.0.0.0.0.0.0.1",
-        render_plugins=[SwaggerRenderPlugin()],
+        render_plugins=[RedocRenderPlugin()],
         path=settings.API_SCHEMA_ENDPOINT,
         security = [{'OpenID': []}],
         components=Components(
