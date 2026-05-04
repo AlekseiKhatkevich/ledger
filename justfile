@@ -104,3 +104,14 @@ haproxy-reload:
 minio-ui:
     nohup xdg-open http://127.0.0.1:9001/browser >/dev/null 2>&1 &
 
+# render error-description templates with jinja
+[group('static')]
+render-html:
+    docker compose exec {{backend_name}} bash -c "uv run aux/html_templates/error_description_templates.py"
+
+# uv run something
+[group('aux')]
+run path:
+    docker compose exec {{backend_name}} bash -c "uv run {{path}}"
+
+

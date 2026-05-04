@@ -1,12 +1,22 @@
 import dataclasses
+import pathlib
 
-_registered_error_description_data = []
+registered_error_description_data = []
 
 @dataclasses.dataclass
 class SystemData:
-    template_name: str
+    output_html_file_name: dataclasses.InitVar[str]
+    output_html_folder: dataclasses.InitVar[str] = 'site/error-descriptions'
+    jinja_template_name: str = 'error_description.jinja'
+    output_html_file_path: pathlib.Path = dataclasses.field(init=False)
 
-@dataclasses.dataclass
+    def __post_init__(self, output_html_file_name: str, output_html_folder: str) -> None:
+        self.output_html_file_path = pathlib.Path(
+            output_html_folder,
+            output_html_file_name,
+        )
+
+@dataclasses.dataclass(frozen=True)
 class ErrorDescriptionData:
     title: str
     header: str
@@ -21,8 +31,8 @@ class ErrorDescriptionData:
 
     system_data: SystemData
 
-    def __post_init__(self):
-        _registered_error_description_data.append(self)
+    def __post_init__(self) -> None:
+        registered_error_description_data.append(self)
 
 
 ErrorDescriptionData(
@@ -37,5 +47,7 @@ ErrorDescriptionData(
         'Find the correct ticker for your coin.',
         'Update the request and send it again.',
     ),
-    system_data=SystemData(template_name='wrong_ticker.html'),
+    system_data=SystemData(
+        output_html_file_name='wrong_ticker.html',
+    ),
 )

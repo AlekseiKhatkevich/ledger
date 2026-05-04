@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Wrong ticker</title>
+  <title>{{title}}</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;max-width:780px;margin:36px auto;padding:18px;color:#111;background:#fff}
@@ -18,36 +18,32 @@
 </head>
 <body>
   <header>
-    <h1>Wrong ticker</h1>
-    <p class="lead">You provided a ticker that does not exist.</p>
+    <h1>{{title}}</h1>
+    <p class="lead">{{header}}</p>
   </header>
 
   <section>
     <h2>Short details</h2>
     <dl>
-      <dt>Summary</dt><dd>Ticker does not exist or has not been indexed yet.</dd>
-      <dt>Suggested status</dt><dd>400 (Bad Request)</dd>
-      <dt>Severity</dt><dd>Low</dd>
+      <dt>Summary</dt><dd>{{summary}}</dd>
+      <dt>Suggested status</dt><dd>{{suggested_status}}</dd>
+      <dt>Severity</dt><dd>{{severity}}</dd>
     </dl>
   </section>
 
   <section>
     <h2>Human-readable description</h2>
     <p>
-      The request cannot be completed because the client provided an invalid ticker.
+      {{hr_description}}
     </p>
   </section>
 
   <section>
     <h2>Actionable guidance</h2>
     <ul>
-      
-        <li>Find the list of all tickers on CoinGecko.</li>
-      
-        <li>Find the correct ticker for your coin.</li>
-      
-        <li>Update the request and send it again.</li>
-      
+      {% for line in guidance %}
+        <li>{{line}}</li>
+      {% endfor %}
     </ul>
   </section>
 
