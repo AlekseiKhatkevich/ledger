@@ -16,8 +16,8 @@ class SystemData:
             output_html_file_name,
         )
 
-@dataclasses.dataclass(frozen=True)
-class ErrorDescriptionData:
+@dataclasses.dataclass
+class TemplateData:
     title: str
     header: str
 
@@ -29,6 +29,10 @@ class ErrorDescriptionData:
 
     guidance: tuple[str, ...]
 
+
+@dataclasses.dataclass(frozen=True)
+class ErrorDescriptionData:
+    template_data: TemplateData
     system_data: SystemData
 
     def __post_init__(self) -> None:
@@ -36,16 +40,18 @@ class ErrorDescriptionData:
 
 
 ErrorDescriptionData(
-    title='Wrong ticker',
-    header='You provided a ticker that does not exist.',
-    summary='Ticker does not exist or has not been indexed yet.',
-    suggested_status='400 (Bad Request)',
-    severity='Low',
-    hr_description='The request cannot be completed because the client provided an invalid ticker.',
-    guidance=(
-        'Find the list of all tickers on CoinGecko.',
-        'Find the correct ticker for your coin.',
-        'Update the request and send it again.',
+    template_data=TemplateData(
+        title='Wrong ticker',
+        header='You provided a ticker that does not exist.',
+        summary='Ticker does not exist or has not been indexed yet.',
+        suggested_status='400 (Bad Request)',
+        severity='Low',
+        hr_description='The request cannot be completed because the client provided an invalid ticker.',
+        guidance=(
+            'Find the list of all tickers on CoinGecko.',
+            'Find the correct ticker for your coin.',
+            'Update the request and send it again.',
+        )
     ),
     system_data=SystemData(
         output_html_file_name='wrong_ticker.html',

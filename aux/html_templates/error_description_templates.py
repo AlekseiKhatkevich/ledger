@@ -20,7 +20,7 @@ class TemplateRenderer:
 
     def render_one(self, data: ErrorDescriptionData) -> TemplateStream:
         template = self.env.get_template(data.system_data.jinja_template_name)
-        return template.stream(asdict(data))
+        return template.stream(asdict(data.template_data))
 
     @staticmethod
     def dump(stream: TemplateStream, data: ErrorDescriptionData) -> None:
