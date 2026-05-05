@@ -11,6 +11,7 @@ default:
 alias up := up-dev
 alias down := down-dev
 alias pytest := test
+alias uv-run := run
 
 #  start container, start without temporal -- just up main, start few profiles -- just up profile1,profile2,...
 [group('docker')]

@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run
+#!/usr/bin/env -S uv run --script
 
 from dataclasses import asdict
 from functools import cached_property

@@ -1,6 +1,7 @@
 {
     debug
     grace_period 10s
+    order jwtauth before basicauth
 }
 
 (keykloack_healthcheck) {
@@ -113,25 +114,19 @@
         }
     }
 
-    handle  * {
-        reverse_proxy keycloak:8080 {
-            method GET
-            rewrite {vars.KC_BASE_URL}/userinfo
-            header_up X-Forwarded-Method {method}
-	        header_up X-Forwarded-Uri {uri}
-            import headers_for_keycloak
 
-            @good_auth status 200
-            handle_response @good_auth {
-                reverse_proxy backend-api:8000 {
+    handle * {
+         jwtauth {
+            jwk_url http://keycloak:8080{vars.KC_BASE_URL}/certs
+            issuer_whitelist {$KC_ISSUER_WHITELIST}
+            audience_whitelist {$KC_AUDIENCE_WHITELIST}
+        }
+
+        reverse_proxy backend-api:8000 {
                     import ledger_healthcheck
-    #                proxy same client with same openid token to a same pod
                     lb_policy header Bearer {
                         fallback least_conn
                         }
                     }
-            }
-            import handle_401_response
-        }
     }
 }

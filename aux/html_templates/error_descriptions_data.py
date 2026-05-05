@@ -3,6 +3,7 @@ import pathlib
 
 registered_error_description_data = []
 
+
 @dataclasses.dataclass
 class SystemData:
     output_html_file_name: dataclasses.InitVar[str]
@@ -16,7 +17,7 @@ class SystemData:
             output_html_file_name,
         )
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TemplateData:
     title: str
     header: str

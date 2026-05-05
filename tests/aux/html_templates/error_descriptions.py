@@ -1,5 +1,3 @@
-import pathlib
-
 import pytest
 from polyfactory.factories.dataclass_factory import DataclassFactory
 
@@ -15,7 +13,7 @@ class ErrorDescriptionDataFactory(DataclassFactory[ErrorDescriptionData]):
 
 
 @pytest.fixture
-def data(tmp_path):
+def data(tmp_path) -> ErrorDescriptionData:
     system_data = SystemDataFactory.build(output_html_file_name='test.html', output_html_folder=str(tmp_path))
     return ErrorDescriptionDataFactory.build(system_data=system_data)
 
@@ -27,3 +25,13 @@ def test_create_html_file(data):
 
     assert data.system_data.output_html_file_path.exists()
 
+    content = data.system_data.output_html_file_path.read_text()
+
+    assert data.template_data.title in content
+    assert data.template_data.header in content
+    assert data.template_data.summary in content
+    assert data.template_data.suggested_status in content
+    assert data.template_data.severity in content
+    assert data.template_data.hr_description in content
+    for g in data.template_data.guidance:
+        assert g in content
