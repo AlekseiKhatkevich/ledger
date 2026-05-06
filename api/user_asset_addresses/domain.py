@@ -1,10 +1,15 @@
-from litestar import Controller, route
+import uuid
+from typing import Annotated
+
+import msgspec
+from litestar.dto import DTOConfig, MsgspecDTO
 
 
-class UserAssetAddressController(Controller):
-    path = 'user_asset_address'
-    tags = ('user_asset_address', )
+class UserAssetAddressData(msgspec.Struct):
+    public_key: str
+    user_id: uuid.UUID
+    wallet_name: list[Annotated[str, msgspec.Meta(max_length=50)]] | None = None
 
-    @route('/', http_method=['POST', 'PUT'])
-    async def create_or_update(self, data):
-        pass
+
+class UserAssetAddressDto(MsgspecDTO[UserAssetAddressData]):
+    config = DTOConfig(exclude={'user_id', })

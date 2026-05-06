@@ -11,6 +11,7 @@ from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 
 from api import lifespan
+from api.user_asset_addresses.crud import UserAssetAddressController
 from api.user_assets.crud import UserAssetCrudController
 from aux.api.routes import aux_router
 from config import settings
@@ -34,7 +35,13 @@ async def root() -> str:
 
 def create_app() -> Litestar:
     return Litestar(
-    [root, aux_router, UserController, UserAssetCrudController],
+    [
+        root,
+        aux_router,
+        UserController,
+        UserAssetCrudController,
+        UserAssetAddressController,
+    ],
     plugins=[
         OpenTelemetryPlugin(open_telemetry_config),
         StructlogPlugin(),
