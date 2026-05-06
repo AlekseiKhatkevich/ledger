@@ -42,6 +42,7 @@ class UserAssetAddress(Base):
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     public_key: Mapped[str]
+    user_id: Mapped[uuid.UUID]
     wallet_name: Mapped[list[str] | None] = mapped_column(
         MutableList.as_mutable(ARRAY(String(50))),
         default=None,
@@ -56,7 +57,7 @@ class UserAssetAddress(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint('public_key', ),
+        UniqueConstraint('user_id', 'public_key',  name='user_key_uq'),
     )
 
     def __repr__(self) -> str:
