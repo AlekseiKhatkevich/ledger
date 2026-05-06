@@ -53,7 +53,7 @@ class UserAssetAddress(Base):
         back_populates='address',
         passive_deletes=True,
         default_factory=list,
-        lazy='write_only'
+        lazy='write_only',
     )
 
     __table_args__ = (

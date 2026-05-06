@@ -13,3 +13,17 @@ class UserAssetAddressData(msgspec.Struct):
 
 class UserAssetAddressDto(MsgspecDTO[UserAssetAddressData]):
     config = DTOConfig(exclude={'user_id', })
+
+
+class UserAssetAddressUpdateData(msgspec.Struct):
+    public_key: str
+    new_data: UserAssetAddressData
+
+
+class UserAssetAddressUpdateDTOIn(MsgspecDTO[UserAssetAddressUpdateData]):
+    config = DTOConfig(exclude={'new_data.user_id', })
+
+
+class UserAssetAddressUpdateDTOOut(MsgspecDTO[UserAssetAddressUpdateData]):
+        config = DTOConfig(exclude={'new_data.user_id', 'public_key', })
+
