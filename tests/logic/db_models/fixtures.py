@@ -41,8 +41,11 @@ def pg_user_asset_operation_repo() -> PostgresUserAssetOperationRepository:
     return PostgresUserAssetOperationRepository()
 
 @pytest.fixture
-async def user_asset_address_in_db(user_asset_address_factory: UserAssetAddressFactory) -> UserAssetAddress:
-    return await user_asset_address_factory.create_async()
+async def user_asset_address_in_db(
+        user_asset_address_factory: UserAssetAddressFactory,
+        jwt_user:User,
+) -> UserAssetAddress:
+    return await user_asset_address_factory.create_async(user_id=jwt_user.sub)
 
 @pytest.fixture
 async def asset_ticker_in_db(asset_ticker_factory: AssetTickerFactory) -> AssetTicker:
