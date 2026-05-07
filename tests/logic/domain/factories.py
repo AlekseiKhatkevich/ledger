@@ -1,6 +1,7 @@
 from faker import Faker
 from polyfactory.factories.msgspec_factory import MsgspecFactory
 
+from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData, UserAssetAddressDeleteData
 from api.user_assets.domain import UserAssetData
 
 
@@ -19,3 +20,14 @@ class UserAssetDataFactory(CustomFactory[UserAssetData]):
     @classmethod
     def ticker_id(cls) -> str:
         return cls.__faker__.pystr(max_chars=10).upper()
+
+
+class UserAssetAddressDataFactory(CustomFactory[UserAssetAddressData]):
+    pass
+
+
+class UserAssetAddressUpdateDataFactory(CustomFactory[UserAssetAddressUpdateData]):
+    pass
+
+class UserAssetAddressDeleteDataFactory(CustomFactory[UserAssetAddressDeleteData]):
+    pass
