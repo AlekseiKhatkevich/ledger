@@ -24,6 +24,11 @@ class UserAssetAddressUpdateDTOIn(MsgspecDTO[UserAssetAddressUpdateData]):
     config = DTOConfig(exclude={'new_data.user_id', })
 
 
-class UserAssetAddressUpdateDTOOut(MsgspecDTO[UserAssetAddressUpdateData]):
-        config = DTOConfig(exclude={'new_data.user_id', 'public_key', })
+class UserAssetAddressDeleteData(msgspec.Struct):
+    public_key: str
+    user_id: uuid.UUID
+
+
+class UserAssetAddressDeleteDataDTOIn(MsgspecDTO[UserAssetAddressDeleteData]):
+    config = DTOConfig(exclude={'user_id', })
 

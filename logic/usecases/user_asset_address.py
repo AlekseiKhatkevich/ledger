@@ -1,6 +1,4 @@
-import msgspec
-
-from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData
+from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData, UserAssetAddressDeleteData
 from database.postgres.repositories.user_asset_address import PostgresUserAssetAddressRepository
 from logic.exceptions import UserAssetAddressNotFoundError
 
@@ -18,6 +16,17 @@ class UserAssetAddressUpdateUseCase:
     async def execute(data: UserAssetAddressUpdateData) -> UserAssetAddressData:
         instance = await PostgresUserAssetAddressRepository().update(data)
         if instance is not None:
-            return msgspec.convert(instance.as_fields_dict(), type=UserAssetAddressData)
+            return instance.to_msgspec(type_=UserAssetAddressData)
+        else:
+            raise UserAssetAddressNotFoundError()
+
+
+class UserAssetDeleteUseCase:
+
+    @staticmethod
+    async def execute(data: UserAssetAddressDeleteData) -> None:
+        instance_id = await PostgresUserAssetAddressRepository().delete(data)
+        if instance_id is not None:
+            return None
         else:
             raise UserAssetAddressNotFoundError()

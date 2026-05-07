@@ -1,9 +1,9 @@
 from functools import cache
 
 import msgspec
-from sqlalchemy import update
+from sqlalchemy import update, delete
 
-from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData
+from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData, UserAssetAddressDeleteData
 from database.postgres.repositories.base_repository import PostgresBaseRepository
 from logic.db_models import UserAssetAddress
 from logic.repositories.user_asser_address import BaseUserAssetAddressRepository
@@ -30,7 +30,7 @@ class PostgresUserAssetAddressRepository(BaseUserAssetAddressRepository, Postgre
             await session.commit()
         return resp
 
-    async def update(self, data: UserAssetAddressUpdateData) -> int | None:
+    async def update(self, data: UserAssetAddressUpdateData) -> UserAssetAddress | None:
         update_stmt = update(
             self.model
         ).where(
@@ -44,5 +44,20 @@ class PostgresUserAssetAddressRepository(BaseUserAssetAddressRepository, Postgre
 
         async with self.db.session() as session:
             resp = await session.scalar(update_stmt)
+            await session.commit()
+        return resp
+
+    async def delete(self, data: UserAssetAddressDeleteData) -> int | None:
+        delete_stmt = delete(
+            self.model,
+        ).where(
+            self.model.user_id == data.user_id,
+            self.model.public_key == data.public_key,
+        ).returning(
+            self.model.id,
+        )
+
+        async with self.db.session() as session:
+            resp = await session.scalar(delete_stmt)
             await session.commit()
         return resp

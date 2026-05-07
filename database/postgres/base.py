@@ -1,7 +1,8 @@
 import datetime
 import enum
-from typing import Literal, Any
+from typing import Literal, Any, Type
 
+import msgspec
 from sqlalchemy import TEXT
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -23,3 +24,6 @@ class Base(AsyncAttrs, MappedAsDataclass, DeclarativeBase):
             c.name: getattr(self, c.name)
             for c in self.__table__.columns if c.name not in exclude
         }
+
+    def to_msgspec[T, bound=msgspec.Struct](self, type_: Type[T]) -> T:
+        return msgspec.convert(self, type=type_, from_attributes=True)
