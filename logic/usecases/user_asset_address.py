@@ -18,7 +18,7 @@ class UserAssetAddressUpdateUseCase:
         if instance is not None:
             return instance.to_msgspec(type_=UserAssetAddressData)
         else:
-            raise UserAssetAddressNotFoundError()
+            raise UserAssetAddressNotFoundError(extra={'public_key': data.public_key})
 
 
 class UserAssetDeleteUseCase:
@@ -29,4 +29,4 @@ class UserAssetDeleteUseCase:
         if instance_id is not None:
             return None
         else:
-            raise UserAssetAddressNotFoundError()
+            raise UserAssetAddressNotFoundError(extra={'public_key': data.public_key})

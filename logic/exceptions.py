@@ -1,5 +1,7 @@
-class BaseUserAssetAddressError(Exception):
-    pass
+class AssetNotFoundError(Exception):
+    def __init__(self, extra: dict | None = None) -> None:
+        self.extra = extra if extra is not None else {}
 
-class UserAssetAddressNotFoundError(BaseUserAssetAddressError):
+
+class UserAssetAddressNotFoundError(AssetNotFoundError):
     pass

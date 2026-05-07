@@ -58,3 +58,41 @@ ErrorDescriptionData(
         output_html_file_name='wrong_ticker.html',
     ),
 )
+
+ErrorDescriptionData(
+    template_data=TemplateData(
+        title='Non unique user asset address',
+        header='You provided a user asset address which is already exists',
+        summary='You provided a user asset address which is already exists',
+        suggested_status='400 (Bad Request)',
+        severity='Low',
+        hr_description='The request cannot be completed because the client provided an existing user'
+                       ' asset address public key.',
+        guidance=(
+            'This public key already exists',
+            'If you want to change this key to another - then you need to provide an alternative key',
+            'Or you could leave it as it is as this key is already here.',
+        )
+    ),
+    system_data=SystemData(
+        output_html_file_name='user_asset_address_already_exists.html',
+    ),
+)
+
+
+ErrorDescriptionData(
+    template_data=TemplateData(
+        title='User asset address 404',
+        header='User asset address not found',
+        summary='User asset address does not exists',
+        suggested_status='400 (Bad Request)',
+        severity='Low',
+        hr_description='Provided public key has not been found.',
+        guidance=(
+            'Double check public key',
+        )
+    ),
+    system_data=SystemData(
+        output_html_file_name='user_asset_address_not_exists.html',
+    ),
+)

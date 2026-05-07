@@ -65,6 +65,7 @@ def create_app() -> Litestar:
                 "BearerToken": SecurityScheme(
                     type="http",
                     scheme="bearer",
+                    bearer_format="JWT",
                 )
             },
         ),

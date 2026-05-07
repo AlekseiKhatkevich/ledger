@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Non unique user asset address</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;max-width:780px;margin:36px auto;padding:18px;color:#111;background:#fff}
+    h1{margin:0 0 6px;font-size:1.6rem}
+    p.lead{margin:6px 0 18px;color:#444}
+    section{margin-top:18px}
+    pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto}
+    dl{display:grid;grid-template-columns:140px 1fr;gap:8px 16px}
+    dt{font-weight:600;color:#333}
+    dd{margin:0;color:#222}
+    .meta{font-size:0.95rem;color:#666;margin-top:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Non unique user asset address</h1>
+    <p class="lead">You provided a user asset address which is already exists</p>
+  </header>
+
+  <section>
+    <h2>Short details</h2>
+    <dl>
+      <dt>Summary</dt><dd>You provided a user asset address which is already exists</dd>
+      <dt>Suggested status</dt><dd>400 (Bad Request)</dd>
+      <dt>Severity</dt><dd>Low</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Human-readable description</h2>
+    <p>
+      The request cannot be completed because the client provided an existing user asset address public key.
+    </p>
+  </section>
+
+  <section>
+    <h2>Actionable guidance</h2>
+    <ul>
+      
+        <li>This public key already exists</li>
+      
+        <li>If you want to change this key to another - then you need to provide an alternative key</li>
+      
+        <li>Or you could leave it as it is as this key is already here.</li>
+      
+    </ul>
+  </section>
+
+  <footer class="meta">
+
+  </footer>
+</body>
+</html>

@@ -1,46 +1,15 @@
-from typing import Callable, NoReturn
-
-from litestar import Controller, route, Request
-from litestar.datastructures import URL
+from litestar import Controller, route
 from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
-from litestar.plugins.problem_details import ProblemDetailsException
 from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
 
 from api.common_domain import ProblemDetailResponse
+from api.exceptions_handling import integrity_error_handler_factory
 from api.user_assets.domain import UserAssetData, UserAssetDto
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
 from logic.usecases.user_asset_upsert import UserAssetUpsertUseCase
 from user.domain import User
-
-
-def integrity_error_handler_factory(
-        title: str,
-        detail: str,
-        pg_error_code: str,
-        error_html: str,
-) -> Callable[[Request, IntegrityError], NoReturn]:
-    def _handler(request: Request, exc: IntegrityError) -> NoReturn:
-            if exc.orig.pgcode == pg_error_code:
-                url = URL.from_components(
-                    'https',
-                    request.url.netloc,
-                    request.url.path,
-                    request.url.fragment,
-                    request.url.query,
-                )
-                raise ProblemDetailsException(
-                    type_=f"https://{request.url.netloc}/error-descriptions/{error_html}",
-                    title=title,
-                    detail=detail,
-                    instance=str(url),
-                    extra={},
-                    status_code=HTTP_400_BAD_REQUEST,
-                )
-            else:
-                raise exc
-    return _handler
 
 
 class UserAssetCrudController(Controller):
