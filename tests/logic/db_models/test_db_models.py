@@ -17,9 +17,10 @@ async def test_user_asset_address_negative_pub_key_non_unique(
     user_asset_address_factory,
 ):
     existing_pub_key = user_asset_address_in_db.public_key
+    existing_user_id = user_asset_address_in_db.user_id
 
     with pytest.raises(IntegrityError) as excinfo:
-        await user_asset_address_factory.create_async(public_key=existing_pub_key)
+        await user_asset_address_factory.create_async(public_key=existing_pub_key, user_id=existing_user_id)
 
     assert excinfo.value.orig.pgcode == constants.PG_UNIQUE_CONSTRAINT_VIOLATION_CODE
 

@@ -3,7 +3,11 @@ from functools import cache
 import msgspec
 from sqlalchemy import update, delete
 
-from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData, UserAssetAddressDeleteData
+from api.user_asset_addresses.domain import (
+    UserAssetAddressData,
+    UserAssetAddressUpdateData,
+    UserAssetAddressDeleteData,
+)
 from database.postgres.repositories.base_repository import PostgresBaseRepository
 from logic.db_models import UserAssetAddress
 from logic.repositories.user_asser_address import BaseUserAssetAddressRepository
