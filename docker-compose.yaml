@@ -29,6 +29,16 @@ services:
       ALEMBIC_CONFIG: alembic/alembic.ini
       PGHOSTADDR: postgres
       DEBUG: ${DEBUG:-1}
+      # -------------------------------------------------------------------
+      # OTEL_EXPORTER_OTLP_ENDPOINT — куда OTLPSpanExporter отправляет спаны.
+      # Jaeger all-in-one принимает OTLP по gRPC на порту 4317.
+      # -------------------------------------------------------------------
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+      # -------------------------------------------------------------------
+      # OTEL_SERVICE_NAME — имя сервиса в Jaeger UI (колонка Service).
+      # Если не задать, Jaeger покажет «unknown_service».
+      # -------------------------------------------------------------------
+      OTEL_SERVICE_NAME: "ledger-backend"
     networks: [ ledger-network ]
     profiles: [main, temporal]
     healthcheck:
@@ -344,6 +354,34 @@ services:
       - "9000"
       - "9001"
 
+  #  ---
+  #  Jaeger all-in-one — лёгкий сервис для приёма, хранения и визуализации
+  #  OpenTelemetry трейсов (и span events, которые выглядят как логи).
+  #  Официальный образ: https://hub.docker.com/r/jaegertracing/all-in-one
+  #  -------------------------------------------------------------------
+  #  Порты:
+  #    16686 — Web UI (проброшен на хост для удобства разработки)
+  #    4317  — OTLP gRPC ingest (backend-api отправляет сюда спаны)
+  #    4318  — OTLP HTTP ingest (альтернатива gRPC)
+  #  -------------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    profiles: [main, temporal]
+    restart: unless-stopped
+    networks: [ledger-network]
+    ports:
+      - "16686:16686"
+    expose:
+      - "4317"
+      - "4318"
+    environment:
+      # Включаем нативный приём OTLP (без отдельного OTEL Collector).
+      # Без этой переменной Jaeger не будет слушать 4317/4318.
+      COLLECTOR_OTLP_ENABLED: "true"
+    volumes:
+      - jaeger_data:/badger
+
 
 networks:
     ledger-network:
@@ -356,3 +394,9 @@ volumes:
   caddy_data:
   caddy_config:
   minio_data:
+  # -------------------------------------------------------------------
+  # jaeger_data — volume для хранения трейсов между перезапусками контейнера.
+  # В all-in-one по умолчанию используется Badger (встраиваемая БД),
+  # данные пишутся в /badger.
+  # -------------------------------------------------------------------
+  jaeger_data:

@@ -115,4 +115,9 @@ render-html:
 run path:
     docker compose exec {{backend_name}} bash -c "uv run {{path}}"
 
+# jaeger web ui
+[group('otel')]
+jaeger-ui:
+    nohup xdg-open http://localhost:16686/ >/dev/null 2>&1 &
+
 
