@@ -348,19 +348,20 @@ services:
       - "9001"
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/jaeger
     container_name: jaeger
     profiles: [jaeger, main]
     restart: unless-stopped
+    user: "10001:0"
     networks: [ledger-network]
     expose:
       - "4317" # OTLP gRPC
       - "4318" # OTLP HTTP
       - "16686" # UI
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
+    command: ["--config", "file:/etc/jaeger/jaeger-config.yaml"]
     volumes:
       - jaeger_data:/badger
+      - ./aux/jaeger/jaeger-config.yaml:/etc/jaeger/jaeger-config.yaml:ro
 
 
 networks:
