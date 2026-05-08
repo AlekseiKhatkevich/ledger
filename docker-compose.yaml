@@ -27,7 +27,7 @@ services:
       GRANIAN_LOOP: "asyncio"  #  "auto" in prod. "asyncio" suitable for debugging with @Evaluate Async Code@
       UV_NO_DEV: 0
       ALEMBIC_CONFIG: alembic/alembic.ini
-      PGHOSTADDR: postgres
+      PGHOSTADDR: haproxy
       DEBUG: ${DEBUG:-1}
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"  # send all spas there
       OTEL_SERVICE_NAME: "ledger-backend"
@@ -117,18 +117,18 @@ services:
     networks:
       [ ledger-network ]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $PGDATABASE -U $PGUSER || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 1s
+      start_period: 10s
     stop_grace_period: 120s
 
   #  ---
 
   pgcache:
     image: pgcache/pgcache
-    profiles: [main, temporal]
+    profiles: [pgcache]
     container_name: pgcache
     restart: unless-stopped
     networks: [ledger-network]
