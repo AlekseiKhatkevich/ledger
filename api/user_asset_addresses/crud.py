@@ -1,7 +1,7 @@
-from litestar import Controller, post, put, delete
+from litestar import Controller, post, put
 from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
-from litestar.status_codes import HTTP_400_BAD_REQUEST
+from litestar.status_codes import HTTP_400_BAD_REQUEST, HTTP_204_NO_CONTENT
 from sqlalchemy.exc import IntegrityError
 
 from api.common_domain import ProblemDetailResponse
@@ -65,9 +65,10 @@ class UserAssetAddressController(Controller):
         user_asset_update_data = data.create_instance(new_data__user_id=kc_user.sub)
         return await UserAssetAddressUpdateUseCase().execute(user_asset_update_data)
 
-    @delete(
-        '/',
+    @post(
+        '/delete',
         dto=UserAssetAddressDeleteDataDTOIn,
+        status_code=HTTP_204_NO_CONTENT,
         responses={
             HTTP_400_BAD_REQUEST: ResponseSpec(
                 data_container=ProblemDetailResponse,

@@ -1,5 +1,5 @@
 import msgspec
-from litestar.status_codes import HTTP_201_CREATED, HTTP_200_OK, HTTP_400_BAD_REQUEST
+from litestar.status_codes import HTTP_201_CREATED, HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_204_NO_CONTENT
 
 from api.user_asset_addresses.crud import UserAssetAddressController
 
@@ -92,6 +92,46 @@ async def test_update_negative_not_found(
 
     response = await httpx_test_client.put(
         UserAssetAddressController.path,
+        json=input_data,
+    )
+
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert response.json()['title'] == 'Public key does not exists'
+
+
+async def test_delete_positive(
+        httpx_test_client,
+        user_asset_address_in_db,
+        pg_user_asset_address_repo,
+        jwt_user,
+):
+    input_data = {
+        'public_key': user_asset_address_in_db.public_key,
+    }
+
+    response = await httpx_test_client.post(
+        UserAssetAddressController.path + '/delete',
+        json=input_data,
+    )
+
+    assert response.status_code == HTTP_204_NO_CONTENT
+
+    instance_from_db = await pg_user_asset_address_repo.get_by_field_names(
+        public_key=input_data['public_key'],
+        user_id=jwt_user.id,
+    )
+    assert instance_from_db is None
+
+
+async def test_delete_negative_no_instance_in_db(
+        httpx_test_client,
+        jwt_user,
+        user_asset_address_delete_data_factory,
+):
+    input_data = msgspec.to_builtins(user_asset_address_delete_data_factory.build())
+
+    response = await httpx_test_client.post(
+        UserAssetAddressController.path + '/delete',
         json=input_data,
     )
 
