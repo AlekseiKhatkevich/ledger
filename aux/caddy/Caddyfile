@@ -35,13 +35,24 @@
                 }
             }
 
-(handle_401_response) {
-    @bad_auth status 401
-    handle_response @bad_auth {
-        respond "Token is invalid or outdated" 401
-        copy_response_headers * {
-                    include Www-Authenticate
-                }
+(handle_401_error) {
+    handle_errors 401 {
+        @jwt_expired {
+            vars {http.auth.jwt.error} `"exp" not satisfied`
+        }
+        @jwt_invalid_signature {
+            vars {http.auth.jwt.error} "invalid signature"
+        }
+        @jwt_invalid_audience {
+            vars {http.auth.jwt.error} "invalid audience"
+        }
+
+        route {
+            respond @jwt_expired `{"error":"token_expired","message":"JWT token has expired. Please refresh your token."}` 401
+            respond @jwt_invalid_signature `{"error":"invalid_signature","message":"JWT signature is invalid."}` 401
+            respond @jwt_invalid_audience `{"error":"invalid_audience","message":"JWT audience is invalid."}` 401
+            respond * `{"error":"unauthorized","message":"Authentication required. Please provide a valid JWT token."}` 401
+        }
     }
 }
 
@@ -110,7 +121,6 @@
        reverse_proxy keycloak:8080 {
            rewrite {vars.KC_BASE_URL}/userinfo
            import headers_for_keycloak
-           import handle_401_response
         }
     }
 
@@ -129,4 +139,6 @@
                         }
                     }
     }
+
+    import handle_401_error
 }
