@@ -6,6 +6,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationDTOOut,
     UserAssetOperationDTOIn,
 )
+from logic.usecases.user_asset_operation import UserAssetOperationUseCase
 from user.domain import User
 
 
@@ -21,4 +22,4 @@ class UserAssetAddressOperationController(Controller):
     )
     async def create(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
         user_asset_operation_data = data.create_instance(user_id=kc_user.sub)
-        return user_asset_operation_data
+        return await UserAssetOperationUseCase().execute(user_asset_operation_data)

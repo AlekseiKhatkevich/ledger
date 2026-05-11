@@ -5,3 +5,7 @@ class AssetNotFoundError(Exception):
 
 class UserAssetAddressNotFoundError(AssetNotFoundError):
     pass
+
+class UserAssetNotFoundError(AssetNotFoundError):
+    pass
+
