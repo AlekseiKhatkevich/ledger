@@ -16,6 +16,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from api import lifespan
 from api.user_asset_addresses.crud import UserAssetAddressController
+from api.user_asset_operations.crud import UserAssetAddressOperationController
 from api.user_assets.crud import UserAssetCrudController
 from aux.api.routes import aux_router
 from config import settings
@@ -52,6 +53,7 @@ def create_app() -> Litestar:
             UserController,
             UserAssetCrudController,
             UserAssetAddressController,
+            UserAssetAddressOperationController,
         ],
         plugins=[
             OpenTelemetryPlugin(open_telemetry_config),
