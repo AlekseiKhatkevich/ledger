@@ -13,8 +13,7 @@ from user.domain import User
 class UserAssetAddressOperationController(Controller):
     path = 'user_asset_operations'
     tags = ('user_asset_operations', )
-
-
+# todo exception handling, maybe move all handlers into a separate router
     @post(
         '/',
         dto=UserAssetOperationDTOIn,

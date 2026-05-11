@@ -9,11 +9,6 @@ from logic.db_models import AssetOperationType
 
 
 class UserAssetOperationData(msgspec.Struct):
-    """Данные операции с активом.
-
-    Валидация Decimal-полей через __post_init__,
-    т.к. msgspec не поддерживает Meta(gt/lt/...) для Decimal.
-    """
     time: datetime.datetime
     type: AssetOperationType
     user_id: uuid.UUID
@@ -24,7 +19,6 @@ class UserAssetOperationData(msgspec.Struct):
     id: int | None = None
 
     def __post_init__(self) -> None:
-        """Проверка Decimal-полей на положительное значение."""
         if self.quantity <= 0:
             raise ValueError(
                 f"quantity must be > 0, got {self.quantity}"
