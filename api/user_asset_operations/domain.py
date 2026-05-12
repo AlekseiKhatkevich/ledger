@@ -1,11 +1,21 @@
 import datetime
 import decimal
 import uuid
+from dataclasses import dataclass
 
 import msgspec
 from litestar.dto import DTOConfig, MsgspecDTO
 
 from logic.db_models import AssetOperationType
+
+
+@dataclass(frozen=True)
+class DbCRUDOperationReturnData:
+    id: int | None
+    asset_exists: bool
+    address_exists: bool
+    # balance: decimal.Decimal
+    balance_ok: bool
 
 
 class UserAssetOperationData(msgspec.Struct):
