@@ -62,4 +62,3 @@ class UserAssetAddressOperationController(Controller):
     async def update(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
         user_asset_operation_data = data.create_instance(user_id=kc_user.sub)
         return await UserAssetOperationUpdateUseCase().execute(user_asset_operation_data)
-# todo проверка того, что нельзя продать больше чем имеешь
