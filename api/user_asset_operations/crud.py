@@ -1,4 +1,4 @@
-from litestar import Controller, post
+from litestar import Controller, post, put
 from litestar.dto import DTOData
 
 from api.exceptions_handling import asset_not_found_error_handler_factory
@@ -6,6 +6,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
     UserAssetOperationDTOIn,
+    UserAssetOperationUpdateDTOIn,
 )
 from logic.exceptions import UserAssetNotFoundError, UserAssetAddressNotFoundError
 from logic.usecases.user_asset_operation import UserAssetOperationUseCase
@@ -33,5 +34,14 @@ class UserAssetAddressOperationController(Controller):
         return_dto=UserAssetOperationDTOOut,
     )
     async def create(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
-        user_asset_operation_data = data.create_instance(user_id=kc_user.sub)
+        user_asset_operation_data = data.create_instance(user_id=kc_user.sub, id=None)
         return await UserAssetOperationUseCase().execute(user_asset_operation_data)
+
+    @put(
+        '/',
+        dto=UserAssetOperationUpdateDTOIn,
+        return_dto=UserAssetOperationDTOOut,
+    )
+    async def update(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
+        user_asset_operation_data = data.create_instance(user_id=kc_user.sub)
+        return user_asset_operation_data

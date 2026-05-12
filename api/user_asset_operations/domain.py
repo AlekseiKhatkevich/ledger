@@ -14,9 +14,10 @@ class UserAssetOperationData(msgspec.Struct):
     user_id: uuid.UUID
     quantity: decimal.Decimal
     unit_price: decimal.Decimal
+    id: int | None
     user_asset_id: int = 0
     address_id: int = 0
-    id: int | None = None
+
 
     def __post_init__(self) -> None:
         if self.quantity <= 0:
@@ -34,4 +35,8 @@ class UserAssetOperationDTOIn(MsgspecDTO[UserAssetOperationData]):
 
 
 class UserAssetOperationDTOOut(MsgspecDTO[UserAssetOperationData]):
+    config = DTOConfig(exclude={'user_id', })
+
+
+class UserAssetOperationUpdateDTOIn(MsgspecDTO[UserAssetOperationData]):
     config = DTOConfig(exclude={'user_id', })
