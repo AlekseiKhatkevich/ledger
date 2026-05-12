@@ -14,6 +14,7 @@ class DbCRUDOperationReturnData:
     id: int | None
     asset_exists: bool
     address_exists: bool
+    balance: decimal.Decimal
     balance_ok: bool
 
 

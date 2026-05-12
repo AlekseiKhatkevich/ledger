@@ -34,9 +34,11 @@ class UserAssetAddressController(Controller):
             PG_UNIQUE_CONSTRAINT_VIOLATION_CODE,
             'user_asset_address_already_exists.html',
         ),
-        AssetNotFoundError: base_error_handler_factory('Public key does not exists',
-                                                       'Public key can not be updated as it does not exists. You need to create it first',
-                                                       'user_asset_address_not_exists.html')
+        AssetNotFoundError: base_error_handler_factory(
+            'Public key does not exists',
+            'Public key can not be updated as it does not exists. You need to create it first',
+            'user_asset_address_not_exists.html',
+        )
     }
 
     @post(
@@ -77,5 +79,3 @@ class UserAssetAddressController(Controller):
     async def delete(self, data: DTOData[UserAssetAddressDeleteData], kc_user: User) -> None:
         user_asset_delete_data = data.create_instance(user_id=kc_user.sub)
         return await UserAssetDeleteUseCase().execute(data=user_asset_delete_data)
-
-
