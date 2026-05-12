@@ -1,7 +1,11 @@
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
-from logic.exceptions import UserAssetNotFoundError, UserAssetAddressNotFoundError, UserAssetOperationNotFoundError, \
-    NotEnoughBalanceToSell
+from logic.exceptions import (
+    UserAssetNotFoundError,
+    UserAssetAddressNotFoundError,
+    UserAssetOperationNotFoundError,
+    NotEnoughBalanceToSell,
+)
 
 
 def _check_asset_and_address(*, data: UserAssetOperationData, return_data: DbCRUDOperationReturnData) -> None:
@@ -27,6 +31,7 @@ class UserAssetOperationInsertUseCase:
         return_data = await PostgresUserAssetOperationRepository().insert_if_valid(data)
 
         _check_asset_and_address(data=data, return_data=return_data)
+        _check_balance(data=data, return_data=return_data)
 
         data.id = return_data.id
 

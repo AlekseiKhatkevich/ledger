@@ -1,3 +1,4 @@
+import decimal
 import uuid
 from functools import cache
 from typing import Any
@@ -128,7 +129,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         user_asset_id: int,
         exclude_operation_id: int | None = None,
     ) -> CTE:
-        # Баланс на адресе для токена: сумма quantity для PURCHASE минус quantity для SELL
         stmt = select(
             func.coalesce(
                 func.sum(
@@ -152,10 +152,9 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
     @staticmethod
     def _build_balance_ok_cte(
         type_: AssetOperationType,
-        quantity: int,
+        quantity: decimal.Decimal,
         balance_check: CTE,
     ) -> CTE:
-        # balance_ok = TRUE если тип != SELL, иначе quantity <= balance
         return select(
             case(
                 (
@@ -195,10 +194,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             select(op_cte.c.id).scalar_subquery().label("op_id"),
         )
 
-    # ---------------------------------------------------------------
-    # Public methods
-    # ---------------------------------------------------------------
-
     async def insert_if_valid(
         self,
         data: UserAssetOperationData,
@@ -207,7 +202,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         asset_check = self._build_asset_check_cte(data.user_id, data.user_asset_id)
         address_check = self._build_address_check_cte(data.user_id, data.address_id)
 
-        # 2. CTE баланса
         balance_check = self._build_balance_check_cte(
             address_id=data.address_id,
             user_asset_id=data.user_asset_id,
@@ -219,10 +213,8 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             balance_check=balance_check,
         )
 
-        # 3. Значения для вставки
         values = self._build_value_columns(data)
 
-        # 4. INSERT ... FROM SELECT ... WHERE все три проверки пройдены
         insert_op = (
             insert(UserAssetOperation)
             .from_select(
@@ -244,15 +236,14 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             .cte("insert_op")
         )
 
-        # 5. Финальный запрос
         final_stmt = self._build_final_select(asset_check, address_check, balance_ok, insert_op)
 
-        # 6. Выполнение
         async with self.db.session() as session:
             row = await session.execute(final_stmt)
             await session.commit()
             asset_exists, address_exists, balance_ok, inserted_id = row.one()
-            return DbCRUDOperationReturnData(
+
+        return DbCRUDOperationReturnData(
                 inserted_id,
                 asset_exists,
                 address_exists,

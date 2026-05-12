@@ -5,7 +5,7 @@ from litestar.status_codes import HTTP_400_BAD_REQUEST, HTTP_204_NO_CONTENT
 from sqlalchemy.exc import IntegrityError
 
 from api.common_domain import ProblemDetailResponse
-from api.exceptions_handling import integrity_error_handler_factory, asset_not_found_error_handler_factory
+from api.exceptions_handling import integrity_error_handler_factory, base_error_handler_factory
 from api.user_asset_addresses.domain import (
     UserAssetAddressData,
     UserAssetAddressDto,
@@ -34,11 +34,9 @@ class UserAssetAddressController(Controller):
             PG_UNIQUE_CONSTRAINT_VIOLATION_CODE,
             'user_asset_address_already_exists.html',
         ),
-        AssetNotFoundError: asset_not_found_error_handler_factory(
-            'Public key does not exists',
-            'Public key can not be updated as it does not exists. You need to create it first',
-            'user_asset_address_not_exists.html',
-        )
+        AssetNotFoundError: base_error_handler_factory('Public key does not exists',
+                                                       'Public key can not be updated as it does not exists. You need to create it first',
+                                                       'user_asset_address_not_exists.html')
     }
 
     @post(

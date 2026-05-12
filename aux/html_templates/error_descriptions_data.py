@@ -132,3 +132,22 @@ ErrorDescriptionData(
         output_html_file_name='user_asset_operation_not_exists.html',
     )
 )
+
+ErrorDescriptionData(
+    template_data=TemplateData(
+        title='Not enough balance',
+        header='Balance is to low',
+        summary='Balance on this exact token is way to low',
+        suggested_status='400 (Bad Request)',
+        severity='Low',
+        hr_description='You dont have enough tokens on this exact wallet to sell it.',
+        guidance=(
+            'You want to sell more tokens then you have',
+            'Please use smaller amount to sell',
+            'Perhaps you have same tokens on different wallet or different address?'
+        )
+    ),
+    system_data=SystemData(
+        output_html_file_name='not_enough_balance.html',
+    )
+)

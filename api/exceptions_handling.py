@@ -43,12 +43,12 @@ def integrity_error_handler_factory(
     return _handler
 
 
-def asset_not_found_error_handler_factory(
+def base_error_handler_factory(
         title: str,
         detail: str,
         error_html: str,
-) -> Callable[[Request, AssetNotFoundError], NoReturn]:
-    def _handler(request: Request, exc: AssetNotFoundError) -> NoReturn:
+) -> Callable[[Request, Exception], NoReturn]:
+    def _handler(request: Request, exc: Exception) -> NoReturn:
             url = _url_from_request(request)
             raise ProblemDetailsException(
                     type_=_make_error_description_url(url, error_html),
