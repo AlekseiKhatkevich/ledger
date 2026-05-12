@@ -8,8 +8,15 @@ from api.user_asset_operations.domain import (
     UserAssetOperationDTOIn,
     UserAssetOperationUpdateDTOIn,
 )
-from logic.exceptions import UserAssetNotFoundError, UserAssetAddressNotFoundError
-from logic.usecases.user_asset_operation import UserAssetOperationUseCase
+from logic.exceptions import (
+    UserAssetNotFoundError,
+    UserAssetAddressNotFoundError,
+    UserAssetOperationNotFoundError,
+)
+from logic.usecases.user_asset_operation import (
+    UserAssetOperationInsertUseCase,
+    UserAssetOperationUpdateUseCase,
+)
 from user.domain import User
 
 
@@ -26,6 +33,11 @@ class UserAssetAddressOperationController(Controller):
             'Public key does not exists',
             'Public key can not be updated as it does not exists. You need to create it first',
             'user_asset_address_not_exists.html',
+        ),
+        UserAssetOperationNotFoundError: asset_not_found_error_handler_factory(
+            'User asset operation does not exists',
+            'Operation with this id does not exists',
+            'user_asset_operation_not_exists.html',
         )
     }
     @post(
@@ -35,7 +47,7 @@ class UserAssetAddressOperationController(Controller):
     )
     async def create(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
         user_asset_operation_data = data.create_instance(user_id=kc_user.sub, id=None)
-        return await UserAssetOperationUseCase().execute(user_asset_operation_data)
+        return await UserAssetOperationInsertUseCase().execute(user_asset_operation_data)
 
     @put(
         '/',
@@ -44,4 +56,5 @@ class UserAssetAddressOperationController(Controller):
     )
     async def update(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
         user_asset_operation_data = data.create_instance(user_id=kc_user.sub)
-        return user_asset_operation_data
+        return await UserAssetOperationUpdateUseCase().execute(user_asset_operation_data)
+# todo проверка того, что нельзя продать больше чем имеешь

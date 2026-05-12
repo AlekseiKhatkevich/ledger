@@ -9,3 +9,7 @@ class UserAssetAddressNotFoundError(AssetNotFoundError):
 class UserAssetNotFoundError(AssetNotFoundError):
     pass
 
+class UserAssetOperationNotFoundError(AssetNotFoundError):
+    pass
+
+

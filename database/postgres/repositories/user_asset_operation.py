@@ -6,7 +6,6 @@ from sqlalchemy import (
     CTE,
     ColumnElement,
     Select,
-    Subquery,
     cast,
     exists,
     insert,
@@ -25,8 +24,8 @@ from logic.repositories.user_asset_operation import BaseUserAssetOperationReposi
 class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAssetOperationRepository):
     model = UserAssetOperation
 
+    @staticmethod
     def _build_asset_check_cte(
-        self,
         user_id: uuid.UUID,
         user_asset_id: int,
     ) -> CTE:
@@ -40,8 +39,8 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             .cte("asset_check")
         )
 
+    @staticmethod
     def _build_address_check_cte(
-        self,
         user_id: uuid.UUID,
         address_id: int,
     ) -> CTE:
@@ -55,8 +54,8 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             .cte("address_check")
         )
 
+    @staticmethod
     def _build_value_columns(
-        self,
         data: UserAssetOperationData,
     ) -> list[ColumnElement[Any]]:
         return [
@@ -120,7 +119,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
 
     async def update_if_valid(
         self,
-        operation_id: int,
         data: UserAssetOperationData,
     ) -> tuple[int | None, bool, bool]:
         asset_check = self._build_asset_check_cte(data.user_id, data.user_asset_id)
@@ -128,7 +126,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
 
         values = self._build_value_columns(data)
 
-        sq: Subquery = (
+        sq = (
             select(*values)
             .where(
                 select(asset_check.c.ok).scalar_subquery(),
@@ -149,7 +147,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
                     UserAssetOperation.address_id: sq.c.address_id,
                 },
             )
-            .where(UserAssetOperation.id == operation_id)
+            .where(UserAssetOperation.id == data.id)
             .returning(UserAssetOperation.id)
             .cte("update_op")
         )
