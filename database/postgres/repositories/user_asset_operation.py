@@ -387,7 +387,11 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
                     UserAssetOperation.address_id: sq.c.address_id,
                 },
             )
-            .where(UserAssetOperation.id == data.id)
+            .where(
+                UserAssetOperation.id == data.id,
+                sq.c.user_asset_id == UserAssetOperation.user_asset_id,
+                sq.c.address_id == UserAssetOperation.address_id,
+            )
             .returning(UserAssetOperation.id)
             .cte("update_op")
         )
