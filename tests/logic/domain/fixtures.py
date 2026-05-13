@@ -5,10 +5,12 @@ from tests.logic.domain.factories import (
     UserAssetAddressDataFactory,
     UserAssetAddressUpdateDataFactory,
     UserAssetAddressDeleteDataFactory,
+    UserAssetOperationDataFactory,
 )
 
 register_fixture(UserAssetDataFactory)
 register_fixture(UserAssetAddressDataFactory)
 register_fixture(UserAssetAddressUpdateDataFactory)
 register_fixture(UserAssetAddressDeleteDataFactory)
+register_fixture(UserAssetOperationDataFactory)
 

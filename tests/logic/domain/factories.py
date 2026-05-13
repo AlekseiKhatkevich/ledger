@@ -1,11 +1,15 @@
+import decimal
+
+import msgspec
 from faker import Faker
 from polyfactory.factories.msgspec_factory import MsgspecFactory
 
 from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData, UserAssetAddressDeleteData
+from api.user_asset_operations.domain import UserAssetOperationData
 from api.user_assets.domain import UserAssetData
 
 
-class CustomFactory[T](MsgspecFactory[T]):
+class CustomFactory[T: msgspec.Struct](MsgspecFactory[T]):
     __is_base_factory__ = True
     __faker__ = Faker(locale='ru_RU')
     __randomize_collection_length__ = True
@@ -31,3 +35,14 @@ class UserAssetAddressUpdateDataFactory(CustomFactory[UserAssetAddressUpdateData
 
 class UserAssetAddressDeleteDataFactory(CustomFactory[UserAssetAddressDeleteData]):
     pass
+
+
+class UserAssetOperationDataFactory(CustomFactory[UserAssetOperationData]):
+
+    @classmethod
+    def quantity(cls) -> decimal.Decimal:
+        return cls.__faker__.pydecimal(min_value=0.01)
+
+    @classmethod
+    def unit_price(cls) -> decimal.Decimal:
+        return cls.__faker__.pydecimal(min_value=0.01)
