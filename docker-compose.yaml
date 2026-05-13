@@ -358,6 +358,12 @@ services:
       - "4317" # OTLP gRPC
       - "4318" # OTLP HTTP
       - "16686" # UI
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q -T 2 http://localhost:16686/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     command: ["--config", "file:/etc/jaeger/jaeger-config.yaml"]
     volumes:
       - jaeger_data:/badger

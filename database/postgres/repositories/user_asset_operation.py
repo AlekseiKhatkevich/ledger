@@ -9,6 +9,7 @@ from sqlalchemy import (
     Select,
     case,
     cast,
+    delete,
     exists,
     func,
     insert,
@@ -19,7 +20,7 @@ from sqlalchemy import (
 
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData
 from database.postgres.repositories.base_repository import PostgresBaseRepository
-from logic.db_models import AssetOperationType, UserAssetOperation
+from logic.db_models import AssetOperationType, UserAssetOperation, UserAsset, UserAssetAddress
 from logic.repositories.user_asset_operation import BaseUserAssetOperationRepository
 
 """
@@ -170,6 +171,16 @@ SELECT
     (SELECT balance_check.balance FROM balance_check)  AS balance,
     (SELECT balance_ok.ok FROM balance_ok)             AS balance_ok,
     (SELECT update_op.id FROM update_op)               AS op_id;
+    
+    
+--------------------------------------------------------------------------------------------------------------
+3 delete_if_valid
+
+DELETE FROM user_asset_operations USING user_assets
+    WHERE user_asset_operations.id = :id
+        AND user_assets.id = user_asset_operations.user_asset_id
+        AND user_assets.user_id = :user_id
+    RETURNING user_asset_operations.id
 """
 
 
@@ -182,7 +193,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         user_id: uuid.UUID,
         user_asset_id: int,
     ) -> CTE:
-        UserAsset = UserAssetOperation.asset.property.mapper.class_
         return (
             select(
                 exists()
@@ -197,7 +207,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         user_id: uuid.UUID,
         address_id: int,
     ) -> CTE:
-        UserAssetAddress = UserAssetOperation.address.property.mapper.class_
         return (
             select(
                 exists()
@@ -397,3 +406,20 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
                 balance,
                 balance_ok,
             )
+
+    async def delete_if_valid(self, _id: int, user_id: uuid.UUID) -> int | None:
+        stmt = (
+            delete(UserAssetOperation)
+            .where(
+                UserAssetOperation.id == _id,
+                UserAsset.id == UserAssetOperation.user_asset_id,
+                UserAsset.user_id == user_id,
+            )
+            .returning(UserAssetOperation.id)
+        )
+
+        async with self.db.session() as session:
+            deleted_id = await session.scalar(stmt)
+            await session.commit()
+
+        return deleted_id

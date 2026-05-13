@@ -1,3 +1,5 @@
+import uuid
+
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.exceptions import (
@@ -18,6 +20,10 @@ def _check_asset_and_address(*, data: UserAssetOperationData, return_data: DbCRU
 def _check_if_updated(*, data: UserAssetOperationData, return_data: DbCRUDOperationReturnData) -> None:
     if return_data.id is None:
         raise UserAssetOperationNotFoundError(extra={'id': data.id})
+
+def _check_if_deleted(_id: int, *, deleted_id: int | None) -> None:
+    if deleted_id is None:
+        raise UserAssetOperationNotFoundError(extra={'id': _id})
 
 def _check_balance(return_data: DbCRUDOperationReturnData) -> None:
     if not return_data.balance_ok:
@@ -49,3 +55,11 @@ class UserAssetOperationUpdateUseCase:
         _check_if_updated(data=data, return_data=return_data)
 
         return data
+
+
+class UserAssetOperationDeleteUseCase:
+
+    @staticmethod
+    async def execute(_id: int, user_id: uuid.UUID) -> None:
+        deleted_id = await PostgresUserAssetOperationRepository().delete_if_valid(_id, user_id)
+        _check_if_deleted(_id, deleted_id=deleted_id)

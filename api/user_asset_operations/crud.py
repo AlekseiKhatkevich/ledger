@@ -1,4 +1,4 @@
-from litestar import Controller, post, put
+from litestar import Controller, post, put, delete
 from litestar.dto import DTOData
 
 from api.exceptions_handling import base_error_handler_factory
@@ -11,11 +11,13 @@ from api.user_asset_operations.domain import (
 from logic.exceptions import (
     UserAssetNotFoundError,
     UserAssetAddressNotFoundError,
-    UserAssetOperationNotFoundError, NotEnoughBalanceToSell,
+    UserAssetOperationNotFoundError,
+    NotEnoughBalanceToSell,
 )
 from logic.usecases.user_asset_operation import (
     UserAssetOperationInsertUseCase,
     UserAssetOperationUpdateUseCase,
+    UserAssetOperationDeleteUseCase,
 )
 from user.domain import User
 
@@ -62,3 +64,7 @@ class UserAssetAddressOperationController(Controller):
     async def update(self, data: DTOData[UserAssetOperationData], kc_user: User) -> UserAssetOperationData:
         user_asset_operation_data = data.create_instance(user_id=kc_user.sub)
         return await UserAssetOperationUpdateUseCase().execute(user_asset_operation_data)
+
+    @delete('/{_id:int}',)
+    async def delete(self, _id:int, kc_user: User) -> None:
+        return await UserAssetOperationDeleteUseCase().execute(_id, kc_user.sub)
