@@ -9,7 +9,9 @@ from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetail
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -20,6 +22,7 @@ from api.user_asset_operations.crud import UserAssetAddressOperationController
 from api.user_assets.crud import UserAssetCrudController
 from aux.api.routes import aux_router
 from config import settings
+from database.postgres.connection import db
 from user.auth.keycloack_middleware import JWTAuthenticationMiddleware
 from user.controllers import UserController
 from user.dependencies import keycloak_user
@@ -32,6 +35,8 @@ processor = BatchSpanProcessor(otlp_exporter)
 provider.add_span_processor(processor)
 trace.set_tracer_provider(provider)
 LoggingInstrumentor().instrument(set_logging_format=True)
+SQLAlchemyInstrumentor().instrument(engine=db.engine.sync_engine, enable_commenter=True)
+HTTPXClientInstrumentor().instrument()
 open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
 
 auth_mw = DefineMiddleware(
