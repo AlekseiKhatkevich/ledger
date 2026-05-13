@@ -360,6 +360,8 @@ services:
       - "4317" # OTLP gRPC
       - "4318" # OTLP HTTP
       - "16686" # UI
+    environment:
+      JAEGER_QUERY_UI_CONFIG: /etc/jaeger/jaeger-ui-config.json
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q -T 2 http://localhost:16686/ || exit 1"]
       interval: 15s
@@ -370,6 +372,7 @@ services:
     volumes:
       - jaeger_data:/badger
       - ./aux/jaeger/jaeger-config.yaml:/etc/jaeger/jaeger-config.yaml:ro
+      - ./aux/jaeger/jaeger-ui-config.json:/etc/jaeger/jaeger-ui-config.json:ro
 
 
 networks:

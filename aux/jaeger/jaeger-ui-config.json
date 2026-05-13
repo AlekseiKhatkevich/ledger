@@ -1,0 +1,26 @@
+{
+  "menu": [
+    {
+      "label": "Документация API",
+      "url": "/docs"
+    }
+  ],
+  "search": {
+    "maxLookback": {
+      "label": "2 days",
+      "value": "2d"
+    },
+    "maxLimit": 150
+  },
+  "Dependencies": {
+    "menuEnabled": true,
+    "menuLabel": "Граф зависимостей"
+  },
+  "monitor": {
+    "menuEnabled": true,
+    "menuLabel": "Монитор"
+  },
+  "archive": {
+    "enabled": true
+  }
+}
