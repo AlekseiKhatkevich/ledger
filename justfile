@@ -16,7 +16,7 @@ alias uv-run := run
 #  start container, start without temporal -- just up main, start few profiles -- just up profile1,profile2,...
 [group('docker')]
 up-dev *profiles="*": && down-dev
-    COMPOSE_PROFILES={{profiles}} docker compose up --watch
+    COMPOSE_PROFILES="{{profiles}}" docker compose up --watch
 
 #  force recreate container
 [group('docker')]
@@ -26,17 +26,18 @@ force-recreate:
 #  stop container
 [group('docker')]
 down-dev *profiles="*":
-    COMPOSE_PROFILES={{profiles}} docker compose down --remove-orphans
+    COMPOSE_PROFILES="{{profiles}}" docker compose down --remove-orphans
+
+#  reload containers (down + up)
+[group('docker')]
+reload *profiles="*":
+    just down-dev
+    just up-dev "{{profiles}}"
 
 #  build container
 [group('docker')]
 build:
     docker compose build
-
-# restart ledger-api service
-[group('docker')]
-restart name="backend-api":
-    docker compose restart {{name}}
 
 #  remove dangling volumes
 [group('docker')]
@@ -119,5 +120,3 @@ run path:
 [group('otel')]
 jaeger-ui:
     nohup xdg-open http://localhost:16686/ >/dev/null 2>&1 &
-
-

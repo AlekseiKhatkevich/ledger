@@ -265,7 +265,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         ]
 
     @staticmethod
-    def _build_final_select_with_balance(
+    def _build_final_select(
         asset_check: CTE,
         address_check: CTE,
         balance_check: CTE,
@@ -277,18 +277,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             select(address_check.c.ok).scalar_subquery().label("address_exists"),
             select(balance_check.c.balance).scalar_subquery().label("balance"),
             select(balance_ok.c.ok).scalar_subquery().label("balance_ok"),
-            select(op_cte.c.id).scalar_subquery().label("op_id"),
-        )
-
-    @staticmethod
-    def _build_final_select(
-        asset_check: CTE,
-        address_check: CTE,
-        op_cte: CTE,
-    ) -> Select:
-        return select(
-            select(asset_check.c.ok).scalar_subquery().label("asset_exists"),
-            select(address_check.c.ok).scalar_subquery().label("address_exists"),
             select(op_cte.c.id).scalar_subquery().label("op_id"),
         )
 
@@ -333,7 +321,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             .cte("insert_op")
         )
 
-        final_stmt = self._build_final_select_with_balance(asset_check, address_check, balance_check, balance_ok, insert_op)
+        final_stmt = self._build_final_select(asset_check, address_check, balance_check, balance_ok, insert_op)
 
         async with self.db.session() as session:
             row = await session.execute(final_stmt)
@@ -395,7 +383,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             .cte("update_op")
         )
 
-        final_stmt = self._build_final_select_with_balance(asset_check, address_check, balance_check, balance_ok, update_op)
+        final_stmt = self._build_final_select(asset_check, address_check, balance_check, balance_ok, update_op)
 
         async with self.db.session() as session:
             row = await session.execute(final_stmt)
