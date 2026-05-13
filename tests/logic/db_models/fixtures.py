@@ -7,6 +7,7 @@ from database.postgres.repositories.asset_ticker import PostgresAssetTickerRepos
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_address import PostgresUserAssetAddressRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
+from logic.db_models import AssetOperationType
 from tests.logic.db_models.factories import (
     UserAssetAddressFactory,
     AssetTickerFactory,
@@ -71,4 +72,17 @@ async def user_asset_operation_in_db(
     return await user_asset_operation_factory.create_async(
         user_asset_id=user_asset_in_db.id,
         address_id=user_asset_address_in_db.id,
+    )
+
+
+@pytest.fixture
+async def purchase_operation_in_db(
+        user_asset_operation_factory: UserAssetOperationFactory,
+        user_asset_in_db: UserAsset,
+        user_asset_address_in_db: UserAssetAddress,
+) -> UserAssetOperation:
+    return await user_asset_operation_factory.create_async(
+        user_asset_id=user_asset_in_db.id,
+        address_id=user_asset_address_in_db.id,
+        type=AssetOperationType.PURCHASE,
     )
