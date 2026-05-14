@@ -19,6 +19,7 @@ from sqlalchemy import (
 )
 
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData
+from api.user_assets.domain import UserAssetAggregatedData
 from database.postgres.repositories.base_repository import PostgresBaseRepository
 from logic.db_models import AssetOperationType, UserAssetOperation, UserAsset, UserAssetAddress
 from logic.repositories.user_asset_operation import BaseUserAssetOperationRepository
@@ -181,6 +182,44 @@ DELETE FROM user_asset_operations USING user_assets
         AND user_assets.id = user_asset_operations.user_asset_id
         AND user_assets.user_id = :user_id
     RETURNING user_asset_operations.id
+
+--------------------------------------------------------------------------------------------------------------
+4. get_user_asset_aggregates() – aggregated per-token stats for a user's portfolio.
+   Includes a scalar correlated subquery that collects all distinct wallet names
+   for each token by unnesting the wallet_name array column.
+
+SELECT
+    -- Current token quantity: PURCHASE adds, SELL subtracts
+    COALESCE(SUM(CASE WHEN type = 'PURCHASE' THEN quantity ELSE -quantity END), 0::decimal) AS coin_qty_now,
+    -- Number of unique addresses used for this token
+    COUNT(DISTINCT address_id) AS unique_addresses_cnt,
+    -- Total USDT spent on purchases
+    COALESCE(SUM(CASE WHEN type = 'PURCHASE' THEN summ END), 0::decimal) AS purchased_for_usdt,
+    -- Total USDT received from sells
+    COALESCE(SUM(CASE WHEN type = 'SELL' THEN summ END), 0::decimal) AS sold_for_usdt,
+    -- How many purchase/sell operations
+    COUNT(*) FILTER (WHERE type = 'PURCHASE') AS num_purchases,
+    COUNT(*) FILTER (WHERE type = 'SELL') AS num_sells,
+    ua.name,
+    ua.ticker_id,
+    ua.id,
+    -- Scalar correlated subquery: collects all distinct wallet names across
+    -- every address that ever held this token. Uses UNNEST to flatten the
+    -- text[] column, then ARRAY_AGG(DISTINCT) to deduplicate.
+    COALESCE(
+        (
+            SELECT ARRAY_AGG(DISTINCT w)
+            FROM user_asset_operations uao2
+            JOIN user_asset_addresses uaa2 ON uaa2.id = uao2.address_id
+            CROSS JOIN LATERAL UNNEST(uaa2.wallet_name) AS w
+            WHERE uao2.user_asset_id = ua.id
+        ),
+        '{}'::text[]
+    ) AS wallet_names
+FROM user_asset_operations uao
+JOIN user_assets ua ON uao.user_asset_id = ua.id
+WHERE ua.user_id = '<uuid>'                     -- filter by user
+GROUP BY ua.id, ua.name, ua.ticker_id;          -- one row per token
 """
 
 
@@ -427,3 +466,95 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             await session.commit()
 
         return deleted_id
+
+    async def get_user_asset_aggregates(
+        self,
+        user_id: uuid.UUID,
+    ) -> list[UserAssetAggregatedData]:
+        """Aggregated per-token stats for a given user.
+
+        Returns one UserAssetAggregatedData per user_asset (token).
+        Includes a scalar correlated subquery that collects all distinct
+        wallet names across every address that ever held this token.
+        """
+        # Inner subquery: unnest the text[] column into individual rows.
+        # Using a subquery here instead of raw func.unnest() inside
+        # array_agg(), because PostgreSQL forbids set-returning functions
+        # inside aggregate expressions. The outer query then applies
+        # array_agg(DISTINCT ...) on the result of this subquery.
+        inner_unnest = (
+            select(
+                func.unnest(UserAssetAddress.wallet_name).label("w"),
+            )
+            .select_from(UserAssetOperation)
+            .join(UserAssetAddress)
+            .where(UserAssetOperation.user_asset_id == UserAsset.id)
+            .correlate(UserAsset)
+            .subquery()
+        )
+        wallet_names_subq = (
+            select(func.array_agg(func.distinct(inner_unnest.c.w)))
+            .select_from(inner_unnest)
+            .scalar_subquery()
+        )
+
+        stmt = (
+            select(
+                # Current token quantity: PURCHASE adds, SELL subtracts
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (UserAssetOperation.type == AssetOperationType.PURCHASE, UserAssetOperation.quantity),
+                            else_=-UserAssetOperation.quantity,
+                        ),
+                    ),
+                    decimal.Decimal(0),
+                ).label("coin_qty_now"),
+                # Number of unique addresses used for this token
+                func.count(UserAssetOperation.address_id.distinct()).label("unique_addresses_cnt"),
+                # Total USDT spent on purchases
+                func.coalesce(
+                    func.sum(UserAssetOperation.summ).filter(UserAssetOperation.type == AssetOperationType.PURCHASE),
+                    decimal.Decimal(0),
+                ).label("purchased_for_usdt"),
+                # Total USDT received from sells
+                func.coalesce(
+                    func.sum(UserAssetOperation.summ).filter(UserAssetOperation.type == AssetOperationType.SELL),
+                    decimal.Decimal(0),
+                ).label("sold_for_usdt"),
+                # How many purchase/sell operations
+                func.count("*").filter(UserAssetOperation.type == AssetOperationType.PURCHASE).label("num_purchases"),
+                func.count("*").filter(UserAssetOperation.type == AssetOperationType.SELL).label("num_sells"),
+                UserAsset.name,
+                UserAsset.ticker_id,
+                UserAsset.id,
+                # Scalar correlated subquery for wallet names
+                func.coalesce(
+                    wallet_names_subq,
+                    literal([]),
+                ).label("wallet_names"),
+            )
+            .select_from(UserAssetOperation)
+            .join(UserAsset)
+            .where(UserAsset.user_id == user_id)
+            .group_by(UserAsset.id, UserAsset.name, UserAsset.ticker_id)
+            .order_by(UserAsset.name)
+        )
+
+        async with self.db.session() as session:
+            rows = await session.execute(stmt)
+            return [
+                UserAssetAggregatedData(
+                    coin_qty_now=row.coin_qty_now,
+                    unique_addresses_cnt=row.unique_addresses_cnt,
+                    purchased_for_usdt=row.purchased_for_usdt,
+                    sold_for_usdt=row.sold_for_usdt,
+                    num_purchases=row.num_purchases,
+                    num_sells=row.num_sells,
+                    name=row.name,
+                    ticker_id=row.ticker_id,
+                    id=row.id,
+                    wallet_names=row.wallet_names or [],
+                )
+                for row in rows
+            ]

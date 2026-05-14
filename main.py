@@ -27,7 +27,7 @@ from user.auth.keycloack_middleware import JWTAuthenticationMiddleware
 from user.controllers import UserController
 from user.dependencies import keycloak_user
 
-# OTLP ad stuff
+# OTEL and stuff
 resource = Resource(attributes={SERVICE_NAME: settings.APP_NAME})
 provider = TracerProvider(resource=resource)
 otlp_exporter = OTLPSpanExporter()

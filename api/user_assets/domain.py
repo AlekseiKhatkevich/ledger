@@ -1,4 +1,6 @@
+import decimal
 import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
 import msgspec
@@ -10,8 +12,27 @@ class UserAssetData(msgspec.Struct):
     ticker_id: Annotated[str, msgspec.Meta(max_length=50)]
     user_id: uuid.UUID
 
-    def __post_init__(self) -> str:
+    def __post_init__(self) -> None:
         self.ticker_id = self.ticker_id.upper()
+
 
 class UserAssetDto(MsgspecDTO[UserAssetData]):
     config = DTOConfig(exclude={'user_id', })
+
+
+@dataclass
+class UserAssetAggregatedData:
+    """Aggregated per-token stats for a user's portfolio.
+
+    One row per token (user_asset).
+    """
+    coin_qty_now: decimal.Decimal
+    unique_addresses_cnt: int
+    purchased_for_usdt: decimal.Decimal
+    sold_for_usdt: decimal.Decimal
+    num_purchases: int
+    num_sells: int
+    name: str
+    ticker_id: str
+    id: int
+    wallet_names: list[str]
