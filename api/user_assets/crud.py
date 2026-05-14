@@ -42,7 +42,6 @@ class UserAssetCrudController(Controller):
         return user_data
 
     # todo ну и всю схему с ценой на сейчас реализовать
-    # todo проверить схему
     # todo caddy opentelemetry
     # todo тесты
     @get('/')

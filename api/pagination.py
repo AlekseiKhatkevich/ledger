@@ -3,14 +3,13 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, List, TypeVar
 
-from litestar.exceptions import ValidationException
 from litestar.params import Parameter
 
+from api.user_assets.domain import UserAssetAggregatedData
 from constants.api import (
     LIST_VIEW_DEFAULT_PAGE_SIZE,
     LIST_VIEW_MAX_PAGE_SIZE,
 )
-from api.user_assets.domain import UserAssetAggregatedData
 from logic.usecases.user_asset import UserAssetListUseCase
 
 C = TypeVar("C", int, str, uuid.UUID)
@@ -50,12 +49,6 @@ class AdvancedCursorPaginator(ABC, Generic[C, T]):
     Subclasses must implement :meth:`get_items` returning
     ``(items, next_cursor, has_more)``.
     """
-
-    default_page_size: int = 20
-    """Default number of results per page."""
-    max_page_size: int = 100
-    """Maximum allowed number of results per page."""
-
     @abstractmethod
     async def get_items(
         self,
@@ -95,14 +88,6 @@ class AdvancedCursorPaginator(ABC, Generic[C, T]):
         """
         if results_per_page is None:
             results_per_page = self.default_page_size
-        elif results_per_page < 1:
-            raise ValidationException(
-                detail=f"results_per_page must be >= 1, got {results_per_page}",
-            )
-        elif results_per_page > self.max_page_size:
-            raise ValidationException(
-                detail=f"results_per_page must be <= {self.max_page_size}, got {results_per_page}",
-            )
 
         items, new_cursor, has_more = await self.get_items(cursor=cursor, results_per_page=results_per_page)
 
@@ -116,9 +101,6 @@ class AdvancedCursorPaginator(ABC, Generic[C, T]):
 
 class UserAssetsPaginator(AdvancedCursorPaginator[str, UserAssetAggregatedData]):
     """Paginator for aggregated user asset data."""
-
-    default_page_size = LIST_VIEW_DEFAULT_PAGE_SIZE
-    max_page_size = LIST_VIEW_MAX_PAGE_SIZE
 
     def __init__(self, user_id: uuid.UUID) -> None:
         self.user_id = user_id
