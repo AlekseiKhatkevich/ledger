@@ -60,6 +60,9 @@
 :8001 {
     @ready path /_caddy_ready
     handle @ready {
+      tracing {
+                span "caddy_self_healthcheck"
+            }
     respond "ok" 200
 }
 }
@@ -79,6 +82,9 @@
         }
 
     handle @static {
+          tracing {
+            span "static"
+        }
         root * /srv
         file_server {
             hide /error-descriptions/templates/*
@@ -87,6 +93,9 @@
 
     # S3 files
     handle_path /ext-files/* {
+          tracing {
+                    span "s3"
+                }
         rewrite * /{$S3_EXT_FILES_BUCKET}{path}
         reverse_proxy http://minio:9000
     }
@@ -97,6 +106,9 @@
     }
 #   Proxying token sourcing and refreshing to keykloack endpoint. Both operation use same EP.
     handle @login+refresh {
+         tracing {
+            span "login+refresh"
+        }
         rewrite * {vars.KC_BASE_URL}/token
 
         reverse_proxy keycloak:8080 {
@@ -110,6 +122,9 @@
         path /aux/health /docs
     }
     handle @exclude_from_auth {
+         tracing {
+            span "no_auth"
+        }
         import ledger_reverce_proxy
     }
 
@@ -118,6 +133,9 @@
         path /user
     }
     handle @userinfo {
+        tracing {
+            span "userinfo"
+        }
        reverse_proxy keycloak:8080 {
            rewrite {vars.KC_BASE_URL}/userinfo
            import headers_for_keycloak
@@ -126,6 +144,9 @@
 
 
     handle * {
+         tracing {
+            span "with_auth"
+        }
          jwtauth {
             jwk_url http://keycloak:8080{vars.KC_BASE_URL}/certs
             issuer_whitelist {$KC_ISSUER_WHITELIST}
