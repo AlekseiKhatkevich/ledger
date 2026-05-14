@@ -1,5 +1,3 @@
-import uuid
-
 from litestar import Controller, route, get
 from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
@@ -10,11 +8,7 @@ from api.common_domain import ProblemDetailResponse
 from api.exceptions_handling import integrity_error_handler_factory
 from api.pagination import CursorPagination, UserAssetsPaginator
 from api.user_assets.domain import UserAssetData, UserAssetDto, UserAssetAggregatedData
-from constants import (
-    PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE,
-    USER_ASSET_LIST_VIEW_DEFAULT_PAGE_SIZE,
-    USER_ASSET_LIST_VIEW_MAX_PAGE_SIZE,
-)
+from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE, LIST_VIEW_DEFAULT_PAGE_SIZE
 from logic.usecases.user_asset import UserAssetUpsertUseCase
 from user.domain import User
 
@@ -55,8 +49,8 @@ class UserAssetCrudController(Controller):
     async def get_all_paginated(
             self,
             kc_user: User,
-            cursor: str | None,
-            results_per_page: int
+            cursor: str | None = None,
+            results_per_page: int = LIST_VIEW_DEFAULT_PAGE_SIZE,
     ) -> CursorPagination[str, UserAssetAggregatedData]:
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
