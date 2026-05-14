@@ -19,7 +19,7 @@ from sqlalchemy import (
 )
 
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData
-from api.user_assets.domain import UserAssetAggregatedData
+from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
 from logic.db_models import AssetOperationType, UserAssetOperation, UserAsset, UserAssetAddress
 from logic.repositories.user_asset_operation import BaseUserAssetOperationRepository
@@ -470,12 +470,23 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
     async def get_user_asset_aggregates(
         self,
         user_id: uuid.UUID,
-    ) -> list[UserAssetAggregatedData]:
-        """Aggregated per-token stats for a given user.
+        page_size: int = 20,
+        last_ticker_id: str | None = None,
+    ) -> UserAssetAggregatedPage:
+        """Aggregated per-token stats for a given user with keyset pagination.
 
-        Returns one UserAssetAggregatedData per user_asset (token).
-        Includes a scalar correlated subquery that collects all distinct
-        wallet names across every address that ever held this token.
+        Uses the existing (user_id, ticker_id) unique constraint as the
+        pagination cursor. Lexicographic ordering on ticker_id is natural
+        for uppercase ticker symbols (BTC, ETH, SOL, ...).
+
+        Args:
+            user_id:         The user to fetch data for.
+            page_size:       How many tokens to return per page.
+            last_ticker_id:  Ticker ID from the previous page's last item.
+                             Pass None for the first page.
+
+        Returns:
+            UserAssetAggregatedPage with items, last_ticker_id, and has_more flag.
         """
         # Inner subquery: unnest the text[] column into individual rows.
         # Using a subquery here instead of raw func.unnest() inside
@@ -497,6 +508,11 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             .select_from(inner_unnest)
             .scalar_subquery()
         )
+
+        # Where clause: filter by user, and if paginating — skip past the cursor
+        where_conditions = [UserAsset.user_id == user_id]
+        if last_ticker_id is not None:
+            where_conditions.append(UserAsset.ticker_id > last_ticker_id)
 
         stmt = (
             select(
@@ -536,25 +552,29 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
             )
             .select_from(UserAssetOperation)
             .join(UserAsset)
-            .where(UserAsset.user_id == user_id)
+            .where(*where_conditions)
             .group_by(UserAsset.id, UserAsset.name, UserAsset.ticker_id)
-            .order_by(UserAsset.name)
+            .order_by(UserAsset.ticker_id)
+            .limit(page_size + 1)  # fetch one extra row to detect next page
         )
 
         async with self.db.session() as session:
             rows = await session.execute(stmt)
-            return [
-                UserAssetAggregatedData(
-                    coin_qty_now=row.coin_qty_now,
-                    unique_addresses_cnt=row.unique_addresses_cnt,
-                    purchased_for_usdt=row.purchased_for_usdt,
-                    sold_for_usdt=row.sold_for_usdt,
-                    num_purchases=row.num_purchases,
-                    num_sells=row.num_sells,
-                    name=row.name,
-                    ticker_id=row.ticker_id,
-                    id=row.id,
-                    wallet_names=row.wallet_names or [],
-                )
-                for row in rows
-            ]
+
+        all_items = [UserAssetAggregatedData(*row) for row in rows]
+
+        # Determine if there is a next page
+        if len(all_items) > page_size:
+            has_more = True
+            all_items = all_items[:page_size]
+        else:
+            has_more = False
+
+        # last_ticker_id: ticker_id of the last returned item, or None if empty
+        last_ticker_id = all_items[-1].ticker_id if all_items else None
+
+        return UserAssetAggregatedPage(
+            items=all_items,
+            last_ticker_id=last_ticker_id,
+            has_more=has_more,
+        )
