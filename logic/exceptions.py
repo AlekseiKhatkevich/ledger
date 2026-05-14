@@ -1,6 +1,10 @@
-class AssetNotFoundError(Exception):
+class BaseLedgerApiException(Exception):
     def __init__(self, extra: dict | None = None) -> None:
         self.extra = extra if extra is not None else {}
+
+
+class AssetNotFoundError(BaseLedgerApiException):
+    pass
 
 
 class UserAssetAddressNotFoundError(AssetNotFoundError):
@@ -14,9 +18,8 @@ class UserAssetOperationNotFoundError(AssetNotFoundError):
 
 
 
-class BalanceError(Exception):
-    def __init__(self, extra: dict | None = None) -> None:
-        self.extra = extra if extra is not None else {}
+class BalanceError(BaseLedgerApiException):
+   pass
 
 
 class NotEnoughBalanceToSell(BalanceError):

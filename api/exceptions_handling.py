@@ -6,7 +6,7 @@ from litestar.plugins.problem_details import ProblemDetailsException
 from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
 
-from logic.exceptions import AssetNotFoundError
+from logic.exceptions import AssetNotFoundError, BaseLedgerApiException
 
 
 def _url_from_request(request: Request) -> URL:
@@ -28,7 +28,7 @@ def integrity_error_handler_factory(
         error_html: str,
 ) -> Callable[[Request, IntegrityError], NoReturn]:
     def _handler(request: Request, exc: IntegrityError) -> NoReturn:
-            if exc.orig.pgcode == pg_error_code:
+            if exc.orig is not None and exc.orig.pgcode == pg_error_code:
                 url = _url_from_request(request)
                 raise ProblemDetailsException(
                     type_=_make_error_description_url(url, error_html),
@@ -47,8 +47,8 @@ def base_error_handler_factory(
         title: str,
         detail: str,
         error_html: str,
-) -> Callable[[Request, Exception], NoReturn]:
-    def _handler(request: Request, exc: Exception) -> NoReturn:
+) -> Callable[[Request, BaseLedgerApiException], NoReturn]:
+    def _handler(request: Request, exc: BaseLedgerApiException) -> NoReturn:
             url = _url_from_request(request)
             raise ProblemDetailsException(
                     type_=_make_error_description_url(url, error_html),

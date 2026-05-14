@@ -16,12 +16,12 @@ async def nng_node_info(state: State) -> NNGNodeInfo:
     """State of nng node"""
     n = state.nng_node
     return NNGNodeInfo(**{
-        'dialers': [d for d in n.dialers.keys()],
+        'dialers': list(n.dialers.keys()),
         'local_addr': n.local_addr,
         'name': n.name,
         'event_state': n.stop_event.is_set(),
         'seen_messages': n.seen_messages.as_set(),
-        'peers': n.peers,
+        'peers': set(n.peers),
     })
 
 aux_router = Router(path='aux', route_handlers=(health, nng_node_info,), tags=('aux', ))

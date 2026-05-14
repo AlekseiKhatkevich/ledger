@@ -49,6 +49,8 @@ class AdvancedCursorPaginator(ABC, Generic[C, T]):
     Subclasses must implement :meth:`get_items` returning
     ``(items, next_cursor, has_more)``.
     """
+    default_page_size: int = LIST_VIEW_DEFAULT_PAGE_SIZE
+    """Default number of items per page."""
     @abstractmethod
     async def get_items(
         self,

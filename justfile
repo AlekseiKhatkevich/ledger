@@ -119,10 +119,16 @@ render-html:
 
 # uv run something
 [group('aux')]
-run path:
-    docker compose exec {{backend_name}} bash -c "uv run {{path}}"
+run *what:
+    docker compose exec {{backend_name}} bash -c "uv run {{what}}"
 
 # jaeger web ui
 [group('otel')]
 jaeger-ui:
     nohup xdg-open http://localhost:16686/ >/dev/null 2>&1 &
+
+
+# run ty tool
+[group('linters')]
+ty path="":
+    just run ty check {{path}}
