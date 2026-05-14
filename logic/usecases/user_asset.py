@@ -17,11 +17,11 @@ class UserAssetListUseCase:
     @staticmethod
     async def execute(
             user_id: uuid.UUID,
-            last_ticker_id: str | None,
+            cursor: str | None,
             page_size: int,
     ) -> UserAssetAggregatedPage:
         return await PostgresUserAssetOperationRepository().get_user_asset_aggregates(
             user_id,
             page_size,
-            last_ticker_id,
+            cursor,
         )

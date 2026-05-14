@@ -46,6 +46,5 @@ class UserAssetAggregatedPage:
     which leverages the existing (user_id, ticker_id) unique index.
     """
     items: list[UserAssetAggregatedData]
-    last_ticker_id: str | None  # ticker_id of the last item on this page
+    cursor: str | None  # ticker_id of the last item on this page
     has_more: bool               # whether a next page exists
-# CursorPagination

@@ -471,7 +471,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         self,
         user_id: uuid.UUID,
         page_size: int,
-        last_ticker_id: str | None = None,
+        cursor: str | None = None,
     ) -> UserAssetAggregatedPage:
         """Aggregated per-token stats for a given user with keyset pagination.
 
@@ -511,8 +511,8 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
 
         # Where clause: filter by user, and if paginating — skip past the cursor
         where_conditions = [UserAsset.user_id == user_id]
-        if last_ticker_id is not None:
-            where_conditions.append(UserAsset.ticker_id > last_ticker_id)
+        if cursor is not None:
+            where_conditions.append(UserAsset.ticker_id > cursor)
 
         stmt = (
             select(
@@ -575,6 +575,6 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
 
         return UserAssetAggregatedPage(
             items=all_items,
-            last_ticker_id=last_ticker_id,
+            cursor=last_ticker_id,
             has_more=has_more,
         )
