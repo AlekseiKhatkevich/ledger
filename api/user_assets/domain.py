@@ -48,3 +48,4 @@ class UserAssetAggregatedPage:
     items: list[UserAssetAggregatedData]
     last_ticker_id: str | None  # ticker_id of the last item on this page
     has_more: bool               # whether a next page exists
+# CursorPagination

@@ -470,7 +470,7 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
     async def get_user_asset_aggregates(
         self,
         user_id: uuid.UUID,
-        page_size: int = 20,
+        page_size: int,
         last_ticker_id: str | None = None,
     ) -> UserAssetAggregatedPage:
         """Aggregated per-token stats for a given user with keyset pagination.
