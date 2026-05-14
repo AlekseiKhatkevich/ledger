@@ -482,11 +482,11 @@ class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAsset
         Args:
             user_id:         The user to fetch data for.
             page_size:       How many tokens to return per page.
-            last_ticker_id:  Ticker ID from the previous page's last item.
+            cursor:  Ticker ID from the previous page's last item.
                              Pass None for the first page.
 
         Returns:
-            UserAssetAggregatedPage with items, last_ticker_id, and has_more flag.
+            UserAssetAggregatedPage with items, cursor, and has_more flag.
         """
         # Inner subquery: unnest the text[] column into individual rows.
         # Using a subquery here instead of raw func.unnest() inside

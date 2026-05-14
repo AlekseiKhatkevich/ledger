@@ -4,12 +4,13 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, List, TypeVar
 
 from litestar.exceptions import ValidationException
+from litestar.params import Parameter
 
-from api.user_assets.domain import UserAssetAggregatedData
 from constants.api import (
     LIST_VIEW_DEFAULT_PAGE_SIZE,
     LIST_VIEW_MAX_PAGE_SIZE,
 )
+from api.user_assets.domain import UserAssetAggregatedData
 from logic.usecases.user_asset import UserAssetListUseCase
 
 C = TypeVar("C", int, str, uuid.UUID)
@@ -17,7 +18,7 @@ T = TypeVar("T")
 
 
 @dataclasses.dataclass
-class CursorPagination(Generic[C, T]):
+class AdvancedCursorPagination(Generic[C, T]):
     """Container for data returned using cursor pagination."""
 
     __slots__ = ("cursor", "items", "next_cursor", "results_per_page", "has_more")
@@ -32,6 +33,15 @@ class CursorPagination(Generic[C, T]):
     """
     has_more: bool
     """Whether there are more results available."""
+
+
+
+PAGE_SIZE_PARAMETER = Parameter(
+    ge=1,
+    le=LIST_VIEW_MAX_PAGE_SIZE,
+    default=LIST_VIEW_DEFAULT_PAGE_SIZE,
+)
+"""Parameter for pagination page size with validation constraints."""
 
 
 class AdvancedCursorPaginator(ABC, Generic[C, T]):
@@ -70,7 +80,7 @@ class AdvancedCursorPaginator(ABC, Generic[C, T]):
         self,
         cursor: C | None = None,
         results_per_page: int | None = None,
-    ) -> CursorPagination[C, T]:
+    ) -> AdvancedCursorPagination[C, T]:
         """Return a paginated result set given an optional cursor (unique ID)
         and a maximal number of results to return.
 
@@ -96,7 +106,7 @@ class AdvancedCursorPaginator(ABC, Generic[C, T]):
 
         items, new_cursor, has_more = await self.get_items(cursor=cursor, results_per_page=results_per_page)
 
-        return CursorPagination[C, T](
+        return AdvancedCursorPagination[C, T](
             items=items,
             results_per_page=results_per_page,
             cursor=new_cursor,

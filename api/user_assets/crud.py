@@ -6,9 +6,9 @@ from sqlalchemy.exc import IntegrityError
 
 from api.common_domain import ProblemDetailResponse
 from api.exceptions_handling import integrity_error_handler_factory
-from api.pagination import CursorPagination, UserAssetsPaginator
+from api.pagination import PAGE_SIZE_PARAMETER, UserAssetsPaginator, AdvancedCursorPagination
 from api.user_assets.domain import UserAssetData, UserAssetDto, UserAssetAggregatedData
-from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE, LIST_VIEW_DEFAULT_PAGE_SIZE
+from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
 from logic.usecases.user_asset import UserAssetUpsertUseCase
 from user.domain import User
 
@@ -41,7 +41,7 @@ class UserAssetCrudController(Controller):
         await UserAssetUpsertUseCase().execute(user_data)
         return user_data
 
-
+    # todo ну и всю схему с ценой на сейчас реализовать
     # todo проверить схему
     # todo caddy opentelemetry
     # todo тесты
@@ -50,7 +50,7 @@ class UserAssetCrudController(Controller):
             self,
             kc_user: User,
             cursor: str | None = None,
-            results_per_page: int = LIST_VIEW_DEFAULT_PAGE_SIZE,
-    ) -> CursorPagination[str, UserAssetAggregatedData]:
+            results_per_page: int = PAGE_SIZE_PARAMETER,
+    ) -> AdvancedCursorPagination[str, UserAssetAggregatedData]:
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
