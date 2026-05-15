@@ -44,8 +44,8 @@ class UserAssetOperationFactory(CustomFactory[UserAssetOperation]):
 
     @classmethod
     def quantity(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=1.0)
+        return cls.__faker__.pydecimal(min_value=1.0, max_value=20)
 
     @classmethod
     def unit_price(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=1.0)
+        return cls.__faker__.pydecimal(min_value=1.0, max_value=100)

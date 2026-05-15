@@ -19,7 +19,7 @@ class PostgresBaseRepository[T, bound=Base]:
     async def get_by_id(self, /, _id: int) -> T:
         return await self.get_by_field_names(id=_id)
 
-    async def add_all(self, models: Iterable[T]) -> Iterable[T]:
+    async def add_all(self, models: Iterable[T]) -> list[T]:
         async with self.db.session() as session:
             session.add_all(models)
             await session.commit()
