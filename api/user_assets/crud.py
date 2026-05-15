@@ -42,8 +42,12 @@ class UserAssetCrudController(Controller):
         return user_data
 
     # todo ну и всю схему с ценой на сейчас реализовать
-    # todo caddy opentelemetry
+    # todo отключить запись трасс в тестах
+    # todo caddy opentelemetry, на сам посттгресс и мимио и темпорал
     # todo тесты
+    # todo вопрос с тестовым клиентом
+    # todo тесты update_if_valid и delete_if_valid
+    # todo restict healthceck https://docs.litestar.dev/latest/reference/contrib/opentelemetry.html#litestar.contrib.opentelemetry.OpenTelemetryConfig.exclude_urls_env_key
     @get('/')
     async def get_all_paginated(
             self,

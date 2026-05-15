@@ -224,7 +224,10 @@ GROUP BY ua.id, ua.name, ua.ticker_id;          -- one row per token
 
 
 @cache
-class PostgresUserAssetOperationRepository(PostgresBaseRepository, BaseUserAssetOperationRepository):
+class PostgresUserAssetOperationRepository(
+    PostgresBaseRepository[UserAssetOperation],
+    BaseUserAssetOperationRepository,
+):
     model = UserAssetOperation
 
     @staticmethod

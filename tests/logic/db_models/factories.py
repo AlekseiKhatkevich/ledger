@@ -20,8 +20,14 @@ class CustomFactory[T](SQLAlchemyFactory[T]):
 
 
 class UserAssetAddressFactory(CustomFactory[UserAssetAddress]):
-    pass
 
+    @classmethod
+    def public_key(cls) -> str:
+        return cls.__faker__.unique.pystr(max_chars=32, min_chars=32)
+
+    @classmethod
+    def wallet_name(cls) -> list[str]:
+        return cls.__faker__.pylist(nb_elements=2, variable_nb_elements=True, value_types=[str])
 
 class AssetTickerFactory(CustomFactory[AssetTicker]):
 
@@ -38,8 +44,8 @@ class UserAssetOperationFactory(CustomFactory[UserAssetOperation]):
 
     @classmethod
     def quantity(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=0.01)
+        return cls.__faker__.pydecimal(min_value=1.0)
 
     @classmethod
     def unit_price(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=0.01)
+        return cls.__faker__.pydecimal(min_value=1.0)

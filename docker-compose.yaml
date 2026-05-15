@@ -349,10 +349,12 @@ services:
     env_file:
       - secrets/minio/.env
     environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+      OTEL_SERVICE_NAME: "minio"
       MINIO_TELEMETRY_TARGET_ENABLE: "on"
-      MINIO_TELEMETRY_TARGET_ENDPOINT: "http://jaeger:4317"
+      MINIO_TELEMETRY_TARGET_ENDPOINT: "http://jaeger:4318"
       MINIO_TELEMETRY_TARGET_TYPE: "s3"
-      MINIO_TELEMETRY_TARGET_SAMPLE_RATE: "0:1"
+      MINIO_TELEMETRY_TARGET_SAMPLE_RATE: "0.1"
     networks: [ledger-network]
     volumes:
       - minio_data:/data

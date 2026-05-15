@@ -10,7 +10,7 @@ from logic.repositories.user_asset import BaseUserAssetRepository
 
 
 @cache
-class PostgresUserAssetRepository(PostgresBaseRepository, BaseUserAssetRepository):
+class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAssetRepository):
     model = UserAsset
 
     async def upsert(self, data: UserAssetData) ->  int | None:
