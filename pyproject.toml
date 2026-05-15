@@ -56,3 +56,6 @@ PGHOSTADDR = "postgres"
 members = [
     "etl",
 ]
+
+[tool.ty.src]
+exclude = ["alembic/", ".venv/", ".cache/"]

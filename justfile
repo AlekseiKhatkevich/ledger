@@ -127,7 +127,6 @@ run *what:
 jaeger-ui:
     nohup xdg-open http://localhost:16686/ >/dev/null 2>&1 &
 
-
 # run ty tool
 [group('linters')]
 ty path="":

@@ -12,7 +12,7 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME, CONTAINER_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
@@ -28,7 +28,11 @@ from user.controllers import UserController
 from user.dependencies import keycloak_user
 
 # OTEL and stuff
-resource = Resource(attributes={SERVICE_NAME: settings.APP_NAME})
+resource = Resource(attributes={
+    SERVICE_NAME: settings.APP_NAME,
+    CONTAINER_NAME: 'ledger-backend',
+
+})
 provider = TracerProvider(resource=resource)
 otlp_exporter = OTLPSpanExporter()
 processor = BatchSpanProcessor(otlp_exporter)

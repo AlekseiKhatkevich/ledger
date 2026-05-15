@@ -31,6 +31,7 @@ services:
       DEBUG: ${DEBUG:-1}
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"  # send all spas there
       OTEL_SERVICE_NAME: "ledger-backend"
+      LITESTAR_EXCLUDED_URLS: /aux/health
     networks: [ ledger-network ]
     profiles: [main, temporal]
     healthcheck:
@@ -60,6 +61,7 @@ services:
 
   postgres:
     image: postgres:18
+    shm_size: 1g
     container_name: postgres
     restart: unless-stopped
     profiles: [main, temporal]
@@ -129,13 +131,14 @@ services:
   #  ---
 
   pgcache:
-    image: pgcache/pgcache
+    image: pgcache/pgcache:0.4.11-amd64
+    shm_size: 16g
     profiles: [pgcache]
     container_name: pgcache
     restart: unless-stopped
     networks: [ledger-network]
-    volumes:
-      - pgcache_data:/var/lib/postgresql
+#    volumes:
+#      - pgcache_data:/var/lib/postgresql
     depends_on:
       - postgres
     expose:
@@ -195,7 +198,11 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT: false
-      KC_FEATURES: hostname:v2
+      KC_FEATURES: hostname:v2,opentelemetry
+      KC_TRACING_ENABLED: true
+      KC_TRACING_JDBC_ENABLED: true
+      KC_TELEMETRY_ENDPOINT: http://jaeger:4317
+      KC_TELEMETRY_PROTOCOL: grpc
     depends_on:
       - postgres
     networks:
@@ -341,6 +348,11 @@ services:
     command: server /data --console-address ":9001"
     env_file:
       - secrets/minio/.env
+    environment:
+      MINIO_TELEMETRY_TARGET_ENABLE: "on"
+      MINIO_TELEMETRY_TARGET_ENDPOINT: "http://jaeger:4317"
+      MINIO_TELEMETRY_TARGET_TYPE: "s3"
+      MINIO_TELEMETRY_TARGET_SAMPLE_RATE: "0:1"
     networks: [ledger-network]
     volumes:
       - minio_data:/data
