@@ -78,7 +78,7 @@ class Settings(
     BaseSettings,
 ):
     """Combined settings"""
-    APP_NAME: str = 'ledger'
+    APP_NAME: str = 'ledger-backend'
     DEBUG: bool = False
 
     model_config = SettingsConfigDict(

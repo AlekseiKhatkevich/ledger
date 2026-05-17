@@ -193,7 +193,7 @@ async def test_get_user_asset_aggregates_positive_with_extra_user_asset(
         jwt_user,
         extra_user_asset_in_db_full_monty,
 ):
-    extra_user_asset, extra_user_asset_operation = extra_user_asset_in_db_full_monty
+    extra_user_asset, _ = extra_user_asset_in_db_full_monty
 
     user_assets_agg = await pg_user_asset_operation_repo.get_user_asset_aggregates(
         user_id=jwt_user.id,

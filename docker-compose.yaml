@@ -131,14 +131,14 @@ services:
   #  ---
 
   pgcache:
-    image: pgcache/pgcache:0.4.11-amd64
+    image: pgcache/pgcache:latest
     shm_size: 16g
     profiles: [pgcache]
     container_name: pgcache
     restart: unless-stopped
     networks: [ledger-network]
-#    volumes:
-#      - pgcache_data:/var/lib/postgresql
+    volumes:
+      - pgcache_data:/var/lib/postgresql
     depends_on:
       - postgres
     expose:

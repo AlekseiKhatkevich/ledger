@@ -51,6 +51,7 @@ addopts = "-vv --pytest-env-verbose"
 PGDATABASE = "ledger-db-test"
 POOL_CLASS = "null"
 PGHOSTADDR = "postgres"
+OTEL_EXPORTER_OTLP_ENDPOINT = "dev/null"
 
 [tool.uv.workspace]
 members = [
