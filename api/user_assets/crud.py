@@ -41,6 +41,7 @@ class UserAssetCrudController(Controller):
         await UserAssetUpsertUseCase().execute(user_data)
         return user_data
 
+    # todo add user_id header into request from caddy
     # todo ну и всю схему с ценой на сейчас реализовать
     # todo caddy opentelemetry, на сам посттгресс и темпорал pgOtel
     # todo restict healthceck https://docs.litestar.dev/latest/reference/contrib/opentelemetry.html#litestar.contrib.opentelemetry.OpenTelemetryConfig.exclude_urls_env_key

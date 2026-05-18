@@ -19,21 +19,20 @@
 
 (headers_for_keycloak) {
     header_up X-Forwarded-For {remote}
-#   as backend uses http connection to KeyCloak internally we have 2 use it too here
-#   in order to have same ISS field inside JWT
+    # As backend uses HTTP connection to Keycloak internally we have to use it too here
+    # in order to have same ISS field inside JWT
     header_up X-Forwarded-Proto http
 
     header_up X-Forwarded-Host {$KEYCLOAK_DOMAIN}
 
     header_up X-Forwarded-Port {$KEYCLOAK_PORT}
-
 }
 
-(ledger_reverce_proxy) {
+(ledger_reverse_proxy) {
     reverse_proxy backend-api:8000 {
-            import ledger_healthcheck
-                }
-            }
+        import ledger_healthcheck
+    }
+}
 
 (handle_401_error) {
     handle_errors 401 {
@@ -56,58 +55,55 @@
     }
 }
 
-
 (basic_tracing) {
     tracing {
-            span "{method}:{path}"
-             span_attributes {
-                                        user_id {http.auth.user.id}
-                                    }
+        span "{method}:{path}"
+        span_attributes {
+            user_id {http.auth.user.id}
         }
- }
+    }
+}
 
 # Caddy self healthcheck
 :8001 {
     @ready path /_caddy_ready
     handle @ready {
-    respond "ok" 200
-}
+        respond "ok" 200
+    }
 }
 
-# ledger backend
+# Ledger backend
 :8000 {
     vars {
-            KC_BASE_URL /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect
-        }
-
-#    tls /etc/caddy/ncert.pem /etc/caddy/nkey.pem
+        KC_BASE_URL /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect
+    }
 
     # STATIC FILES
     @static {
         path /error-descriptions/* /assets/*
         method GET HEAD
-        }
+    }
 
     handle @static {
-            import basic_tracing
-            root * /srv
-            file_server {
-                hide /error-descriptions/templates/*
-                }
+        import basic_tracing
+        root * /srv
+        file_server {
+            hide /error-descriptions/templates/*
         }
+    }
 
     # S3 files
     handle_path /ext-files/* {
-            import basic_tracing
-            rewrite * /{$S3_EXT_FILES_BUCKET}{path}
-            reverse_proxy http://minio:9000
+        import basic_tracing
+        rewrite * /{$S3_EXT_FILES_BUCKET}{path}
+        reverse_proxy http://minio:9000
     }
 
     @login+refresh {
         method POST
         path /user/login /user/refresh
     }
-#   Proxying token sourcing and refreshing to keykloack endpoint. Both operation use same EP.
+    # Proxying token sourcing and refreshing to keycloak endpoint. Both operation use same EP.
     handle @login+refresh {
         import basic_tracing
         rewrite * {vars.KC_BASE_URL}/token
@@ -115,16 +111,16 @@
         reverse_proxy keycloak:8080 {
             import keykloack_healthcheck
             import headers_for_keycloak
-            }
         }
+    }
 
     @exclude_from_auth {
         method GET HEAD TRACE
         path /aux/health /docs
     }
     handle @exclude_from_auth {
-            import basic_tracing
-            import ledger_reverce_proxy
+        import basic_tracing
+        import ledger_reverse_proxy
     }
 
     @userinfo {
@@ -134,26 +130,26 @@
     handle @userinfo {
         import basic_tracing
         reverse_proxy keycloak:8080 {
-           rewrite {vars.KC_BASE_URL}/userinfo
-           import headers_for_keycloak
+            rewrite {vars.KC_BASE_URL}/userinfo
+            import headers_for_keycloak
         }
     }
 
-
     handle * {
-         import basic_tracing
-         jwtauth {
+        import basic_tracing
+        jwtauth {
             jwk_url http://keycloak:8080{vars.KC_BASE_URL}/certs
             issuer_whitelist {$KC_ISSUER_WHITELIST}
             audience_whitelist {$KC_AUDIENCE_WHITELIST}
         }
 
         reverse_proxy backend-api:8000 {
-                    import ledger_healthcheck
-                    lb_policy header Bearer {
-                        fallback least_conn
-                        }
-                    }
+            import ledger_healthcheck
+            lb_policy header Bearer {
+                fallback least_conn
+            }
+            header_up X-User-Id {http.auth.user.id}
+        }
     }
 
     import handle_401_error
