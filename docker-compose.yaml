@@ -348,12 +348,6 @@ services:
     command: server /data --console-address ":9001"
     env_file:
       - secrets/minio/.env
-    environment:
-      # OpenTelemetry tracing via Minio-native telemetry variables
-      MINIO_TELEMETRY_TARGET_ENABLE: "on"
-      MINIO_TELEMETRY_TARGET_ENDPOINT: "http://jaeger:4318"
-      MINIO_TELEMETRY_TARGET_TYPE: "opentelemetry"
-      MINIO_TELEMETRY_TARGET_SAMPLE_RATE: "0.1"
     networks: [ledger-network]
     volumes:
       - minio_data:/data
@@ -367,7 +361,7 @@ services:
   # Beyla auto-instrumenter for Minio — captures S3 HTTP traces via eBPF
   # and forwards them to Jaeger as OpenTelemetry spans
   beyla-minio:
-    image: grafana/beyla:1.7.0
+    image: grafana/beyla:latest
     container_name: beyla-minio
     profiles: [minio]
     restart: unless-stopped
@@ -385,16 +379,9 @@ services:
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
-    environment:
-      # OpenTelemetry traces export to Jaeger via OTLP HTTP
-      BEYLA_OTEL_METRICS_EXPORT_INTERVAL: 0
-      BEYLA_PRINT_TRACES: "true"
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
-      OTEL_SERVICE_NAME: minio
-      # Instrument only the Minio process by its executable path
-      BEYLA_EXECUTABLE_NAME: /usr/bin/minio
-      # Beyla v1.7 — open-port based auto-discovery
-      BEYLA_OPEN_PORT: 9000
+    volumes:
+      - ./aux/beyla/beyla-config.yaml:/beyla-config.yaml:ro
+    command: ["-config", "/beyla-config.yaml"]
     networks:
       [ledger-network]
     depends_on:
