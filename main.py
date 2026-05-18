@@ -29,6 +29,12 @@ from user.dependencies import keycloak_user
 
 
 def setup_opentelemetry() ->  OpenTelemetryConfig:
+    """Configure OpenTelemetry and return Litestar-compatible config.
+
+    Uses OpenTelemetryConfig.exclude to filter out health-check traces
+    (/aux/health) at the middleware level, avoiding "incomplete" spans
+    in Jaeger.
+    """
     resource = Resource(attributes={
         SERVICE_NAME: settings.APP_NAME,
         CONTAINER_NAME: 'ledger-backend',
@@ -46,9 +52,8 @@ def setup_opentelemetry() ->  OpenTelemetryConfig:
     SQLAlchemyInstrumentor().instrument(engine=db.engine.sync_engine, enable_commenter=True)
     HTTPXClientInstrumentor().instrument()
 
-    open_telemetry_config = OpenTelemetryConfig(tracer_provider=provider)
-    
-    return open_telemetry_config
+    # Use exclude list to skip health-check traces at the middleware level.
+    return OpenTelemetryConfig(exclude=['/aux/health'])
 
 
 auth_mw = DefineMiddleware(
@@ -63,7 +68,6 @@ async def root() -> str:
 
 
 def create_app() -> Litestar:
-    # open_telemetry_config_local = OpenTelemetryConfig()
     open_telemetry_config_local = setup_opentelemetry()
 
     return Litestar(
