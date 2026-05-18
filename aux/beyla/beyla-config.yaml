@@ -1,0 +1,15 @@
+# Beyla configuration for auto-instrumenting Minio HTTP/S3 traffic
+otel_traces_export:
+  endpoint: http://jaeger:4318
+  protocol: http/protobuf
+otel_metrics_export:
+  endpoint: ""
+  interval: 0
+service_name: minio
+discovery:
+  services:
+    - name: minio
+      exe_path: /usr/bin/minio
+instrumentation:
+  http:
+    enabled: true
