@@ -386,8 +386,8 @@ services:
     volumes:
       - ./aux/beyla/beyla-config.yaml:/beyla-config.yaml:ro
     command: ["-config", "/beyla-config.yaml"]
-    networks:
-      [ledger-network]
+#    networks:
+#      [ledger-network]
     depends_on:
       minio:
         condition: service_healthy

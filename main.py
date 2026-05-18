@@ -63,7 +63,8 @@ async def root() -> str:
 
 
 def create_app() -> Litestar:
-    open_telemetry_config_local = OpenTelemetryConfig()
+    # open_telemetry_config_local = OpenTelemetryConfig()
+    open_telemetry_config_local = setup_opentelemetry()
 
     return Litestar(
         [

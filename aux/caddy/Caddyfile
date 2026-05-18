@@ -60,9 +60,6 @@
 :8001 {
     @ready path /_caddy_ready
     handle @ready {
-      tracing {
-                span "caddy_self_healthcheck"
-            }
     respond "ok" 200
 }
 }
