@@ -31,7 +31,6 @@ services:
       DEBUG: ${DEBUG:-1}
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"  # send all spas there
       OTEL_SERVICE_NAME: "ledger-backend"
-      LITESTAR_EXCLUDED_URLS: /aux/health
     networks: [ ledger-network ]
     profiles: [main, temporal]
     healthcheck:

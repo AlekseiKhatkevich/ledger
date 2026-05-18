@@ -29,12 +29,6 @@ from user.dependencies import keycloak_user
 
 
 def setup_opentelemetry() ->  OpenTelemetryConfig:
-    """Configure OpenTelemetry and return Litestar-compatible config.
-
-    Uses OpenTelemetryConfig.exclude to filter out health-check traces
-    (/aux/health) at the middleware level, avoiding "incomplete" spans
-    in Jaeger.
-    """
     resource = Resource(attributes={
         SERVICE_NAME: settings.APP_NAME,
         CONTAINER_NAME: 'ledger-backend',
