@@ -10,3 +10,9 @@ discovery:
     - name: minio
       exe_path: /usr/bin/minio
       open_ports: 9000
+# Ignore healthcheck traces and OPTIONS to root (console)
+routes:
+  ignored_patterns:
+    - /minio/health/*
+    - /
+  ignore_mode: traces
