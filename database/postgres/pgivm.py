@@ -17,7 +17,6 @@ Provides SQLAlchemy DDLElement classes that compile to pg_ivm function calls::
         MyView.drop(op)
 """
 
-import sqlalchemy as sa
 from alembic.operations import Operations
 from sqlalchemy import DDLElement, Select, Selectable
 from sqlalchemy.dialects import postgresql
@@ -119,6 +118,27 @@ def _compile_get_immv_def(
     return f"SELECT pgivm.get_immv_def('{element.name}');"
 
 
+class RenameImmv(DDLElement):
+    """``ALTER TABLE name RENAME TO new_name`` — renames an IMMV."""
+
+    def __init__(
+        self,
+        name: str,
+        new_name: str,
+    ) -> None:
+        self.name = name
+        self.new_name = new_name
+
+
+@compiler.compiles(RenameImmv)
+def _compile_rename_immv(
+    element: RenameImmv,
+    compiler: SQLCompiler,
+    **kw: object,
+) -> str:
+    return f"ALTER TABLE {element.name} RENAME TO {element.new_name};"
+
+
 class BaseImmvORMMixin:
     """Mixin for ORM models backed by an IMMV.
 
@@ -142,6 +162,7 @@ class BaseImmvORMMixin:
             # Then in alembic migration:
             AssetPopularity.create(op)
             AssetPopularity.drop(op)
+            AssetPopularity.rename(op, "new_name")
     """
 
     selectable: Select | Selectable | None = None
@@ -150,16 +171,12 @@ class BaseImmvORMMixin:
 
     @classmethod
     def create(cls, op: Operations) -> None:
-        """Create the IMMV. Use in alembic upgrade."""
-        if cls.selectable is None:
-            raise TypeError(f"{cls.__name__}.selectable must be set")
-        if not hasattr(cls, '__tablename__') or cls.__tablename__ is None:
-            raise TypeError(f"{cls.__name__}.__tablename__ must be set")
         op.execute(CreateImmv(cls.__tablename__, cls.selectable))
 
     @classmethod
     def drop(cls, op: Operations) -> None:
-        """Drop the IMMV. Use in alembic downgrade."""
-        if not hasattr(cls, '__tablename__') or cls.__tablename__ is None:
-            raise TypeError(f"{cls.__name__}.__tablename__ must be set")
         op.execute(DropImmv(cls.__tablename__))
+
+    @classmethod
+    def rename(cls, op: Operations, new_name: str) -> None:
+        op.execute(RenameImmv(cls.__tablename__, new_name))
