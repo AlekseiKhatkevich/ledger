@@ -4,6 +4,7 @@ import enum
 import uuid
 from typing import Annotated
 
+import sqlalchemy as sa
 from sqlalchemy import (
     String,
     ForeignKey,
@@ -20,6 +21,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database.postgres.base import Base
 from database.postgres.model_types import bigint_pk
+from database.postgres.pgivm import BaseImmvORMMixin
 
 __all__ = (
     'UpdatedAtMixin',
@@ -29,6 +31,7 @@ __all__ = (
     'UserAssetOperation',
     'UserAsset',
     'AssetTickerPrice',
+    'AssetPopularity',
 )
 
 
@@ -202,3 +205,18 @@ class UserAsset(Base):
         ).label(
             'balance_in_usdt',
         )
+
+
+class AssetPopularity(BaseImmvORMMixin, Base):
+    """IMMV model for asset popularity (number of users per ticker)."""
+
+    __tablename__ = "asset_popularity"
+    is_view = True
+
+    ticker_id: Mapped[str] = mapped_column(sa.String, primary_key=True)
+    num_usages: Mapped[int] = mapped_column(sa.BigInteger)
+
+    selectable = select(
+        UserAsset.ticker_id,
+        func.count().label("num_usages"),
+    ).select_from(UserAsset).group_by(UserAsset.ticker_id)
