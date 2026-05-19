@@ -57,7 +57,7 @@
 
 (basic_tracing) {
     tracing {
-        span "{method}:{path}"
+        span "{method} {path}"
         span_attributes {
             user_id {http.auth.user.id}
         }

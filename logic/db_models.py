@@ -22,14 +22,22 @@ from database.postgres.base import Base
 from database.postgres.model_types import bigint_pk
 
 __all__ = (
+    'UpdatedAtMixin',
     'AssetOperationType',
     'UserAssetAddress',
     'AssetTicker',
     'UserAssetOperation',
     'UserAsset',
+    'AssetTickerPrice',
 )
 
 
+class UpdatedAtMixin:
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        init=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
 
 class AssetOperationType(enum.StrEnum):
@@ -74,6 +82,23 @@ class AssetTicker(Base):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.name = })'
+
+
+class AssetTickerPrice(UpdatedAtMixin, Base):
+    __tablename__ = 'asset_tickers_price'
+    name: Mapped[str] = mapped_column(
+        ForeignKey('asset_tickers.name', ondelete='CASCADE'),
+        primary_key=True,
+    )
+    price: Mapped[decimal.Decimal]
+
+    __table_args__ = (
+        CheckConstraint('price > 0', name='positive_price_check'),
+        Index('ix_updated_at', 'updated_at'),
+    )
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__} @ {self.price})'
 
 
 class UserAssetOperation(Base):

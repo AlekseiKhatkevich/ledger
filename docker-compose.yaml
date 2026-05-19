@@ -355,6 +355,11 @@ services:
     restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/ready || exit 1"]
+      interval: 15s
+      timeout: 2s
+      retries: 3
+      start_interval: 2s
+      start_period: 15s
     expose:
       - "9000"
       - "9001"
@@ -385,8 +390,6 @@ services:
     volumes:
       - ./aux/beyla/beyla-config.yaml:/beyla-config.yaml:ro
     command: ["-config", "/beyla-config.yaml"]
-#    networks:
-#      [ledger-network]
     depends_on:
       minio:
         condition: service_healthy
