@@ -59,7 +59,7 @@ services:
 #  ---
 
   postgres:
-    image: postgres:18
+    build: aux/docker/pg_ivm
     shm_size: 1g
     container_name: postgres
     restart: unless-stopped
@@ -109,7 +109,7 @@ services:
       "-c", "password_encryption=scram-sha-256",
       "-c", "idle_in_transaction_session_timeout=1min",
       "-c", "idle_session_timeout=5min",
-      "-c", "shared_preload_libraries=pg_stat_statements",
+      "-c", "shared_preload_libraries=pg_stat_statements,pg_ivm",
       "-c", "pg_stat_statements.track=all"
     ]
     env_file: secrets/postgres/.env

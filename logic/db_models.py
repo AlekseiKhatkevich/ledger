@@ -71,6 +71,7 @@ class UserAssetAddress(Base):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.wallet_name = })'
 
+
 class AssetTicker(Base):
     __tablename__ = 'asset_tickers'
 
