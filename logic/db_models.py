@@ -206,17 +206,23 @@ class UserAsset(Base):
             'balance_in_usdt',
         )
 
-
 class AssetPopularity(BaseImmvORMMixin, Base):
-    """IMMV model for asset popularity (number of users per ticker)."""
+    """IMMV model for asset popularity (number of users per ticker).
+    replica_identity_full is needed for logical replication support.
+    """
 
     __tablename__ = "asset_popularity"
     is_view = True
+    replica_identity_full = True
 
-    ticker_id: Mapped[str] = mapped_column(sa.String, primary_key=True)
-    num_usages: Mapped[int] = mapped_column(sa.BigInteger)
+    ticker_id: Mapped[str] = mapped_column(primary_key=True)
+    num_usages: Mapped[int] = mapped_column()
 
     selectable = select(
         UserAsset.ticker_id,
         func.count().label("num_usages"),
-    ).select_from(UserAsset).group_by(UserAsset.ticker_id)
+    ).select_from(
+        UserAsset,
+    ).group_by(
+        UserAsset.ticker_id,
+    )

@@ -10,11 +10,15 @@ Provides SQLAlchemy DDLElement classes that compile to pg_ivm function calls::
     op.execute(CreateImmv("my_view", selectable))
 
     # ORM mixin usage:
-    class MyView(Base, BaseImmvORMMixin):
-        __table__ = sa.Table(...)
+    class MyView(BaseImmvORMMixin, Base):
+        __tablename__ = "my_view"
+        is_view = True
+        ...
+
         selectable = ...
         MyView.create(op)
         MyView.drop(op)
+        MyView.rename(op, "new_name")
 """
 
 from alembic.operations import Operations
@@ -139,6 +143,38 @@ def _compile_rename_immv(
     return f"ALTER TABLE {element.name} RENAME TO {element.new_name};"
 
 
+class SetReplicaIdentityFull(DDLElement):
+    """``ALTER TABLE name REPLICA IDENTITY FULL``"""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+@compiler.compiles(SetReplicaIdentityFull)
+def _compile_set_replica_identity_full(
+    element: SetReplicaIdentityFull,
+    compiler: SQLCompiler,
+    **kw: object,
+) -> str:
+    return f"ALTER TABLE {element.name} REPLICA IDENTITY FULL;"
+
+
+class SetReplicaIdentityDefault(DDLElement):
+    """``ALTER TABLE name REPLICA IDENTITY DEFAULT``"""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+@compiler.compiles(SetReplicaIdentityDefault)
+def _compile_set_replica_identity_default(
+    element: SetReplicaIdentityDefault,
+    compiler: SQLCompiler,
+    **kw: object,
+) -> str:
+    return f"ALTER TABLE {element.name} REPLICA IDENTITY DEFAULT;"
+
+
 class BaseImmvORMMixin:
     """Mixin for ORM models backed by an IMMV.
 
@@ -150,14 +186,12 @@ class BaseImmvORMMixin:
         class AssetPopularity(BaseImmvORMMixin, Base):
             __tablename__ = "asset_popularity"
             is_view = True
+            replica_identity_full = True  # optional, defaults to False
 
             ticker_id: Mapped[str] = mapped_column(primary_key=True)
             num_usages: Mapped[int]
 
-            selectable = select(
-                UserAsset.ticker_id,
-                func.count().label("num_usages"),
-            ).select_from(UserAsset).group_by(UserAsset.ticker_id)
+            selectable = select(...)
 
             # Then in alembic migration:
             AssetPopularity.create(op)
@@ -168,15 +202,26 @@ class BaseImmvORMMixin:
     selectable: Select | Selectable | None = None
     __tablename__: str
     is_view: bool = True
+    replica_identity_full: bool = False
 
     @classmethod
     def create(cls, op: Operations) -> None:
+        """Create the IMMV. Use in alembic upgrade."""
+        assert cls.selectable is not None, f"{cls.__name__}.selectable must be set"
         op.execute(CreateImmv(cls.__tablename__, cls.selectable))
+        if cls.replica_identity_full:
+            op.execute(SetReplicaIdentityFull(cls.__tablename__))
 
     @classmethod
     def drop(cls, op: Operations) -> None:
+        """Drop the IMMV. Use in alembic downgrade."""
         op.execute(DropImmv(cls.__tablename__))
 
     @classmethod
     def rename(cls, op: Operations, new_name: str) -> None:
+        """Rename the IMMV. Use in alembic migration.
+
+        Corresponds to ``ALTER TABLE ... RENAME TO ...`` — see
+        https://github.com/sraoss/pg_ivm#renaming-an-immv
+        """
         op.execute(RenameImmv(cls.__tablename__, new_name))
