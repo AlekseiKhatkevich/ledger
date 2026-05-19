@@ -11,9 +11,12 @@ RUN set -eux; \
         postgresql-server-dev-18; \
     rm -rf /var/lib/apt/lists/*
 
-# Clone pg_ivm from the branch supporting PG 18
-# Use GIT_SSL_NO_VERIFY=0 to ensure SSL works (ca-certificates is installed above)
-RUN git clone --branch 133-support-postgresql-18 --depth 1 https://github.com/sraoss/pg_ivm.git /tmp/pg_ivm
+# Clone pg_ivm at the specific commit that supports PG 18
+# Pin to a specific commit for reproducible builds
+ARG PG_IVM_COMMIT=2949e99d7cbd59039aa20f6444bf3b6e13e0c6d8
+RUN git clone https://github.com/sraoss/pg_ivm.git /tmp/pg_ivm && \
+    cd /tmp/pg_ivm && \
+    git checkout ${PG_IVM_COMMIT}
 
 # Build and install the extension
 WORKDIR /tmp/pg_ivm

@@ -26,6 +26,17 @@ def upgrade() -> None:
     # replica identity). FULL mode uses all columns instead.
     # Logical replication (pgcache_pub) requires REPLICA IDENTITY on any table
     # that is part of a publication and gets updated via pg_ivm triggers.
+    #
+    # NOTE: pg_ivm officially does NOT support IMMV together with logical
+    # replication (see README — "Logical replication is not supported").
+    # Alternative (preferred) approach — remove asset_popularity from the
+    # publication instead of setting REPLICA IDENTITY:
+    #
+    #   ALTER PUBLICATION pgcache_pub DROP TABLE asset_popularity;
+    #
+    # This avoids the need for REPLICA IDENTITY entirely, since pg_ivm
+    # already maintains the IMMV on the source.
+    #
     # See: https://github.com/sraoss/pg_ivm/issues/110
     op.execute(
         "ALTER TABLE asset_popularity REPLICA IDENTITY FULL"
