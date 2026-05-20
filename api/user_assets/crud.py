@@ -42,8 +42,7 @@ class UserAssetCrudController(Controller):
         return user_data
 
     # todo ну и всю схему с ценой на сейчас реализовать
-    # todo caddy opentelemetry, на сам посттгресс и темпорал pgOtel
-    # todo pghero healtchcheck, config, settigs
+    # todo tempral worker OTEL
     @get('/')
     async def get_all_paginated(
             self,

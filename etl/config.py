@@ -18,6 +18,7 @@ class TemporalSettings:
 
 class ExternalUrlsSettings:
     EXTERNAL_URL_COINS_LIST: HttpUrl
+    EXTERNAL_URL_ASSET_PRICES: HttpUrl
 
 
 class BasePostgresSettings:

@@ -20,3 +20,11 @@ class UpsertTicketsWorkflow:
                 maximum_interval=datetime.timedelta(seconds=60),
             ),
         )
+
+
+@workflow.defn
+class UpdatePricesWorkflow:
+
+    @workflow.run
+    async def run(self, tickers: tuple[str]) -> dict:
+        pass

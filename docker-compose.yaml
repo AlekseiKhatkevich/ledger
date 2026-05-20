@@ -293,6 +293,11 @@ services:
       POSTGRES_USER: postgres228
       POSTGRES_SEEDS: postgres
       DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+#      OTEL_TRACES_EXPORTER: otlp
+#      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+#      OTEL_SERVICE_NAME: "temporal-server"
+#      OTEL_TRACES_SAMPLER: parentbased_traceidratio
+#      OTEL_TRACES_SAMPLER_ARG: "0.1"
     env_file:
       - ./secrets/temporal-server/.env
     networks:

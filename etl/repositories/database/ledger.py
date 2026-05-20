@@ -3,19 +3,30 @@ import inspect
 from functools import cache
 from typing import TypeVar, Callable, ParamSpec, Awaitable
 
+from sqlalchemy import MetaData, Table, Column, VARCHAR, BIGINT
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import DeclarativeBase
 
 from db.postgres.connection import ledger_db
 
-LedgerBase = automap_base()
+metadata = MetaData()
+LedgerBase = automap_base(metadata=metadata)
 
 
 M = TypeVar('M', bound=DeclarativeBase)
 P = ParamSpec('P')
 R = TypeVar('R')
 C = TypeVar('C', bound=type)
+
+
+#  as asset_popularity does not have a primary key automap can not load it, so we map it ourselves.
+Table(
+    "asset_popularity",
+    metadata,
+    Column("ticker_id", VARCHAR(50), primary_key=True),
+    Column("num_usages", BIGINT),
+)
 
 def with_prepare_automap(cls) -> C:
     """Calls `DB.prepare_automap` to fill data in Base before each method call."""
@@ -50,11 +61,19 @@ class LedgerDbRepository:
         self.base = LedgerBase
 
     @property
-    def model(self) -> M:
+    def asset_tickers_model(self) -> M:
         return self.base.classes.asset_tickers
 
+    @property
+    def asset_tickers_price_model(self) -> M:
+        return self.base.classes.asset_tickers_price
+
+    @property
+    def asset_popularity(self) -> M:
+        return self.base.classes.asset_popularity
+
     async def upsert_tickers(self, tickers: frozenset[str]) -> None:
-        insert_stmt = insert(self.model).values(tuple({'name': t.upper()} for t in tickers))
+        insert_stmt = insert(self.asset_tickers_model).values(tuple({'name': t.upper()} for t in tickers))
         on_conflict_stmt = insert_stmt.on_conflict_do_nothing(index_elements=['name',])
         async with self.db.session() as session:
             await session.execute(on_conflict_stmt)
