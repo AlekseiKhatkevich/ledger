@@ -6,8 +6,11 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+from sqlalchemy.sql.schema import SchemaItem
+
 from config import settings
 from database.postgres.base import Base
+from aux.helpers.common import iter_subclasses
 
 # do not delete import below !
 from user import *
@@ -35,6 +38,22 @@ target_metadata = Base.metadata
 # ... etc.
 postgres_url = settings.PG_DSN.render_as_string(hide_password=False)
 
+
+def _excluded_models() -> set[str]:
+    return {m.__tablename__ for m in iter_subclasses(Base) if getattr(m, 'is_view', False)}
+
+
+def include_object(
+        object: SchemaItem,
+        name: str,
+        type_: str,
+        reflected: bool,
+        compare_to: SchemaItem | None,
+):
+    """exclude views (pg_ivm in particular)"""
+    return name not in _excluded_models()
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -54,6 +73,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -61,7 +81,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, include_object=include_object,)
 
     with context.begin_transaction():
         context.run_migrations()

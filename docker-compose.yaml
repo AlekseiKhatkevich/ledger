@@ -59,7 +59,7 @@ services:
 #  ---
 
   postgres:
-    build: aux/docker/pg_ivm
+    build: aux/docker/postgres_custom
     shm_size: 1g
     container_name: postgres
     restart: unless-stopped
@@ -129,6 +129,24 @@ services:
 
   #  ---
 
+  pghero:
+    image: ankane/pghero
+    container_name: pghero
+    profiles: [pghero]
+    restart: unless-stopped
+    env_file: secrets/postgres/.env
+    environment:
+      DATABASE_URL: postgres://${PGUSER}:${PGPASSWORD}@haproxy:5432/${PGDATABASE}
+#      DATABASE_URL: postgres://postgres228:1q2w3e@haproxy:5432/ledger-db
+    expose:
+      - "8080"
+    networks: [ledger-network]
+    depends_on:
+      postgres:
+        condition: service_started
+
+  #  ---
+
   pgcache:
     image: pgcache/pgcache:latest
     shm_size: 16g
@@ -170,6 +188,7 @@ services:
       - "8404:8404"
       - "8081:8081"
       - "8080:8080"
+      - "8002:8002"
       - "9001:9001"
       - "16686:16686"
     networks: [ledger-network]

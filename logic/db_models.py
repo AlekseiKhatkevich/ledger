@@ -90,15 +90,17 @@ class AssetTicker(Base):
 
 class AssetTickerPrice(UpdatedAtMixin, Base):
     __tablename__ = 'asset_tickers_price'
+
+    id: Mapped[bigint_pk] = mapped_column(init=False)
     name: Mapped[str] = mapped_column(
         ForeignKey('asset_tickers.name', ondelete='CASCADE'),
-        primary_key=True,
     )
     price: Mapped[decimal.Decimal]
 
     __table_args__ = (
         CheckConstraint('price > 0', name='positive_price_check'),
         Index('ix_updated_at', 'updated_at'),
+        UniqueConstraint('name', name='name_uq'),
     )
 
     def __repr__(self) -> str:
@@ -206,6 +208,8 @@ class UserAsset(Base):
             'balance_in_usdt',
         )
 
+
+# todo тесты на обе модели
 class AssetPopularity(BaseImmvORMMixin, Base):
     """IMMV model for asset popularity (number of users per ticker).
     replica_identity_full is needed for logical replication support.
