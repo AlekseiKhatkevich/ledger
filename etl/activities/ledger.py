@@ -11,7 +11,7 @@ async def upsert_tickers(batch_size: int = 1000) -> None:
 
 @activity.defn
 async def get_prices_batch(
-        tickers: tuple[str],
+        tickers: tuple[str, ...],
         batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE,
 ):
     pass
