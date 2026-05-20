@@ -134,13 +134,17 @@ services:
     container_name: pghero
     profiles: [pghero]
     restart: unless-stopped
-    env_file: secrets/postgres/.env
-    environment:
-      DATABASE_URL: postgres://${PGUSER}:${PGPASSWORD}@haproxy:5432/${PGDATABASE}
-#      DATABASE_URL: postgres://postgres228:1q2w3e@haproxy:5432/ledger-db
+    env_file: secrets/pghero/.env
     expose:
       - "8080"
     networks: [ledger-network]
+    healthcheck:
+      test: ["CMD-SHELL", " wget --spider -q -T 2 http://pghero:8080/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_interval: 2s
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_started

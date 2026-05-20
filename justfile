@@ -131,3 +131,9 @@ jaeger-ui:
 [group('linters')]
 ty path="":
     just run ty check {{path}}
+
+# pghero web ui
+[group('postgres')]
+pghero-ui:
+    nohup xdg-open http://localhost:8002/ >/dev/null 2>&1 &
+
