@@ -4,14 +4,15 @@ import inspect
 from functools import cache
 from typing import TypeVar, Callable, ParamSpec, Awaitable
 
-from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, case, true
+from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, true
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, aliased
-from sqlalchemy.sql import text
-import constants
 
+import constants
 from db.postgres.connection import ledger_db
+
+from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
 
 metadata = MetaData()
 LedgerBase = automap_base(metadata=metadata)
@@ -20,7 +21,7 @@ LedgerBase = automap_base(metadata=metadata)
 class Base(DeclarativeBase):
     metadata = metadata
 
-
+#  automap doesn't work here as model doesn't have a primary key of any sort
 class AssetPopularity(Base):
     __tablename__ = "asset_popularity"
 
@@ -90,7 +91,7 @@ class LedgerDbRepository:
         batch_size: int,
         lock_namespace: int = constants.LEDGER_PRICES_LOCK_NAMESPACE,
         age_interval: datetime.timedelta = constants.LEDGER_PRICES_PRICE_TIMEOUT,
-    ) -> list[dict]:
+    ) -> list[LedgerPricesFromDBForUpdate]:
         """Select up to batch_size price records, forcing tickers to appear first."""
 
         atp = aliased(self.asset_tickers_price_model)
@@ -104,15 +105,18 @@ class LedgerDbRepository:
             pop.num_usages,
             func.pg_try_advisory_lock(lock_namespace, atp.id.cast(Integer)).label('acquired'),
         ).select_from(
-            atp
+            atp,
         ).outerjoin(
-            pop, atp.name == pop.ticker_id,
+            pop,
+            atp.name == pop.ticker_id,
         ).where(
             atp.updated_at < func.now() - age_interval,
         ).order_by(
-            case((atp.name.in_(tickers), 1), else_=0).desc(),
+            atp.name.in_(tickers).desc(),
             pop.num_usages.desc().nullslast(),
-        ).limit(batch_size).subquery()
+        ).limit(
+            batch_size,
+        ).subquery()
 
         outer = select(
             inner.c.id,
@@ -120,11 +124,10 @@ class LedgerDbRepository:
             inner.c.price,
             inner.c.updated_at,
             inner.c.num_usages,
-        ).where(inner.c.acquired == true())
+        ).where(
+            inner.c.acquired == true(),
+        )
 
         async with self.db.session() as session:
             result = await session.execute(outer)
-            rows = [dict(r._mapping) for r in result]
-            await session.execute(text("SELECT pg_advisory_unlock_all()"))
-            await session.commit()
-        return rows
+            return [LedgerPricesFromDBForUpdate(*entry) for entry in result.all()]
