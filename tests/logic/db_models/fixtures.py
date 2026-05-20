@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Iterable
 import pytest
 from polyfactory.pytest_plugin import register_fixture
 
+from database.postgres.repositories.asset_popularity import PostgresPopularityRepository
 from database.postgres.repositories.asset_ticker import PostgresAssetTickerRepository
 from database.postgres.repositories.asset_ticker_price import PostgresAssetTickerPriceRepository
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
@@ -49,6 +50,11 @@ def pg_asset_ticker_price_repo() -> PostgresAssetTickerPriceRepository:
 @pytest.fixture(scope='session')
 def pg_user_asset_operation_repo() -> PostgresUserAssetOperationRepository:
     return PostgresUserAssetOperationRepository()
+
+@pytest.fixture(scope='session')
+def pg_asset_popularity_repo() -> PostgresPopularityRepository:
+    return PostgresPopularityRepository()
+
 
 @pytest.fixture
 async def asset_ticker_price_in_db(
@@ -124,7 +130,6 @@ async def user_asset_in_db_many(
         user_asset_ticker_in_db_many: list[AssetTicker],
         pg_user_asset_repo: PostgresUserAssetRepository ,
         jwt_user: User,
-        db,
 ) -> Iterable[UserAsset]:
     user_assets = [
         user_asset_factory.build(user_id=jwt_user.sub, ticker_id=ticker.name)

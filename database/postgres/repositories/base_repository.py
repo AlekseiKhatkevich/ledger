@@ -25,3 +25,8 @@ class PostgresBaseRepository[T, bound=Base]:
             await session.commit()
 
         return models
+
+    async def get_all(self) -> list[T]:
+        async with self.db.session() as session:
+            res = await session.scalars(select(self.model))
+            return res.all()

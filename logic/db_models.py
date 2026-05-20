@@ -214,7 +214,6 @@ class AssetPopularity(BaseImmvORMMixin, Base):
     """IMMV model for asset popularity (number of users per ticker).
     replica_identity_full is needed for logical replication support.
     """
-
     __tablename__ = "asset_popularity"
     is_view = True
     replica_identity_full = True

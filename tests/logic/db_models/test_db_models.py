@@ -108,3 +108,12 @@ async def test_asset_ticker_price_negative_non_uq_name(
         )
 
     assert excinfo.value.orig.pgcode == constants.PG_UNIQUE_CONSTRAINT_VIOLATION_CODE
+
+
+async def test_asset_popularity(user_asset_in_db_many, pg_asset_popularity_repo):
+    popularity = await pg_asset_popularity_repo.get_all()
+    assets_tickers = {ua.ticker_id for ua in  user_asset_in_db_many}
+    assert len(assets_tickers) == len(popularity)
+    for pop in popularity:
+        assert pop.ticker_id in assets_tickers
+        assert pop.num_usages == 1
