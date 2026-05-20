@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy.orm import mapped_column, Mapped, relationship, MappedAsDataclass
 
 from database.postgres.base import Base
 from database.postgres.model_types import bigint_pk
@@ -35,7 +35,7 @@ __all__ = (
 )
 
 
-class UpdatedAtMixin:
+class UpdatedAtMixin(MappedAsDataclass):
     updated_at: Mapped[datetime.datetime] = mapped_column(
         init=False,
         server_default=func.now(),

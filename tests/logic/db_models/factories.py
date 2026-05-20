@@ -4,7 +4,13 @@ from faker import Faker
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
 from database.postgres.connection import db
-from logic.db_models import UserAssetAddress, AssetTicker, UserAsset, UserAssetOperation
+from logic.db_models import (
+    UserAssetAddress,
+    AssetTicker,
+    UserAsset,
+    UserAssetOperation,
+    AssetTickerPrice,
+)
 
 
 class CustomFactory[T](SQLAlchemyFactory[T]):
@@ -49,3 +55,14 @@ class UserAssetOperationFactory(CustomFactory[UserAssetOperation]):
     @classmethod
     def unit_price(cls) -> decimal.Decimal:
         return cls.__faker__.pydecimal(min_value=1.0, max_value=100)
+
+
+class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
+
+    @classmethod
+    def price(cls) -> decimal.Decimal:
+        return cls.__faker__.pydecimal(min_value=0.1, max_value=100_000)
+
+    @classmethod
+    def name(cls) -> str:
+        return cls.__faker__.unique.pystr(max_chars=50, min_chars=3)

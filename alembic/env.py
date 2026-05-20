@@ -49,7 +49,7 @@ def include_object(
         type_: str,
         reflected: bool,
         compare_to: SchemaItem | None,
-):
+) -> bool:
     """exclude views (pg_ivm in particular)"""
     return name not in _excluded_models()
 

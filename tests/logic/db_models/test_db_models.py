@@ -1,3 +1,5 @@
+import decimal
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -75,3 +77,34 @@ async def test_user_asset_operation_negative_quantity(
         )
 
     assert excinfo.value.orig.pgcode == constants.PG_CHECK_CONSTRAINT_VIOLATION_CODE
+
+
+
+async def test_asset_ticker_price_positive(asset_ticker_price_in_db, pg_asset_ticker_price_repo):
+    asset_ticker_price_from_db = await pg_asset_ticker_price_repo.get_by_id(asset_ticker_price_in_db.id)
+    assert asset_ticker_price_from_db is not None
+
+
+async def test_asset_ticker_price_negative_price_out_of_range(
+        asset_ticker_in_db,
+        asset_ticker_price_factory,
+):
+    with pytest.raises(IntegrityError) as excinfo:
+        await asset_ticker_price_factory.create_async(
+            name=asset_ticker_in_db.name,
+            price=decimal.Decimal(-1),
+        )
+
+    assert excinfo.value.orig.pgcode == constants.PG_CHECK_CONSTRAINT_VIOLATION_CODE
+
+
+async def test_asset_ticker_price_negative_non_uq_name(
+        asset_ticker_price_factory,
+        asset_ticker_price_in_db,
+):
+    with pytest.raises(IntegrityError) as excinfo:
+        await asset_ticker_price_factory.create_async(
+            name=asset_ticker_price_in_db.name,
+        )
+
+    assert excinfo.value.orig.pgcode == constants.PG_UNIQUE_CONSTRAINT_VIOLATION_CODE

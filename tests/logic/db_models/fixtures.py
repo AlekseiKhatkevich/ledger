@@ -6,15 +6,17 @@ import pytest
 from polyfactory.pytest_plugin import register_fixture
 
 from database.postgres.repositories.asset_ticker import PostgresAssetTickerRepository
+from database.postgres.repositories.asset_ticker_price import PostgresAssetTickerPriceRepository
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_address import PostgresUserAssetAddressRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
-from logic.db_models import AssetOperationType
+from logic.db_models import AssetOperationType, AssetTickerPrice
 from tests.logic.db_models.factories import (
     UserAssetAddressFactory,
     AssetTickerFactory,
     UserAssetFactory,
     UserAssetOperationFactory,
+    AssetTickerPriceFactory,
 )
 from user.domain import User
 
@@ -25,6 +27,7 @@ register_fixture(UserAssetAddressFactory)
 register_fixture(AssetTickerFactory)
 register_fixture(UserAssetFactory)
 register_fixture(UserAssetOperationFactory)
+register_fixture(AssetTickerPriceFactory)
 
 
 @pytest.fixture(scope='session')
@@ -40,8 +43,19 @@ def pg_user_asset_repo() -> PostgresUserAssetRepository:
     return PostgresUserAssetRepository()
 
 @pytest.fixture(scope='session')
+def pg_asset_ticker_price_repo() -> PostgresAssetTickerPriceRepository:
+    return PostgresAssetTickerPriceRepository()
+
+@pytest.fixture(scope='session')
 def pg_user_asset_operation_repo() -> PostgresUserAssetOperationRepository:
     return PostgresUserAssetOperationRepository()
+
+@pytest.fixture
+async def asset_ticker_price_in_db(
+        asset_ticker_price_factory: AssetTickerPriceFactory,
+        asset_ticker_in_db:AssetTicker,
+) -> AssetTickerPrice:
+    return await asset_ticker_price_factory.create_async(name=asset_ticker_in_db.name)
 
 @pytest.fixture
 async def user_asset_address_in_db(
