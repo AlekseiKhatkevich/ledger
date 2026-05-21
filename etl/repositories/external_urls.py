@@ -31,11 +31,11 @@ class ExternalUrlsRepository:
     # https://will-ockmore.github.io/httpx-retries/api/
     @staticmethod
     async def get_prices(
-            tickers: set[str],
+            ticker_names: set[str],
     ) -> dict[str, CoinGeckoSimplePriceElementDataSchema]:
         """Get list of prices from coingecko"""
         params = {
-            'symbols': ','.join(tickers),
+            'symbols': ','.join(ticker_names),
             'vs_currencies': 'usd',
             'include_last_updated_at': True,
         }

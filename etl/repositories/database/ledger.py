@@ -131,10 +131,10 @@ class LedgerDbRepository:
         ).subquery()
 
         outer = select(
-            inner.c.id,
             inner.c.name,
             inner.c.price,
             inner.c.updated_at,
+            inner.c.id,
         ).where(
             inner.c.acquired == true(),
         )

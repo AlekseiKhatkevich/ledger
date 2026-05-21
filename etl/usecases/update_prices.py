@@ -1,5 +1,7 @@
 import decimal
 
+import anyio
+
 from custom_types import CryptoPriceResponse
 from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
 from repositories.database.ledger import LedgerDbRepository
@@ -23,7 +25,7 @@ class UpdatePricesUseCase:
     ) -> list[LedgerPricesFromDBForUpdate]:
         db_prices_dict = {p.name: p for p in tickers_from_db}
 
-        for name, resp_data in response_data:
+        for name, resp_data in response_data.items():
             try:
                 db_price = db_prices_dict[name]
             except KeyError:  # does not have price in DB yet
@@ -41,13 +43,13 @@ class UpdatePricesUseCase:
         return tickers_from_db
 
 
-    async def execute(self, tickers: tuple[str, ...], batch_size: int):
+    async def execute(self, ticker_names: set[str], batch_size: int):
         tickers_for_update_from_db = await self.db_repository.get_prices_batch(
-            tickers,
+            ticker_names,
             batch_size,
         )
         #  we need to send all tickers even if some of them are not in DB yet ...
-        all_tickers = {ticker.name for ticker in tickers_for_update_from_db} | set(tickers)
+        all_tickers = {ticker.name for ticker in tickers_for_update_from_db} | ticker_names
         price_response_data = await self.ext_url_service.get_prices(all_tickers)
         updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
 
