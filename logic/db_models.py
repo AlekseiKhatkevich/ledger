@@ -209,7 +209,6 @@ class UserAsset(Base):
         )
 
 
-# todo тесты на обе модели
 class AssetPopularity(BaseImmvORMMixin, Base):
     """IMMV model for asset popularity (number of users per ticker).
     replica_identity_full is needed for logical replication support.

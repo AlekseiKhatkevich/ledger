@@ -131,3 +131,7 @@ class LedgerDbRepository:
         async with self.db.session() as session:
             result = await session.execute(outer)
             return [LedgerPricesFromDBForUpdate(*entry) for entry in result.all()]
+
+    async def pg_advisory_unlock_all(self) -> None:
+        async with self.db.session() as session:
+            await session.execute(func.pg_advisory_unlock_all())

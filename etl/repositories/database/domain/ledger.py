@@ -10,4 +10,3 @@ class LedgerPricesFromDBForUpdate:
     price: decimal.Decimal
     updated_at: datetime.timedelta
     num_usages: int | None
-
