@@ -92,17 +92,26 @@ class LedgerDbRepository:
         lock_namespace: int = constants.LEDGER_PRICES_LOCK_NAMESPACE,
         age_interval: datetime.timedelta = constants.LEDGER_PRICES_PRICE_TIMEOUT,
     ) -> list[LedgerPricesFromDBForUpdate]:
-        """Select up to batch_size price records, forcing tickers to appear first."""
+        """Select up to batch_size price records, forcing tickers to appear first.
+        Adjusts LIMIT by the number of forced tickers missing from asset_tickers_price.
+        """
 
         atp = aliased(self.asset_tickers_price_model)
         pop = aliased(AssetPopularity)
+
+        # CTE: count how many of the forced tickers actually exist in the table
+        existing_count_cte = (
+            select(func.count().label('cnt'))
+            .select_from(atp)
+            .where(atp.name.in_(tickers))
+            .cte(name='existing_count')
+        )
 
         inner = select(
             atp.id,
             atp.name,
             atp.price,
             atp.updated_at,
-            pop.num_usages,
             func.pg_try_advisory_lock(lock_namespace, atp.id.cast(Integer)).label('acquired'),
         ).select_from(
             atp,
@@ -115,7 +124,10 @@ class LedgerDbRepository:
             atp.name.in_(tickers).desc(),
             pop.num_usages.desc().nullslast(),
         ).limit(
-            batch_size,
+            func.greatest(
+                batch_size - (len(tickers) - select(existing_count_cte.c.cnt).scalar_subquery()),
+                0,
+            ),
         ).subquery()
 
         outer = select(
@@ -123,7 +135,6 @@ class LedgerDbRepository:
             inner.c.name,
             inner.c.price,
             inner.c.updated_at,
-            inner.c.num_usages,
         ).where(
             inner.c.acquired == true(),
         )

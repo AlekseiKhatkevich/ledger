@@ -3,9 +3,11 @@ from typing import TYPE_CHECKING
 
 import httpx
 import ijson
+import msgspec
 
 from config import settings
 from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
+from repositories.serializers import CoinGeckoSimplePriceElementDataSchema
 
 if TYPE_CHECKING:
     from custom_types import CryptoPriceResponse
@@ -28,10 +30,12 @@ class ExternalUrlsRepository:
     # todo Retry-After в хедерах, httpx.RequestError
     # https://will-ockmore.github.io/httpx-retries/api/
     @staticmethod
-    async def get_prices(tickers_from_db: list[LedgerPricesFromDBForUpdate]) -> CryptoPriceResponse:
+    async def get_prices(
+            tickers: set[str],
+    ) -> dict[str, CoinGeckoSimplePriceElementDataSchema]:
         """Get list of prices from coingecko"""
         params = {
-            'symbols': ','.join(ticker.name for ticker in tickers_from_db),
+            'symbols': ','.join(tickers),
             'vs_currencies': 'usd',
             'include_last_updated_at': True,
         }
@@ -41,4 +45,10 @@ class ExternalUrlsRepository:
                 params=params,
             )
             response.raise_for_status()
-            return response.json()
+            data: CryptoPriceResponse = response.json()
+
+        return msgspec.convert(
+            {k.upper(): v for k, v in data.items()},
+            dict[str, CoinGeckoSimplePriceElementDataSchema],
+            strict=False,  # to convert unix timestamp into datetime
+        )

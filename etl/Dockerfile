@@ -32,7 +32,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY --chown=nonroot:nonroot . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --package etl --locked
+    uv sync --package etl
 
 ENV PATH="/app/.venv/bin:$PATH"
 
