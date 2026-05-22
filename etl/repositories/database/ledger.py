@@ -4,7 +4,7 @@ import inspect
 from functools import cache
 from typing import TypeVar, Callable, ParamSpec, Awaitable
 
-from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, exists
+from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, exists, values, column, except_, String
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, aliased
@@ -123,6 +123,14 @@ class LedgerDbRepository:
         atp = aliased(self.asset_tickers_price_model)
         pop = aliased(AssetPopularity)
 
+        # missing_tickers_count_cte = (
+        #     select((len(tickers) - func.count()).label('cnt'))
+        #     .select_from(atp)
+        #     .where(atp.name.in_(tickers))
+        #     .cte('missing_tickers_count_cte')
+        # )
+
+        #  already locked asset_ticker_price rows
         locked = select(PgLocks).where(
                 PgLocks.classid == lock_namespace,
                 PgLocks.objid == atp.id,
@@ -143,12 +151,35 @@ class LedgerDbRepository:
         ).order_by(
             atp.name.in_(tickers).desc(),
             pop.num_usages.desc().nullslast(),
-        ).limit(
-            batch_size
         )
+        # ).limit(
+        #     func.greatest(
+        #         batch_size - select(missing_tickers_count_cte.c.cnt).scalar_subquery(),
+        #         0,
+        #     ),
+        # )
+
+        #  query 2
+        value_expr = (
+            values(
+                column("name", String),
+                name='input_tickers'
+            ).data(
+                [(t,) for t in tickers]
+            )
+        )
+        input_select = value_expr.select()
+        existing_select = select(self.asset_tickers_price_model.name)
+        missing_tickers_query = except_(input_select, existing_select)
 
         async with self.db.session() as session:
+            result = await session.scalars(missing_tickers_query)
+            tickers_not_in_db_yet = result.all()
+
+            query = query.limit(batch_size - len(tickers_not_in_db_yet))
+
             result = await session.execute(query)
+
             return [
                 LedgerPricesFromDBForUpdate(
                     name=row.name,

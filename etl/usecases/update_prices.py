@@ -26,22 +26,23 @@ class UpdatePricesUseCase:
         db_prices_dict = {p.name: p for p in tickers_from_db}
 
         for name, resp_data in response_data.items():
-            try:
-                db_price = db_prices_dict[name]
-            except KeyError:  # does not have price in DB yet
-                tickers_from_db.append(
-                    LedgerPricesFromDBForUpdate(
-                        name=name,
-                        price=resp_data.usd,
-                        updated_at=resp_data.last_updated_at,
+            if resp_data.usd is not None:
+                try:
+                    db_price = db_prices_dict[name]
+                except KeyError:  # does not have price in DB yet
+                    tickers_from_db.append(
+                        LedgerPricesFromDBForUpdate(
+                            name=name,
+                            price=resp_data.usd,
+                            updated_at=resp_data.last_updated_at,
+                        )
                     )
-                )
-            else:
-                db_price.price = resp_data.usd
-                db_price.updated_at = resp_data.last_updated_at
+                else:
+                    if db_price.updated_at < resp_data.last_updated_at:
+                        db_price.price = resp_data.usd
+                        db_price.updated_at = resp_data.last_updated_at
 
         return tickers_from_db
-
 
     async def execute(self, ticker_names: set[str], batch_size: int):
         tickers_for_update_from_db = await self.db_repository.get_prices_batch(
@@ -50,8 +51,12 @@ class UpdatePricesUseCase:
         )
         #  we need to send all tickers even if some of them are not in DB yet ...
         all_tickers = {ticker.name for ticker in tickers_for_update_from_db} | ticker_names
-        price_response_data = await self.ext_url_service.get_prices(all_tickers)
-        updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
-
-        return  updated_tickers
+        print(all_tickers)
+        print(len(all_tickers))
+        # price_response_data = await self.ext_url_service.get_prices(all_tickers)
+        # updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
+        #
+        # await self._finalize()
+        # return  updated_tickers #  return prices from db
+        return tickers_for_update_from_db
 
