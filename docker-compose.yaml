@@ -152,14 +152,12 @@ services:
   #  ---
 
   pgcache:
-    image: pgcache/pgcache:latest
+    image: pgcache/pgcache:0.4.11-amd64
     shm_size: 16g
-    profiles: [pgcache]
+    profiles: [pgcache, main]
     container_name: pgcache
     restart: unless-stopped
     networks: [ledger-network]
-    volumes:
-      - pgcache_data:/var/lib/postgresql
     depends_on:
       - postgres
     expose:
@@ -456,7 +454,6 @@ networks:
 
 volumes:
   postgres_data:
-  pgcache_data:
   keycloak_data:
   caddy_data:
   caddy_config:
