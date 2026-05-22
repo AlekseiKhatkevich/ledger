@@ -4,14 +4,13 @@ import inspect
 from functools import cache
 from typing import TypeVar, Callable, ParamSpec, Awaitable
 
-from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, true
+from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, exists
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, aliased
 
 import constants
 from db.postgres.connection import ledger_db
-
 from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
 
 metadata = MetaData()
@@ -24,15 +23,28 @@ class Base(DeclarativeBase):
 #  automap doesn't work here as model doesn't have a primary key of any sort
 class AssetPopularity(Base):
     __tablename__ = "asset_popularity"
+    is_view = True
 
     ticker_id: Mapped[str] = mapped_column(VARCHAR(50), primary_key=True)
     num_usages: Mapped[int] = mapped_column(BIGINT)
+
+#  system view pg_locks
+class PgLocks(Base):
+    __tablename__ = "pg_locks"
+    is_view = True
+
+    classid: Mapped[int]
+    objid: Mapped[int]
+    locktype: Mapped[str]
+
+    __mapper_args__ = {"primary_key": ["classid", "objid", "locktype"],}
 
 
 M = TypeVar('M', bound=DeclarativeBase)
 P = ParamSpec('P')
 R = TypeVar('R')
 C = TypeVar('C', bound=type)
+
 
 def with_prepare_automap(cls) -> C:
     """Calls `DB.prepare_automap` to fill data in Base before each method call."""
@@ -92,57 +104,64 @@ class LedgerDbRepository:
         lock_namespace: int = constants.LEDGER_PRICES_LOCK_NAMESPACE,
         age_interval: datetime.timedelta = constants.LEDGER_PRICES_PRICE_TIMEOUT,
     ) -> list[LedgerPricesFromDBForUpdate]:
-        """Select up to batch_size price records, forcing tickers to appear first.
-        Adjusts LIMIT by the number of forced tickers missing from asset_tickers_price.
+        """
+        SELECT atp.*, pg_try_advisory_lock(14, atp.id::int) AS acquired
+        FROM asset_tickers_price atp
+        LEFT OUTER JOIN asset_popularity ap ON atp.name = ap.ticker_id
+        WHERE atp.updated_at < now() - interval '5 minutes'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM pg_locks pl
+              WHERE pl.classid = 14 AND pl.objid = atp.id AND pl.locktype = 'advisory'
+          )
+        ORDER BY
+            atp.name IN ('BTC', 'SKID', 'SWEEP') DESC,
+            ap.num_usages DESC NULLS LAST
+        LIMIT 50;
         """
 
         atp = aliased(self.asset_tickers_price_model)
         pop = aliased(AssetPopularity)
 
-        # CTE: count how many of the forced tickers actually exist in the table
-        existing_count_cte = (
-            select(func.count().label('cnt'))
-            .select_from(atp)
-            .where(atp.name.in_(tickers))
-            .cte(name='existing_count')
-        )
+        locked = select(PgLocks).where(
+                PgLocks.classid == lock_namespace,
+                PgLocks.objid == atp.id,
+                PgLocks.locktype == "advisory",
+            ).exists()
 
-        inner = select(
-            atp.id,
+        query = select(
             atp.name,
             atp.price,
             atp.updated_at,
+            atp.id,
             func.pg_try_advisory_lock(lock_namespace, atp.id.cast(Integer)).label('acquired'),
-        ).select_from(
-            atp,
-        ).outerjoin(
-            pop,
-            atp.name == pop.ticker_id,
+        ).select_from(atp).outerjoin(
+            pop, atp.name == pop.ticker_id,
         ).where(
             atp.updated_at < func.now() - age_interval,
+            ~ locked,
         ).order_by(
             atp.name.in_(tickers).desc(),
             pop.num_usages.desc().nullslast(),
         ).limit(
-            func.greatest(
-                batch_size - (len(tickers) - select(existing_count_cte.c.cnt).scalar_subquery()),
-                0,
-            ),
-        ).subquery()
-
-        outer = select(
-            inner.c.name,
-            inner.c.price,
-            inner.c.updated_at,
-            inner.c.id,
-        ).where(
-            inner.c.acquired == true(),
+            batch_size
         )
 
         async with self.db.session() as session:
-            result = await session.execute(outer)
-            return [LedgerPricesFromDBForUpdate(*entry) for entry in result.all()]
+            result = await session.execute(query)
+            return [
+                LedgerPricesFromDBForUpdate(
+                    name=row.name,
+                    price=row.price,
+                    updated_at=row.updated_at,
+                    id=row.id,
+                )
+                for row in result.all()
+            ]
 
     async def pg_advisory_unlock_all(self) -> None:
         async with self.db.session() as session:
             await session.execute(func.pg_advisory_unlock_all())
+
+    async def update_prices(self: list[LedgerPricesFromDBForUpdate]):
+        pass
