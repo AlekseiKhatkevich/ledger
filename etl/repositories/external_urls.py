@@ -6,7 +6,7 @@ import ijson
 import msgspec
 
 from config import settings
-from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
+from repositories.database.domain.ledger import LedgerPricesFromDB
 from repositories.serializers import CoinGeckoSimplePriceElementDataSchema
 
 if TYPE_CHECKING:

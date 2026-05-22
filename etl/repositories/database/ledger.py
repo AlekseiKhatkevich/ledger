@@ -1,17 +1,18 @@
 import datetime
+import decimal
 import functools
 import inspect
 from functools import cache
 from typing import TypeVar, Callable, ParamSpec, Awaitable
 
-from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, exists, values, column, except_, String
+from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, values, column, except_, String
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, aliased
 
 import constants
 from db.postgres.connection import ledger_db
-from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
+from repositories.database.domain.ledger import LedgerPricesFromDB
 
 metadata = MetaData()
 LedgerBase = automap_base(metadata=metadata)
@@ -103,34 +104,12 @@ class LedgerDbRepository:
         batch_size: int,
         lock_namespace: int = constants.LEDGER_PRICES_LOCK_NAMESPACE,
         age_interval: datetime.timedelta = constants.LEDGER_PRICES_PRICE_TIMEOUT,
-    ) -> list[LedgerPricesFromDBForUpdate]:
-        """
-        SELECT atp.*, pg_try_advisory_lock(14, atp.id::int) AS acquired
-        FROM asset_tickers_price atp
-        LEFT OUTER JOIN asset_popularity ap ON atp.name = ap.ticker_id
-        WHERE atp.updated_at < now() - interval '5 minutes'
-          AND NOT EXISTS (
-              SELECT 1
-              FROM pg_locks pl
-              WHERE pl.classid = 14 AND pl.objid = atp.id AND pl.locktype = 'advisory'
-          )
-        ORDER BY
-            atp.name IN ('BTC', 'SKID', 'SWEEP') DESC,
-            ap.num_usages DESC NULLS LAST
-        LIMIT 50;
-        """
+    ) -> list[LedgerPricesFromDB]:
 
         atp = aliased(self.asset_tickers_price_model)
         pop = aliased(AssetPopularity)
 
-        # missing_tickers_count_cte = (
-        #     select((len(tickers) - func.count()).label('cnt'))
-        #     .select_from(atp)
-        #     .where(atp.name.in_(tickers))
-        #     .cte('missing_tickers_count_cte')
-        # )
-
-        #  already locked asset_ticker_price rows
+        #  query 1
         locked = select(PgLocks).where(
                 PgLocks.classid == lock_namespace,
                 PgLocks.objid == atp.id,
@@ -152,14 +131,8 @@ class LedgerDbRepository:
             atp.name.in_(tickers).desc(),
             pop.num_usages.desc().nullslast(),
         )
-        # ).limit(
-        #     func.greatest(
-        #         batch_size - select(missing_tickers_count_cte.c.cnt).scalar_subquery(),
-        #         0,
-        #     ),
-        # )
 
-        #  query 2
+        #  query 2 , find tickets that are not in asset_ticker_price yet.
         value_expr = (
             values(
                 column("name", String),
@@ -169,30 +142,89 @@ class LedgerDbRepository:
             )
         )
         input_select = value_expr.select()
-        existing_select = select(self.asset_tickers_price_model.name)
+        existing_select = select(atp.name)
         missing_tickers_query = except_(input_select, existing_select)
 
         async with self.db.session() as session:
             result = await session.scalars(missing_tickers_query)
-            tickers_not_in_db_yet = result.all()
+            ticker_names_not_in_db_yet = result.all()
 
-            query = query.limit(batch_size - len(tickers_not_in_db_yet))
-
+            query = query.limit(batch_size - len(ticker_names_not_in_db_yet))
             result = await session.execute(query)
 
-            return [
-                LedgerPricesFromDBForUpdate(
-                    name=row.name,
-                    price=row.price,
-                    updated_at=row.updated_at,
-                    id=row.id,
-                )
-                for row in result.all()
-            ]
+        existing_prices = [
+            LedgerPricesFromDB(
+                name=row.name,
+                price=row.price,
+                updated_at=row.updated_at,
+                id=row.id,
+            )
+            for row in result.all()
+        ]
+        non_existing_prices = [
+            LedgerPricesFromDB(
+                name=name,
+                price=decimal.Decimal(0),
+                updated_at=datetime.datetime.min.replace(tzinfo=datetime.UTC),
+                id=None,
+            )
+            for name in ticker_names_not_in_db_yet
+        ]
+
+        return [*existing_prices, *non_existing_prices]
 
     async def pg_advisory_unlock_all(self) -> None:
         async with self.db.session() as session:
             await session.execute(func.pg_advisory_unlock_all())
 
-    async def update_prices(self: list[LedgerPricesFromDBForUpdate]):
-        pass
+    async def update_prices(
+        self,
+        tickers_with_prices: list[LedgerPricesFromDB],
+        ticker_names: frozenset[str],
+    ) -> list[LedgerPricesFromDB]:
+        """Upsert ticker prices via CTE and return requested tickers in one query."""
+        values_to_insert = [
+            {
+                'name': t.name,
+                'price': t.price,
+                'updated_at': t.updated_at,
+            }
+            for t in tickers_with_prices
+        ]
+
+        insert_stmt = insert(self.asset_tickers_price_model).values(values_to_insert)
+        excluded = insert_stmt.excluded
+
+        upsert_cte = insert_stmt.on_conflict_do_update(
+            index_elements=['name', ],
+            set_={
+                'price': excluded.price,
+                'updated_at': excluded.updated_at,
+            },
+            where=(
+                self.asset_tickers_price_model.updated_at < excluded.updated_at
+            ),
+        ).returning(
+            self.asset_tickers_price_model,
+        ).cte(name='upserted')
+
+        select_stmt = select(
+            self.asset_tickers_price_model,
+        ).where(
+            self.asset_tickers_price_model.name.in_(ticker_names),
+        ).add_cte(upsert_cte)
+
+        async with self.db.session() as session:
+            result = await session.execute(select_stmt)
+            rows = result.scalars().all()
+            await session.commit()
+
+        return [
+            LedgerPricesFromDB(
+                name=row.name,
+                price=row.price,
+                updated_at=row.updated_at,
+                id=row.id,
+            )
+            for row in rows
+        ]

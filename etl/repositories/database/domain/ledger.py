@@ -4,7 +4,7 @@ import decimal
 
 
 @dataclasses.dataclass
-class LedgerPricesFromDBForUpdate:
+class LedgerPricesFromDB:
     name: str
     price: decimal.Decimal
     updated_at: datetime.datetime

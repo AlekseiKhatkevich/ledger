@@ -1,9 +1,4 @@
-import decimal
-
-import anyio
-
-from custom_types import CryptoPriceResponse
-from repositories.database.domain.ledger import LedgerPricesFromDBForUpdate
+from repositories.database.domain.ledger import LedgerPricesFromDB
 from repositories.database.ledger import LedgerDbRepository
 from repositories.external_urls import ExternalUrlsRepository
 from repositories.serializers import CoinGeckoSimplePriceElementDataSchema
@@ -20,27 +15,17 @@ class UpdatePricesUseCase:
 
     @staticmethod
     def _merge_coingecko_data(
-            tickers_from_db: list[LedgerPricesFromDBForUpdate],
+            tickers_from_db: list[LedgerPricesFromDB],
             response_data: dict[str, CoinGeckoSimplePriceElementDataSchema],
-    ) -> list[LedgerPricesFromDBForUpdate]:
+    ) -> list[LedgerPricesFromDB]:
         db_prices_dict = {p.name: p for p in tickers_from_db}
 
         for name, resp_data in response_data.items():
             if resp_data.usd is not None:
-                try:
-                    db_price = db_prices_dict[name]
-                except KeyError:  # does not have price in DB yet
-                    tickers_from_db.append(
-                        LedgerPricesFromDBForUpdate(
-                            name=name,
-                            price=resp_data.usd,
-                            updated_at=resp_data.last_updated_at,
-                        )
-                    )
-                else:
-                    if db_price.updated_at < resp_data.last_updated_at:
-                        db_price.price = resp_data.usd
-                        db_price.updated_at = resp_data.last_updated_at
+                db_price = db_prices_dict[name]
+                if db_price.updated_at < resp_data.last_updated_at:
+                    db_price.price = resp_data.usd
+                    db_price.updated_at = resp_data.last_updated_at
 
         return tickers_from_db
 
@@ -49,14 +34,14 @@ class UpdatePricesUseCase:
             ticker_names,
             batch_size,
         )
-        #  we need to send all tickers even if some of them are not in DB yet ...
-        all_tickers = {ticker.name for ticker in tickers_for_update_from_db} | ticker_names
-        print(all_tickers)
-        print(len(all_tickers))
-        # price_response_data = await self.ext_url_service.get_prices(all_tickers)
-        # updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
-        #
-        # await self._finalize()
-        # return  updated_tickers #  return prices from db
-        return tickers_for_update_from_db
-
+        all_ticker_names = {ticker.name for ticker in tickers_for_update_from_db}
+        price_response_data = await self.ext_url_service.get_prices(all_ticker_names)
+        updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
+        #  filter out ticker prices that are not in DB yet with zero prices
+        tickers_for_update_in_db = [t for t in updated_tickers if (t.price or t.id is not None)]
+        final_ticker_prices_from_db = await self.db_repository.update_prices(
+            tickers_for_update_in_db,
+            ticker_names,
+        )
+        await self._finalize()
+        return final_ticker_prices_from_db
