@@ -195,7 +195,7 @@ class LedgerDbRepository:
         insert_stmt = insert(self.asset_tickers_price_model).values(values_to_insert)
         excluded = insert_stmt.excluded
 
-        upsert_cte = insert_stmt.on_conflict_do_update(
+        upsert_stmt = insert_stmt.on_conflict_do_update(
             index_elements=['name', ],
             set_={
                 'price': excluded.price,
@@ -204,21 +204,20 @@ class LedgerDbRepository:
             where=(
                 self.asset_tickers_price_model.updated_at < excluded.updated_at
             ),
-        ).returning(
-            self.asset_tickers_price_model,
-        ).cte(name='upserted')
+        )
 
         select_stmt = select(
             self.asset_tickers_price_model,
         ).where(
             self.asset_tickers_price_model.name.in_(ticker_names),
-        ).add_cte(upsert_cte)
+        )
 
         async with self.db.session() as session:
+            await session.execute(upsert_stmt)
             result = await session.execute(select_stmt)
-            rows = result.scalars().all()
             await session.commit()
 
+        rows = result.scalars().all()
         return [
             LedgerPricesFromDB(
                 name=row.name,
