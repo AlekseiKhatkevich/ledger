@@ -96,6 +96,11 @@ class AssetTickerPrice(UpdatedAtMixin, Base):
         ForeignKey('asset_tickers.name', ondelete='CASCADE'),
     )
     price: Mapped[decimal.Decimal]
+    saved_at: Mapped[datetime.datetime] = mapped_column(
+        init=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
     __table_args__ = (
         CheckConstraint('price > 0', name='positive_price_check'),

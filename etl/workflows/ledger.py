@@ -5,6 +5,8 @@ import constants
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 
+from repositories.database.domain.ledger import LedgerPriceOutTemporalDTO
+
 with workflow.unsafe.imports_passed_through():
     from activities.ledger import upsert_tickers, get_prices_batch
 
@@ -32,7 +34,7 @@ class UpdatePricesWorkflow:
             self,
             tickers: set[str],
             batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE,
-    ) -> dict[str, decimal.Decimal]:
+    ) -> list[LedgerPriceOutTemporalDTO]:
         return await workflow.execute_activity(
             get_prices_batch,
             args=[tickers, batch_size, ],

@@ -1,6 +1,6 @@
 from temporalio import activity
 
-import constants
+from repositories.database.domain.ledger import LedgerPriceOutTemporalDTO
 from usecases.update_prices import UpdatePricesUseCase
 from usecases.upsert_tickers import UpsertCryptoTickersInDbUseCase
 
@@ -14,5 +14,5 @@ async def upsert_tickers(batch_size: int = 1000) -> None:
 async def get_prices_batch(
         tickers: set[str],
         batch_size: int,
-):
+) -> list[LedgerPriceOutTemporalDTO]:
     return await UpdatePricesUseCase().execute(tickers, batch_size)
