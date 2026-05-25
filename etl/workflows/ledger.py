@@ -38,5 +38,5 @@ class UpdatePricesWorkflow:
         return await workflow.execute_activity(
             get_prices_batch,
             args=[tickers, batch_size, ],
-            schedule_to_close_timeout=datetime.timedelta(seconds=60),
+            schedule_to_close_timeout=datetime.timedelta(seconds=60 * 3),
         )

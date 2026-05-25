@@ -188,6 +188,7 @@ class LedgerDbRepository:
                 'name': t.name,
                 'price': t.price,
                 'updated_at': t.updated_at,
+                'saved_at': func.NOW(),
             }
             for t in tickers_with_prices
         ]
@@ -200,6 +201,7 @@ class LedgerDbRepository:
             set_={
                 'price': excluded.price,
                 'updated_at': excluded.updated_at,
+                'saved_at': func.NOW(),
             },
             where=(
                 self.asset_tickers_price_model.updated_at < excluded.updated_at

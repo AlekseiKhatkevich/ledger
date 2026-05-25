@@ -46,7 +46,6 @@ class UpdatePricesUseCase:
             ticker_names,
         )
         await self._finalize()
-        #  todo оборачивал ftp.price во float - так работает
         return [
             LedgerPriceOutTemporalDTO(price=ftp.price, name=ftp.name)
             for ftp in final_ticker_prices_from_db

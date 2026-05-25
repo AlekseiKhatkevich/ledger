@@ -7,6 +7,7 @@ from typing import Callable
 
 from temporalio.client import Client, ScheduleAlreadyRunningError
 from temporalio.worker import Worker
+from temporalio.contrib.pydantic import pydantic_data_converter
 
 from config import settings
 from schedules import schedules
@@ -30,7 +31,7 @@ class WorkerData:
 
 @cache
 async def get_client(addr: str) -> Client:
-    return await Client.connect(addr)
+    return await Client.connect(addr, data_converter=pydantic_data_converter)
 
 async def start_worker(worker_data: WorkerData, create_schedules: bool=False) -> None:
     client = await get_client(settings.TEMPORAL_ADDRESS)
