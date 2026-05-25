@@ -1,8 +1,8 @@
 from temporalio import activity
 
+import constants
 from usecases.update_prices import UpdatePricesUseCase
 from usecases.upsert_tickers import UpsertCryptoTickersInDbUseCase
-import constants
 
 
 @activity.defn
@@ -12,7 +12,7 @@ async def upsert_tickers(batch_size: int = 1000) -> None:
 # todo retry 429, etc, timeout
 @activity.defn
 async def get_prices_batch(
-        tickers: tuple[str, ...],
-        batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE,
+        tickers: set[str],
+        batch_size: int,
 ):
-    await UpdatePricesUseCase().execute(tickers, batch_size)
+    return await UpdatePricesUseCase().execute(tickers, batch_size)

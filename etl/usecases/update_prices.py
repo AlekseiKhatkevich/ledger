@@ -1,3 +1,5 @@
+import decimal
+
 from repositories.database.domain.ledger import LedgerPricesFromDB
 from repositories.database.ledger import LedgerDbRepository
 from repositories.external_urls import ExternalUrlsRepository
@@ -29,7 +31,7 @@ class UpdatePricesUseCase:
 
         return tickers_from_db
 
-    async def execute(self, ticker_names: set[str], batch_size: int):
+    async def execute(self, ticker_names: set[str], batch_size: int) -> dict[str, decimal.Decimal]:
         tickers_for_update_from_db = await self.db_repository.get_prices_batch(
             ticker_names,
             batch_size,
@@ -44,4 +46,4 @@ class UpdatePricesUseCase:
             ticker_names,
         )
         await self._finalize()
-        return final_ticker_prices_from_db
+        return {p.name: p.price for p in final_ticker_prices_from_db}

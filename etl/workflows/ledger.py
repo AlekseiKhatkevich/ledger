@@ -1,10 +1,12 @@
 import datetime
+import decimal
+import constants
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
-    from activities.ledger import upsert_tickers
+    from activities.ledger import upsert_tickers, get_prices_batch
 
 @workflow.defn
 class UpsertTicketsWorkflow:
@@ -26,5 +28,13 @@ class UpsertTicketsWorkflow:
 class UpdatePricesWorkflow:
 
     @workflow.run
-    async def run(self, tickers: tuple[str]) -> dict:
-        pass
+    async def run(
+            self,
+            tickers: set[str],
+            batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE,
+    ) -> dict[str, decimal.Decimal]:
+        return await workflow.execute_activity(
+            get_prices_batch,
+            args=[tickers, batch_size, ],
+            schedule_to_close_timeout=datetime.timedelta(seconds=60),
+        )
