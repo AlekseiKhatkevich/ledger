@@ -39,4 +39,9 @@ class UpdatePricesWorkflow:
             get_prices_batch,
             args=[tickers, batch_size, ],
             schedule_to_close_timeout=datetime.timedelta(seconds=60 * 3),
+            retry_policy=RetryPolicy(
+                backoff_coefficient=2,
+                initial_interval=datetime.timedelta(seconds=1),
+                maximum_attempts=3,
+            ),
         )
