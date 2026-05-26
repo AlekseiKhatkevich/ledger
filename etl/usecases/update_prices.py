@@ -1,4 +1,9 @@
-import decimal
+import datetime
+from functools import singledispatchmethod
+from typing import NoReturn
+
+import httpx
+import temporalio.exceptions as temporal_exc
 
 from repositories.database.domain.ledger import LedgerPricesFromDB, LedgerPriceOutTemporalDTO
 from repositories.database.ledger import LedgerDbRepository
@@ -31,13 +36,42 @@ class UpdatePricesUseCase:
 
         return tickers_from_db
 
+    @singledispatchmethod
+    @staticmethod
+    def _handle_api_exceptions(err: httpx.HTTPError ) -> NoReturn:
+        raise err
+
+    # noinspection PyNestedDecorators
+    @_handle_api_exceptions.register
+    @staticmethod
+    def _(err: httpx.HTTPStatusError) -> NoReturn:
+        """Set following retry to a value form a header Retry-After"""
+        match err.response.status_code:
+            case httpx.codes.TOO_MANY_REQUESTS:
+                retry_after_value = int(err.response.headers['Retry-After'])
+                raise temporal_exc.ApplicationError(
+                    f"429 from CoinGeco. Retry after header {retry_after_value}",
+                    type="CoinGecko_429",
+                    non_retryable=False,
+                    next_retry_delay=datetime.timedelta(seconds=retry_after_value),
+                )
+            case _:
+                raise err
+
     async def execute(self, ticker_names: set[str], batch_size: int) -> list[LedgerPriceOutTemporalDTO]:
         tickers_for_update_from_db = await self.db_repository.get_prices_batch(
             ticker_names,
             batch_size,
         )
         all_ticker_names = {ticker.name for ticker in tickers_for_update_from_db}
-        price_response_data = await self.ext_url_service.get_prices(all_ticker_names)
+
+        try:
+            price_response_data = await self.ext_url_service.get_prices(all_ticker_names)
+        except httpx.HTTPError as err:
+            self._handle_api_exceptions(err)
+        finally:
+            await self._finalize()
+
         updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
         #  filter out ticker prices that are not in DB yet with zero prices
         tickers_for_update_in_db = [t for t in updated_tickers if (t.price or t.id is not None)]

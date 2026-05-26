@@ -1,11 +1,9 @@
-import datetime
 from typing import AsyncGenerator
 from typing import TYPE_CHECKING
 
 import httpx
 import ijson
 import msgspec
-from temporalio import exceptions as temporal_exc
 
 from config import settings
 from repositories.serializers import CoinGeckoSimplePriceElementDataSchema
@@ -29,22 +27,7 @@ class ExternalUrlsRepository:
                     yield symbol
 
     @staticmethod
-    def _check_status_code(response: httpx.Response) -> None:
-        """Set following retry to a value form a header Retry-After"""
-        match response.status_code:
-            case httpx.codes.TOO_MANY_REQUESTS:
-                retry_after_value = int(response.headers['Retry-After'])
-                raise temporal_exc.ApplicationError(
-                    f"429 from CoinGeco. Retry after header {retry_after_value}",
-                    type="CoinGecko_429",
-                    non_retryable=False,
-                    next_retry_delay=datetime.timedelta(seconds=retry_after_value),
-                )
-            case _:
-                response.raise_for_status()
-
     async def get_prices(
-            self,
             ticker_names: set[str],
     ) -> dict[str, CoinGeckoSimplePriceElementDataSchema]:
         """Get list of prices from coingecko"""
@@ -58,7 +41,7 @@ class ExternalUrlsRepository:
                 settings.EXTERNAL_URL_ASSET_PRICES.encoded_string(),
                 params=params,
             )
-            self._check_status_code(response)
+            response.raise_for_status()
             data: CryptoPriceResponse = response.json()
 
         return msgspec.convert(
