@@ -5,7 +5,7 @@ import constants
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 
-from repositories.database.domain.ledger import LedgerPriceOutTemporalDTO
+from repositories.database.domain.ledger import LedgerPriceOutTemporalDTO, UpdatePricesWorkflowParams
 
 with workflow.unsafe.imports_passed_through():
     from activities.ledger import upsert_tickers, get_prices_batch
@@ -26,23 +26,23 @@ class UpsertTicketsWorkflow:
         )
 
 
-@workflow.defn
+@workflow.defn(name='Update-ticker-prices-by-request')
 class UpdatePricesWorkflow:
 
     @workflow.run
     async def run(
             self,
-            tickers: set[str],
-            batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE,
+            params: UpdatePricesWorkflowParams
     ) -> list[LedgerPriceOutTemporalDTO]:
-        workflow.logger.info(f'Workflow input parameters are: {tickers=}, {batch_size=}')
+        workflow.logger.info(f'Workflow input parameters are: {params.tickers=}, {params.batch_size=}')
         return await workflow.execute_activity(
             get_prices_batch,
-            args=[tickers, batch_size, ],
+            args=[params],
             schedule_to_close_timeout=datetime.timedelta(seconds=60 * 3),
             retry_policy=RetryPolicy(
                 backoff_coefficient=2,
                 initial_interval=datetime.timedelta(seconds=1),
                 maximum_attempts=3,
+                non_retryable_error_types=["KeyError",]
             ),
         )

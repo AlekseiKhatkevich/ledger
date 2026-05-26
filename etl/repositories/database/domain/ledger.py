@@ -2,6 +2,8 @@ import dataclasses
 import datetime
 import decimal
 
+import constants
+
 
 @dataclasses.dataclass
 class LedgerPricesFromDB:
@@ -15,3 +17,9 @@ class LedgerPricesFromDB:
 class LedgerPriceOutTemporalDTO:
     name: str
     price: decimal.Decimal
+
+
+@dataclasses.dataclass
+class UpdatePricesWorkflowParams:
+    tickers: set[str]
+    batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE

@@ -16,7 +16,6 @@ class UpdatePricesUseCase:
         self.ext_url_service = ExternalUrlsRepository()
         self.db_repository = LedgerDbRepository()
 
-    # todo финализация в случае 429го респонса
     async def _finalize(self) -> None:
         await self.db_repository.pg_advisory_unlock_all()
 
@@ -50,7 +49,7 @@ class UpdatePricesUseCase:
             case httpx.codes.TOO_MANY_REQUESTS:
                 retry_after_value = int(err.response.headers['Retry-After'])
                 raise temporal_exc.ApplicationError(
-                    f"429 from CoinGeco. Retry after header {retry_after_value}",
+                    f"429 from CoinGeco. Retry-After header value -- {retry_after_value}",
                     type="CoinGecko_429",
                     non_retryable=False,
                     next_retry_delay=datetime.timedelta(seconds=retry_after_value),
