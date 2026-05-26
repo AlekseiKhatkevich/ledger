@@ -9,6 +9,7 @@ from temporalio.client import Client, ScheduleAlreadyRunningError
 from temporalio.worker import Worker
 from temporalio.contrib.pydantic import pydantic_data_converter
 
+from aux.opentelemetry import setup_opentelemetry
 from config import settings
 from schedules import schedules
 
@@ -31,7 +32,13 @@ class WorkerData:
 
 @cache
 async def get_client(addr: str) -> Client:
-    return await Client.connect(addr, data_converter=pydantic_data_converter)
+    # Set up OpenTelemetry tracing and get the Temporal TracingInterceptor.
+    tracing_interceptor = setup_opentelemetry()
+    return await Client.connect(
+        addr,
+        data_converter=pydantic_data_converter,
+        interceptors=[tracing_interceptor],
+    )
 
 async def start_worker(worker_data: WorkerData, create_schedules: bool=False) -> None:
     client = await get_client(settings.TEMPORAL_ADDRESS)

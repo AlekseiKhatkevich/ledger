@@ -318,9 +318,14 @@ dependencies = [
     { name = "httpx" },
     { name = "ijson" },
     { name = "msgspec" },
+    { name = "opentelemetry-exporter-otlp-proto-grpc" },
+    { name = "opentelemetry-instrumentation-asyncpg" },
+    { name = "opentelemetry-instrumentation-httpx" },
+    { name = "opentelemetry-instrumentation-logging" },
+    { name = "opentelemetry-instrumentation-sqlalchemy" },
     { name = "pydantic-settings" },
     { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "temporalio" },
+    { name = "temporalio", extra = ["opentelemetry"] },
 ]
 
 [package.metadata]
@@ -331,9 +336,14 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ijson", specifier = ">=3.5.0" },
     { name = "msgspec", specifier = ">=0.20.0" },
+    { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = ">=1.30.0" },
+    { name = "opentelemetry-instrumentation-asyncpg", specifier = ">=0.53b0" },
+    { name = "opentelemetry-instrumentation-httpx", specifier = ">=0.53b0" },
+    { name = "opentelemetry-instrumentation-logging", specifier = ">=0.53b0" },
+    { name = "opentelemetry-instrumentation-sqlalchemy", specifier = ">=0.53b0" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.46" },
-    { name = "temporalio", specifier = ">=1.26.0" },
+    { name = "temporalio", extras = ["opentelemetry"], specifier = ">=1.26.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1062,6 +1072,20 @@ wheels = [
 ]
 
 [[package]]
+name = "opentelemetry-instrumentation-asyncpg"
+version = "0.62b1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-semantic-conventions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0c/a5/13be4f6412abdeb3b18c95871e993b58e2a21b1e7a7a385692ba04f16e66/opentelemetry_instrumentation_asyncpg-0.62b1.tar.gz", hash = "sha256:6bd7fdcd8116ff400abe12503d43b89c076ded9df1db0638050351504d59b907", size = 8800, upload-time = "2026-04-24T13:22:41.807Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/f0/07cbce732e49f925be75c98f51cfa380694d85304c41bd3a8fbfd9954ccf/opentelemetry_instrumentation_asyncpg-0.62b1-py3-none-any.whl", hash = "sha256:d58a3b2da6d41faba3e47613b0dfe739e639af5a7c74c2715e06730a0f57f81e", size = 10089, upload-time = "2026-04-24T13:21:41.092Z" },
+]
+
+[[package]]
 name = "opentelemetry-instrumentation-httpx"
 version = "0.62b1"
 source = { registry = "https://pypi.org/simple" }
@@ -1687,6 +1711,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/05/ca/b8728451320ca9d8bb6e1680b9bd23767118f86d5b8644edf2304d533f1b/temporalio-1.26.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:46187d5f82ca2ae81f35ea5916a76db0e2f067210dc6b1852c3749475721946e", size = 13808036, upload-time = "2026-04-15T23:42:42.757Z" },
     { url = "https://files.pythonhosted.org/packages/cb/54/3113f5e0ac58655790abac64656373e06191b351d74bfb94692e81bd6784/temporalio-1.26.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:03300c3e5237443367ac61bb20bd726c656b3daa50310bdd436599d5bdc7cf97", size = 14336604, upload-time = "2026-04-15T23:42:49.851Z" },
     { url = "https://files.pythonhosted.org/packages/fd/9b/c50840a26af3587c0c8d9af04d9976743e22496996dc1a377efc75dcd316/temporalio-1.26.0-cp310-abi3-win_amd64.whl", hash = "sha256:1c4a0d82f0a3796cbf78864c799f8dca0b94cdaec68e7b8b224c859005686ec4", size = 14525849, upload-time = "2026-04-15T23:42:57.589Z" },
+]
+
+[package.optional-dependencies]
+opentelemetry = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
 ]
 
 [[package]]

@@ -360,6 +360,8 @@ services:
       - temporal
     environment:
       <<: *temporal_env
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+      OTEL_SERVICE_NAME: "ledger-etl-worker"
     networks:
       [ ledger-network ]
     restart: on-failure

@@ -35,6 +35,7 @@ class UpdatePricesWorkflow:
             tickers: set[str],
             batch_size: int = constants.LEDGER_PRICES_BATCH_SIZE,
     ) -> list[LedgerPriceOutTemporalDTO]:
+        workflow.logger.info(f'Workflow input parameters are: {tickers=}, {batch_size=}')
         return await workflow.execute_activity(
             get_prices_batch,
             args=[tickers, batch_size, ],

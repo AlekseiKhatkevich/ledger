@@ -2,8 +2,9 @@ import datetime
 import decimal
 import functools
 import inspect
+from collections.abc import Callable
 from functools import cache
-from typing import TypeVar, Callable, ParamSpec, Awaitable
+from typing import Any, Awaitable, ParamSpec, TypeVar
 
 from sqlalchemy import MetaData, VARCHAR, BIGINT, Integer, select, func, values, column, except_, String
 from sqlalchemy.dialects.postgresql import insert
@@ -50,7 +51,7 @@ C = TypeVar('C', bound=type)
 def with_prepare_automap(cls) -> C:
     """Calls `DB.prepare_automap` to fill data in Base before each method call."""
 
-    def make_wrapped(fn: Callable[P, Awaitable[R] | R]) -> Callable[P, Awaitable[R] | R]:
+    def make_wrapped(fn: Callable[P, Awaitable[R] | R]) -> Any:
         @functools.wraps(fn)
         async def wrapped(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[R] | R:
             async with self.db.prepare_automap(self.base):
@@ -100,7 +101,7 @@ class LedgerDbRepository:
 
     async def get_prices_batch(
         self,
-        tickers: tuple[str, ...],
+        tickers: list[str],
         batch_size: int,
         lock_namespace: int = constants.LEDGER_PRICES_LOCK_NAMESPACE,
         age_interval: datetime.timedelta = constants.LEDGER_PRICES_PRICE_TIMEOUT,
@@ -180,7 +181,7 @@ class LedgerDbRepository:
     async def update_prices(
         self,
         tickers_with_prices: list[LedgerPricesFromDB],
-        ticker_names: frozenset[str],
+        ticker_names: set[str],
     ) -> list[LedgerPricesFromDB]:
         """Upsert ticker prices via CTE and return requested tickers in one query."""
         values_to_insert = [

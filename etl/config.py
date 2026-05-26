@@ -11,6 +11,11 @@ __all__ = (
 )
 
 
+class OpenTelemetrySettings:
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = 'http://jaeger:4317'
+    OTEL_SERVICE_NAME: str = 'ledger-etl-worker'
+
+
 class TemporalSettings:
     TEMPORAL_ADDRESS: str = 'temporal:7233'
     TEMPORAL_NAMESPACE: str = 'default'
@@ -57,6 +62,7 @@ class DbSettings(BaseSettings):
 
 @cache
 class Settings(
+    OpenTelemetrySettings,
     TemporalSettings,
     ExternalUrlsSettings,
     BaseSettings,
