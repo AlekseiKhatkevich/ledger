@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager, aclosing
 from functools import cache, cached_property
 from typing import AsyncGenerator, Literal
 
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from sqlalchemy import NullPool, AsyncAdaptedQueuePool
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -53,7 +54,10 @@ class DB[T, bound=BasePostgresSettings](Finalizable):
                 max_overflow=self.db_settings.POOL_MAX_OVERFLOW,
                 pool_use_lifo=self.db_settings.POOL_USE_LIFO,
             )
-        return create_async_engine(**engine_kwargs)
+        engine = create_async_engine(**engine_kwargs)
+        # Instrument the async engine's sync_engine for OpenTelemetry tracing.
+        SQLAlchemyInstrumentor().instrument(engine=engine.sync_engine, enable_commenter=True)
+        return engine
 
     @cached_property
     def engine(self) -> AsyncEngine:

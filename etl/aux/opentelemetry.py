@@ -5,7 +5,6 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -38,9 +37,6 @@ def setup_opentelemetry() -> TracingInterceptor:
 
     # Instrument httpx client — captures all outgoing HTTP requests as spans.
     HTTPXClientInstrumentor().instrument()
-
-    # Instrument SQLAlchemy — captures all ORM-level database queries as spans.
-    SQLAlchemyInstrumentor().instrument()
 
     # Instrument asyncpg — captures driver-level database query details as spans.
     # AsyncPGInstrumentor().instrument()  to much noize

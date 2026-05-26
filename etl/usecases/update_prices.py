@@ -68,9 +68,8 @@ class UpdatePricesUseCase:
         try:
             price_response_data = await self.ext_url_service.get_prices(all_ticker_names)
         except httpx.HTTPError as err:
-            self._handle_api_exceptions(err)
-        finally:
             await self._finalize()
+            self._handle_api_exceptions(err)
 
         updated_tickers = self._merge_coingecko_data(tickers_for_update_from_db, price_response_data)
         #  filter out ticker prices that are not in DB yet with zero prices
