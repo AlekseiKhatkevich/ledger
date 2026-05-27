@@ -60,8 +60,8 @@ class UserAssetDetailOut:
     ticker_id: str
     price: decimal.Decimal | None
     outdated: bool
-    time_when_price_was_update_in_db: datetime.datetime
-    popularity_rank: int | None = None
+    time_when_price_was_update_in_db: datetime.datetime | None
+    popularity_rank: int | None
 
 
 @dataclass

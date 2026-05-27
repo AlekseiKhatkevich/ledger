@@ -76,7 +76,7 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
                 func.cast(sa.null(), Integer).label('popularity_rank'),
             )
 
-        stmt = stmt.outerjoin(
+        asset_stmt = stmt.outerjoin(
             AssetTickerPrice,
             self.model.ticker_id == AssetTickerPrice.name,
         ).where(
@@ -85,7 +85,7 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
         )
 
         async with self.db.session() as session:
-            row = await session.execute(stmt)
+            row = await session.execute(asset_stmt)
             asset_result = row.one_or_none()
             if asset_result is None:
                 return None

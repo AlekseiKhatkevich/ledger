@@ -53,8 +53,19 @@ class UserAssetOperationDetailOut:
 
 
 @dataclass(frozen=True)
+class UserAssetOperationSummaryGrouped:
+    key: str
+    type: str
+    count: decimal.Decimal
+    total_quantity: decimal.Decimal
+    total_summ: decimal.Decimal
+
+
+@dataclass(frozen=True)
 class UserAssertOperationsSummaryOut:
-    pass
+    overall: list[UserAssetOperationSummaryGrouped]
+    by_public_key: list[UserAssetOperationSummaryGrouped]
+
 
 class UserAssetOperationDTOIn(MsgspecDTO[UserAssetOperationData]):
     config = DTOConfig(exclude={'id', 'user_id'})

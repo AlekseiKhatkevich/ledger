@@ -51,7 +51,8 @@ class UserAssetCrudController(Controller):
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
 
-    # todo обработка случая, если нет ассета или операции или цены
+    # todo обработка случая, если нет ассета  или цены
+    # todo посчитать стоимость с учетом текущей цены
     # todo SSE
     @get('/{ticker_id: str}')
     async def get_exact_user_asset(

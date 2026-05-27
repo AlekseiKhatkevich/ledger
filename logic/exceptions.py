@@ -6,7 +6,6 @@ class BaseLedgerApiException(Exception):
 class AssetNotFoundError(BaseLedgerApiException):
     pass
 
-
 class UserAssetAddressNotFoundError(AssetNotFoundError):
     pass
 
