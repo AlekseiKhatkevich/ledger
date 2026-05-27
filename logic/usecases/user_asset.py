@@ -1,9 +1,9 @@
+from decimal import Decimal
 import uuid
 
-import dataclasses
-from decimal import Decimal
 import polars as pl
-from api.user_asset_operations.domain import UserAssertOperationsSummaryOut
+
+from api.user_asset_operations.domain import UserAssertOperationsSummaryOut, UserAssetOperationSummaryGrouped
 from api.user_assets.domain import UserAssetData, UserAssetAggregatedPage, GetUserAssetDetailInputParams, \
     UserAssetDetailCombinedOut
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
@@ -51,13 +51,19 @@ class UserAssetDetailUseCase:
             pl.sum("quantity").alias("total_quantity"),
             pl.sum("summ").alias("total_summ"),
         ]
-        grouped_overall = df.group_by("type").agg(*agg_exprs)
-        grouped_by_pubkey = df.group_by("public_key", "type").agg(*agg_exprs)
-
+        overall = [
+            UserAssetOperationSummaryGrouped(key=r['type'], **r)
+            for r in df.group_by('type').agg(*agg_exprs).to_dicts()
+        ]
+        by_public_key = [
+            UserAssetOperationSummaryGrouped(key=r.pop('public_key'), **r)
+            for r in df.group_by('public_key', 'type').agg(*agg_exprs).to_dicts()
+        ]
         return UserAssertOperationsSummaryOut(
-            overall=grouped_overall,
-            by_public_key=grouped_by_pubkey,
+            overall=overall,
+            by_public_key=by_public_key,
         )
+
 
 
     async def execute(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailCombinedOut:
