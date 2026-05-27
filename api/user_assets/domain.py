@@ -64,11 +64,20 @@ class UserAssetDetailOut:
     popularity_rank: int | None
 
 
+@dataclass(frozen=True)
+class AssetPublicKeyDetailOut:
+    asset_id: str
+    public_key: str
+    in_tock: decimal.Decimal
+    market_value: decimal.Decimal | None = None
+
+
 @dataclass
 class UserAssetDetailCombinedOut:
     user_asset: UserAssetDetailOut
     operations: list[UserAssetOperationDetailOut]
     operations_summary: UserAssertOperationsSummaryOut | None = None
+    public_key_details: list[AssetPublicKeyDetailOut] | None = None
 
 
 @dataclass(frozen=True)
@@ -76,4 +85,3 @@ class GetUserAssetDetailInputParams:
     user_id: uuid.UUID
     ticker_id: str
     with_rank: bool
-
