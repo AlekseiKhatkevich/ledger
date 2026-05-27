@@ -581,3 +581,46 @@ class PostgresUserAssetOperationRepository(
             cursor=last_ticker_id,
             has_more=has_more,
         )
+
+    def get_user_asset_operations_stmt(
+        self,
+        user_asset_id: int,
+        user_id: uuid.UUID,
+    ) -> Select:
+        """Build a SELECT statement for user asset operations with address details.
+
+        Corresponding SQL:
+            SELECT
+                uao.id,
+                uao.type,
+                uao.quantity,
+                uao.unit_price,
+                uao.summ,
+                uao.time,
+                uaa.wallet_name,
+                uaa.public_key
+            FROM user_asset_operations uao
+            JOIN user_asset_addresses uaa ON uao.address_id = uaa.id
+            WHERE uao.user_asset_id = :user_asset_id
+              AND uaa.user_id = :user_id
+            ORDER BY uao.time DESC
+        """
+        return (
+            select(
+                self.model.id,
+                self.model.type,
+                self.model.quantity,
+                self.model.unit_price,
+                self.model.summ,
+                self.model.time,
+                UserAssetAddress.wallet_name,
+                UserAssetAddress.public_key,
+            )
+            .select_from(self.model)
+            .join(self.model.address)
+            .where(
+                self.model.user_asset_id == user_asset_id,
+                UserAssetAddress.user_id == user_id,
+            )
+            .order_by(self.model.time.desc())
+        )

@@ -37,9 +37,9 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
         Retrieve a single user asset enriched with price info and optional popularity rank.
         """
         stmt = select(
-            UserAsset.id,
-            UserAsset.name,
-            UserAsset.ticker_id,
+            self.model.id,
+            self.model.name,
+            self.model.ticker_id,
             AssetTickerPrice.price,
             func.coalesce(
                 func.now() - AssetTickerPrice.updated_at > datetime.timedelta(minutes=5),
@@ -70,10 +70,10 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
 
         stmt = stmt.outerjoin(
             AssetTickerPrice,
-            UserAsset.ticker_id == AssetTickerPrice.name,
+            self.model.ticker_id == AssetTickerPrice.name,
         ).where(
-            UserAsset.user_id == params.user_id,
-            UserAsset.ticker_id == params.ticker_id,
+            self.model.user_id == params.user_id,
+            self.model.ticker_id == params.ticker_id,
         )
 
         async with self.db.session() as session:

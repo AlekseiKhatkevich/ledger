@@ -76,3 +76,4 @@ class GetUserAssetDetailInputParams:
     user_id: uuid.UUID
     ticker_id: str
     with_rank: bool
+
