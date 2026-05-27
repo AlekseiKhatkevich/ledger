@@ -3,11 +3,11 @@ from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
 from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
-
+from litestar.params import FromPath, FromQuery
 from api.common_domain import ProblemDetailResponse
 from api.exceptions_handling import integrity_error_handler_factory
 from api.pagination import PAGE_SIZE_PARAMETER, UserAssetsPaginator, AdvancedCursorPagination
-from api.user_assets.domain import UserAssetData, UserAssetDto, UserAssetAggregatedData
+from api.user_assets.domain import UserAssetData, UserAssetDto, UserAssetAggregatedData, GetUserAssetDetailInputParams
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
 from logic.usecases.user_asset import UserAssetUpsertUseCase
 from user.domain import User
@@ -41,8 +41,6 @@ class UserAssetCrudController(Controller):
         await UserAssetUpsertUseCase().execute(user_data)
         return user_data
 
-    # todo ну и всю схему с ценой на сейчас реализовать
-    # todo tempral worker OTEL
     @get('/')
     async def get_all_paginated(
             self,
@@ -52,3 +50,17 @@ class UserAssetCrudController(Controller):
     ) -> AdvancedCursorPagination[str, UserAssetAggregatedData]:
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
+
+    # todo SSE
+    @get('/{ticker_id: str}')
+    async def get_exact_user_asset(
+            self,
+            kc_user: User,
+            ticker_id: FromPath[str],
+            with_rank: FromQuery[bool] = False,
+    ):
+        params = GetUserAssetDetailInputParams(
+            user_id=kc_user.id,
+            ticker_id=ticker_id,
+            with_rank=with_rank,
+        )

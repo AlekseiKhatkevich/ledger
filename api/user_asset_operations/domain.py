@@ -40,6 +40,22 @@ class UserAssetOperationData(msgspec.Struct):
             )
 
 
+@dataclass(frozen=True)
+class UserAssetOperationDetailOut:
+    id: int
+    type: AssetOperationType
+    quantity: decimal.Decimal
+    unit_price: decimal.Decimal
+    summ: decimal.Decimal
+    time: datetime.datetime
+    wallet_name: list[str]
+    public_key: str
+
+
+@dataclass(frozen=True)
+class UserAssertOperationsSummaryOut:
+    pass
+
 class UserAssetOperationDTOIn(MsgspecDTO[UserAssetOperationData]):
     config = DTOConfig(exclude={'id', 'user_id'})
 

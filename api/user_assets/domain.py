@@ -1,3 +1,4 @@
+import datetime
 import decimal
 import uuid
 from dataclasses import dataclass, field
@@ -5,6 +6,8 @@ from typing import Annotated
 
 import msgspec
 from litestar.dto import DTOConfig, MsgspecDTO
+
+from api.user_asset_operations.domain import UserAssetOperationDetailOut, UserAssertOperationsSummaryOut
 
 
 class UserAssetData(msgspec.Struct):
@@ -48,3 +51,28 @@ class UserAssetAggregatedPage:
     items: list[UserAssetAggregatedData]
     cursor: str | None  # ticker_id of the last item on this page
     has_more: bool               # whether a next page exists
+
+
+@dataclass(frozen=True)
+class UserAssetDetailOut:
+    id: int
+    name: str
+    ticker_id: str
+    price: decimal.Decimal
+    outdated: bool
+    time_when_price_was_update_in_db: datetime.datetime
+    popularity_rank: int | None = None
+
+
+@dataclass
+class UserAssetDetailCombinedOut:
+    user_asset: UserAssetDetailOut
+    operations: list[UserAssetOperationDetailOut]
+    operations_summary: UserAssertOperationsSummaryOut | None = None
+
+
+@dataclass(frozen=True)
+class GetUserAssetDetailInputParams:
+    user_id: uuid.UUID
+    ticker_id: str
+    with_rank: bool

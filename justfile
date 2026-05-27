@@ -122,6 +122,11 @@ render-html:
 run *what:
     docker compose exec {{backend_name}} bash -c "uv run {{what}}"
 
+# update package to latest version in container
+[group('aux')]
+upgrade-package package:
+    docker compose exec {{backend_name}} bash -c "uv lock --upgrade-package {{package}} && uv sync"
+
 # jaeger web ui
 [group('otel')]
 jaeger-ui:

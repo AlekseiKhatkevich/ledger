@@ -3,7 +3,7 @@ from functools import cache
 import msgspec
 from sqlalchemy.dialects.postgresql import insert
 
-from api.user_assets.domain import UserAssetData
+from api.user_assets.domain import UserAssetData, GetUserAssetDetailInputParams
 from database.postgres.repositories.base_repository import PostgresBaseRepository
 from logic.db_models import UserAsset
 from logic.repositories.user_asset import BaseUserAssetRepository
@@ -25,3 +25,6 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
             resp = await session.scalar(on_conflict_stmt)
             await session.commit()
         return resp
+
+
+    async def get_user_asset_detail(self, params: GetUserAssetDetailInputParams):

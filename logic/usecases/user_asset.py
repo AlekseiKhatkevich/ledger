@@ -1,6 +1,6 @@
 import uuid
 
-from api.user_assets.domain import UserAssetData, UserAssetAggregatedPage
+from api.user_assets.domain import UserAssetData, UserAssetAggregatedPage, GetUserAssetDetailInputParams
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 
@@ -25,3 +25,9 @@ class UserAssetListUseCase:
             page_size,
             cursor,
         )
+
+class UserAssetDetailUseCase:
+
+    @staticmethod
+    async def execute(params: GetUserAssetDetailInputParams):
+        pass
