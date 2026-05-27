@@ -8,8 +8,11 @@ from sqlalchemy import func, select, Integer
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
 
-from api.user_assets.domain import UserAssetData, GetUserAssetDetailInputParams, UserAssetDetailOut
+from api.user_asset_operations.domain import UserAssetOperationDetailOut
+from api.user_assets.domain import UserAssetData, GetUserAssetDetailInputParams, UserAssetDetailOut, \
+    UserAssetDetailCombinedOut
 from database.postgres.repositories.base_repository import PostgresBaseRepository
+from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.db_models import UserAsset, AssetTickerPrice, AssetPopularity
 from logic.repositories.user_asset import BaseUserAssetRepository
 
@@ -32,10 +35,15 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
         return resp
 
 
-    async def get_user_asset_detail(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailOut | None:
+    async def get_user_asset_detail(
+            self,
+            params: GetUserAssetDetailInputParams,
+    ) -> UserAssetDetailCombinedOut | None:
         """
         Retrieve a single user asset enriched with price info and optional popularity rank.
         """
+        operations_repo = PostgresUserAssetOperationRepository()
+
         stmt = select(
             self.model.id,
             self.model.name,
@@ -78,17 +86,23 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
 
         async with self.db.session() as session:
             row = await session.execute(stmt)
-            result = row.one_or_none()
+            asset_result = row.one_or_none()
+            if asset_result is None:
+                return None
+            row = await session.execute(
+                operations_repo.get_user_asset_operations_stmt(
+                    user_id=params.user_id,
+                    user_asset_id=asset_result.id,
+                )
+            )
+            operations_result = row.all()
 
-        if result is None:
-            return None
-
-        return UserAssetDetailOut(
-            id=result.id,
-            name=result.name,
-            ticker_id=result.ticker_id,
-            price=result.price,
-            outdated=result.outdated,
-            time_when_price_was_update_in_db=result.time_when_price_was_update_in_db,
-            popularity_rank=result.popularity_rank,
+        return UserAssetDetailCombinedOut(
+            user_asset=msgspec.convert(
+                asset_result, type=UserAssetDetailOut, from_attributes=True,
+            ),
+            operations=msgspec.convert(
+                operations_result, type=list[UserAssetOperationDetailOut], from_attributes=True,
+            )
         )
+

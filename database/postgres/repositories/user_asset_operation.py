@@ -605,8 +605,7 @@ class PostgresUserAssetOperationRepository(
               AND uaa.user_id = :user_id
             ORDER BY uao.time DESC
         """
-        return (
-            select(
+        return select(
                 self.model.id,
                 self.model.type,
                 self.model.quantity,
@@ -615,12 +614,14 @@ class PostgresUserAssetOperationRepository(
                 self.model.time,
                 UserAssetAddress.wallet_name,
                 UserAssetAddress.public_key,
-            )
-            .select_from(self.model)
-            .join(self.model.address)
-            .where(
+            ).select_from(
+                self.model
+            ).join(
+                self.model.address
+            ).where(
                 self.model.user_asset_id == user_asset_id,
                 UserAssetAddress.user_id == user_id,
+            ).order_by(
+                self.model.time.desc()
             )
-            .order_by(self.model.time.desc())
-        )
+
