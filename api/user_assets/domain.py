@@ -87,3 +87,8 @@ class GetUserAssetDetailInputParams:
 
     def __post_init__(self) -> None:
         self.ticker_id = self.ticker_id.upper()
+
+@dataclass(frozen=True)
+class UserAssetPriceSimple:
+    name: str
+    price: decimal.Decimal

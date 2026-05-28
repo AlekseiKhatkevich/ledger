@@ -122,3 +122,4 @@ secrets
 /.clinerules
 /bench/
 /llm_task.md
+/.local/share/uv/

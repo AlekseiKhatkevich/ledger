@@ -99,12 +99,12 @@ class UserAssetCrudController(Controller):
                 'event': 'initial',
                 'data': msgspec.json.encode(initial_data)
             }
-            update_prices_result = await usecase.temporal_handle.result()
-
-            # yield {
-            #     'event': 'price_update',
-            #     'data': msgspec.json.encode(update_prices_result)
-            # }
+            update_prices_result = await usecase.get_price_after_update_in_temporal()
+            if update_prices_result is not None:
+                yield {
+                    'event': 'price_update',
+                    'data': msgspec.json.encode(update_prices_result)
+                }
             while True:
                 try:
                     await anyio.sleep(10)

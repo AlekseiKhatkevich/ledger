@@ -8,7 +8,7 @@ from api.user_asset_operations.domain import (
     UserAssertOperationsSummaryOut,
     UserAssetOperationSummaryGrouped,
 )
-from api.user_assets.domain import AssetPublicKeyDetailOut
+from api.user_assets.domain import AssetPublicKeyDetailOut, UserAssetPriceSimple
 from api.user_assets.domain import (
     UserAssetData,
     UserAssetAggregatedPage,
@@ -49,7 +49,7 @@ class UserAssetListUseCase:
 class UserAssetDetailUseCase:
 
     def __init__(self) -> None:
-        self.temporal_handle = None
+        self._temporal_handle = None
 
     @staticmethod
     def _calculate_operations_summary(
@@ -134,13 +134,18 @@ class UserAssetDetailUseCase:
             )
             return workflow_handle
 
+    async def get_price_after_update_in_temporal(self) -> list[UserAssetPriceSimple] | None:
+        #  if we actually sent a request to temporal
+        if self._temporal_handle is not None:
+            update_prices_result = await self._temporal_handle.result()
+            return [UserAssetPriceSimple(**upr) for upr in update_prices_result]
 
     async def execute(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailCombinedOut:
         asset_data_from_db = await PostgresUserAssetRepository().get_user_asset_detail(params)
         if asset_data_from_db is None:
             raise UserAssetNotFoundError({'ticker_id': params.ticker_id})
 
-        self.temporal_handle = await self._check_if_price_outdated(asset_data_from_db)
+        self._temporal_handle = await self._check_if_price_outdated(asset_data_from_db)
 
         asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
         asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
