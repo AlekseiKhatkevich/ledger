@@ -5,11 +5,18 @@ from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
 from litestar.params import FromPath, FromQuery
 from api.common_domain import ProblemDetailResponse
-from api.exceptions_handling import integrity_error_handler_factory
+from api.exceptions_handling import integrity_error_handler_factory, base_error_handler_factory
 from api.pagination import PAGE_SIZE_PARAMETER, UserAssetsPaginator, AdvancedCursorPagination
-from api.user_assets.domain import UserAssetData, UserAssetDto, UserAssetAggregatedData, GetUserAssetDetailInputParams
+from api.user_assets.domain import (
+    UserAssetData,
+    UserAssetDto,
+    UserAssetAggregatedData,
+    GetUserAssetDetailInputParams,
+    UserAssetDetailCombinedOut,
+)
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
-from logic.usecases.user_asset import UserAssetUpsertUseCase
+from logic.exceptions import UserAssetNotFoundError
+from logic.usecases.user_asset import UserAssetUpsertUseCase, UserAssetDetailUseCase
 from user.domain import User
 
 
@@ -22,6 +29,11 @@ class UserAssetCrudController(Controller):
             'Provide correct ticker. All available tickers are on Coingecko.',
             PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE,
             'wrong_ticker.html',
+        ),
+        UserAssetNotFoundError: base_error_handler_factory(
+            'User asset does not not exists',
+            'User asset with this name does not exists for this user',
+            'user_asset_with_exact_name_not_exists.html',
         ),
     }
 
@@ -60,9 +72,10 @@ class UserAssetCrudController(Controller):
             kc_user: User,
             ticker_id: FromPath[str],
             with_rank: FromQuery[bool] = False,
-    ):
+    ) -> UserAssetDetailCombinedOut:
         params = GetUserAssetDetailInputParams(
             user_id=kc_user.id,
             ticker_id=ticker_id,
             with_rank=with_rank,
         )
+        return await UserAssetDetailUseCase().execute(params)

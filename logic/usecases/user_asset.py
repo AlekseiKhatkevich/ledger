@@ -1,10 +1,12 @@
-import dataclasses
 import uuid
 from decimal import Decimal
 
 import polars as pl
 
-from api.user_asset_operations.domain import UserAssertOperationsSummaryOut, UserAssetOperationSummaryGrouped
+from api.user_asset_operations.domain import (
+    UserAssertOperationsSummaryOut,
+    UserAssetOperationSummaryGrouped,
+)
 from api.user_assets.domain import AssetPublicKeyDetailOut
 from api.user_assets.domain import (
     UserAssetData,
@@ -15,7 +17,7 @@ from api.user_assets.domain import (
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.db_models import AssetOperationType
-from logic.exceptions import UserAssetAddressNotFoundError
+from logic.exceptions import UserAssetNotFoundError
 
 
 class UserAssetUpsertUseCase:
@@ -102,7 +104,6 @@ class UserAssetDetailUseCase:
 
         return [
             AssetPublicKeyDetailOut(
-                asset_id=ticker_id,
                 public_key=row['public_key'],
                 in_tock=(in_tock := row['in_tock']),
                 market_value=in_tock * price if price is not None else None,
@@ -110,9 +111,12 @@ class UserAssetDetailUseCase:
             for row in details.to_dicts()
         ]
 
-    async def execute(self, params: 'GetUserAssetDetailInputParams') -> UserAssertOperationsSummaryOut:
+    async def execute(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailCombinedOut:
         asset_data_from_db = await PostgresUserAssetRepository().get_user_asset_detail(params)
         if asset_data_from_db is None:
-            raise UserAssetAddressNotFoundError({'ticker_id': params.ticker_id})
+            raise UserAssetNotFoundError({'ticker_id': params.ticker_id})
         
-        return self._calculate_public_key_details(asset_data_from_db)
+        asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
+        asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
+
+        return asset_data_from_db

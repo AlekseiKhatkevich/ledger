@@ -117,6 +117,24 @@ ErrorDescriptionData(
 
 ErrorDescriptionData(
     template_data=TemplateData(
+        title='User asset does not not exists',
+        header='User asset does not not exists',
+        summary='User asset for this user with this name does not exists',
+        suggested_status='400 (Bad Request)',
+        severity='Low',
+        hr_description='Yor tried to get user asset but id does ot exist with this asset name',
+        guidance=(
+            'Double check that user asset with this name exists',
+            'If not you need to create it first or use proper user_asset_id'
+        )
+    ),
+    system_data=SystemData(
+        output_html_file_name='user_asset_with_exact_name_not_exists.html',
+    )
+)
+
+ErrorDescriptionData(
+    template_data=TemplateData(
         title='User asset operation does not not exists',
         header='User asset operation does not not exists',
         summary='User asset operation for this user does not exists',

@@ -615,13 +615,13 @@ class PostgresUserAssetOperationRepository(
                 UserAssetAddress.wallet_name,
                 UserAssetAddress.public_key,
             ).select_from(
-                self.model
+                self.model,
             ).join(
-                self.model.address
+                self.model.address,
             ).where(
                 self.model.user_asset_id == user_asset_id,
                 UserAssetAddress.user_id == user_id,
             ).order_by(
-                self.model.time.desc()
+                self.model.time.desc(),
             )
 

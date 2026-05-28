@@ -66,7 +66,6 @@ class UserAssetDetailOut:
 
 @dataclass(frozen=True)
 class AssetPublicKeyDetailOut:
-    asset_id: str
     public_key: str
     in_tock: decimal.Decimal
     market_value: decimal.Decimal | None = None
@@ -80,8 +79,11 @@ class UserAssetDetailCombinedOut:
     public_key_details: list[AssetPublicKeyDetailOut] | None = None
 
 
-@dataclass(frozen=True)
+@dataclass
 class GetUserAssetDetailInputParams:
     user_id: uuid.UUID
     ticker_id: str
     with_rank: bool
+
+    def __post_init__(self) -> None:
+        self.ticker_id = self.ticker_id.upper()
