@@ -85,9 +85,7 @@ class UserAssetCrudController(Controller):
             with_rank=with_rank,
         )
 
-        async def _user_asset_stream(
-                params: GetUserAssetDetailInputParams,
-        ) -> AsyncGenerator[dict, None]:
+        async def _user_asset_stream() -> AsyncGenerator[dict, None]:
             """SSE generator for user asset detail.
 
             First event ('initial') sends full asset data.
@@ -96,22 +94,26 @@ class UserAssetCrudController(Controller):
             """
             usecase = UserAssetDetailUseCase()
 
-            # Initial full data snapshot
             initial_data = await usecase.execute(params)
             yield {
                 'event': 'initial',
                 'data': msgspec.json.encode(initial_data)
             }
+            update_prices_result = await usecase.temporal_handle.result()
 
-            # TODO: Replace polling loop with real price update events
+            # yield {
+            #     'event': 'price_update',
+            #     'data': msgspec.json.encode(update_prices_result)
+            # }
             while True:
                 try:
                     await anyio.sleep(10)
+                    yield {'comment': 'ping'}
                 except BaseException:
                     break
 
         return ServerSentEvent(
-            content=_user_asset_stream(params),
+            content=_user_asset_stream(),
             retry_duration=3000,
-            background=BackgroundTask(print, ('FINISH NAH', ))
+            # background=BackgroundTask(print, ('FINISH NAH', ))
         )

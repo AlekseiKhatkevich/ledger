@@ -1,1 +1,2 @@
+LEDGER_PRICES_BATCH_SIZE: int = 50
 LEDGER_TASK_QUEUE: str = 'LedgerTaskQueue'

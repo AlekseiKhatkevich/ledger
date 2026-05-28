@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 
 import polars as pl
+from temporalio.client import WorkflowHandle
 
 from api.user_asset_operations.domain import (
     UserAssertOperationsSummaryOut,
@@ -14,6 +15,10 @@ from api.user_assets.domain import (
     GetUserAssetDetailInputParams,
     UserAssetDetailCombinedOut,
 )
+from aux.temporal.client import get_client
+from aux.temporal.domain import UpdatePricesWorkflowParams
+from aux.temporal.workflows import TEMPORAL_UPDATE_PRICES_FLOW
+from constants import LEDGER_TASK_QUEUE
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.db_models import AssetOperationType
@@ -42,6 +47,9 @@ class UserAssetListUseCase:
         )
 
 class UserAssetDetailUseCase:
+
+    def __init__(self) -> None:
+        self.temporal_handle = None
 
     @staticmethod
     def _calculate_operations_summary(
@@ -78,7 +86,6 @@ class UserAssetDetailUseCase:
         asset_data_from_db: UserAssetDetailCombinedOut,
     ) -> list[AssetPublicKeyDetailOut]:
         price = asset_data_from_db.user_asset.price
-        ticker_id = asset_data_from_db.user_asset.ticker_id
 
         df = pl.DataFrame(
             asset_data_from_db.operations,
@@ -111,11 +118,30 @@ class UserAssetDetailUseCase:
             for row in details.to_dicts()
         ]
 
+    @staticmethod
+    async def _check_if_price_outdated(
+            asset_data_from_db: UserAssetDetailCombinedOut,
+    ) -> WorkflowHandle | None:
+        if asset_data_from_db.user_asset.outdated:
+            temporal_client = await get_client()
+            workflow_handle = await temporal_client.start_workflow(
+                TEMPORAL_UPDATE_PRICES_FLOW,
+                UpdatePricesWorkflowParams(
+                    tickers={asset_data_from_db.user_asset.ticker_id,},
+                ),
+                id=f'{TEMPORAL_UPDATE_PRICES_FLOW}-{uuid.uuid4()}',
+                task_queue=LEDGER_TASK_QUEUE,
+            )
+            return workflow_handle
+
+
     async def execute(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailCombinedOut:
         asset_data_from_db = await PostgresUserAssetRepository().get_user_asset_detail(params)
         if asset_data_from_db is None:
             raise UserAssetNotFoundError({'ticker_id': params.ticker_id})
-        
+
+        self.temporal_handle = await self._check_if_price_outdated(asset_data_from_db)
+
         asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
         asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
 

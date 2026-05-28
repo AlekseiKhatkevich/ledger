@@ -26,7 +26,7 @@ class UpsertTicketsWorkflow:
         )
 
 
-@workflow.defn(name='Update-ticker-prices-by-request')
+@workflow.defn
 class UpdatePricesWorkflow:
 
     @workflow.run

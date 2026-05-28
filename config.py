@@ -69,12 +69,18 @@ class NNGSettings:
     NNG_SURVEY_ADDR: str = 'abstract://survey'
     NNG_SURVEY_INTERVAL: float = 1.0
 
+
+class TemporalSettings:
+    TEMPORAL_ADDRESS: str = 'temporal:7233'
+    TEMPORAL_NAMESPACE: str = 'default'
+
 @cache
 class Settings(
     ApiSettings,
     PostgresSettings,
     KeycloakSettings,
     NNGSettings,
+    TemporalSettings,
     BaseSettings,
 ):
     """Combined settings"""
