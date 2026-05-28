@@ -1,6 +1,15 @@
+import json
+from dataclasses import asdict
+
+import anyio
+from collections.abc import AsyncGenerator
+
+import msgspec.json
 from litestar import Controller, route, get
+from litestar.background_tasks import BackgroundTask
 from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
+from litestar.response.sse import ServerSentEvent
 from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
 from litestar.params import FromPath, FromQuery
@@ -12,7 +21,6 @@ from api.user_assets.domain import (
     UserAssetDto,
     UserAssetAggregatedData,
     GetUserAssetDetailInputParams,
-    UserAssetDetailCombinedOut,
 )
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
 from logic.exceptions import UserAssetNotFoundError
@@ -63,19 +71,47 @@ class UserAssetCrudController(Controller):
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
 
-    # todo обработка случая, если нет ассета  или цены
-    # todo посчитать стоимость с учетом текущей цены
-    # todo SSE
+
     @get('/{ticker_id: str}')
     async def get_exact_user_asset(
             self,
             kc_user: User,
             ticker_id: FromPath[str],
             with_rank: FromQuery[bool] = False,
-    ) -> UserAssetDetailCombinedOut:
+    ) -> ServerSentEvent:
         params = GetUserAssetDetailInputParams(
             user_id=kc_user.id,
             ticker_id=ticker_id,
             with_rank=with_rank,
         )
-        return await UserAssetDetailUseCase().execute(params)
+
+        async def _user_asset_stream(
+                params: GetUserAssetDetailInputParams,
+        ) -> AsyncGenerator[dict, None]:
+            """SSE generator for user asset detail.
+
+            First event ('initial') sends full asset data.
+            Subsequent events ('price_update') will be emitted when
+            the price-update mechanism is implemented.
+            """
+            usecase = UserAssetDetailUseCase()
+
+            # Initial full data snapshot
+            initial_data = await usecase.execute(params)
+            yield {
+                'event': 'initial',
+                'data': msgspec.json.encode(initial_data)
+            }
+
+            # TODO: Replace polling loop with real price update events
+            while True:
+                try:
+                    await anyio.sleep(10)
+                except BaseException:
+                    break
+
+        return ServerSentEvent(
+            content=_user_asset_stream(params),
+            retry_duration=3000,
+            background=BackgroundTask(print, ('FINISH NAH', ))
+        )
