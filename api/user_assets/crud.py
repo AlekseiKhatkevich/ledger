@@ -1,18 +1,16 @@
-import json
-from dataclasses import asdict
-
-import anyio
+import asyncio
 from collections.abc import AsyncGenerator
 
 import msgspec.json
 from litestar import Controller, route, get
-from litestar.background_tasks import BackgroundTask
 from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
+from litestar.params import FromPath, FromQuery
 from litestar.response.sse import ServerSentEvent
 from litestar.status_codes import HTTP_400_BAD_REQUEST
 from sqlalchemy.exc import IntegrityError
-from litestar.params import FromPath, FromQuery
+
+import constants
 from api.common_domain import ProblemDetailResponse
 from api.exceptions_handling import integrity_error_handler_factory, base_error_handler_factory
 from api.pagination import PAGE_SIZE_PARAMETER, UserAssetsPaginator, AdvancedCursorPagination
@@ -20,7 +18,7 @@ from api.user_assets.domain import (
     UserAssetData,
     UserAssetDto,
     UserAssetAggregatedData,
-    GetUserAssetDetailInputParams,
+    GetUserAssetDetailInputParams, UserAssetDetailCombinedOut,
 )
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
 from logic.exceptions import UserAssetNotFoundError
@@ -48,7 +46,7 @@ class UserAssetCrudController(Controller):
     @route(
         '/',
         dto=UserAssetDto,
-        http_method=["POST", "PUT",],
+        http_method=['POST', 'PUT',],
         responses={
             HTTP_400_BAD_REQUEST: ResponseSpec(
                 data_container=ProblemDetailResponse,
@@ -85,7 +83,17 @@ class UserAssetCrudController(Controller):
             with_rank=with_rank,
         )
 
-        async def _user_asset_stream() -> AsyncGenerator[dict, None]:
+        def _get_response_message(data) -> dict[str, str | bytes]:
+            if isinstance(data, UserAssetDetailCombinedOut):
+                event = 'initial'
+            else:
+                event = 'price_update'
+            return {
+                'event': event,
+                'data': msgspec.json.encode(data)
+            }
+
+        async def _user_asset_stream() -> AsyncGenerator[dict[str, str | bytes], None]:
             """SSE generator for user asset detail.
 
             First event ('initial') sends full asset data.
@@ -93,27 +101,21 @@ class UserAssetCrudController(Controller):
             the price-update mechanism is implemented.
             """
             usecase = UserAssetDetailUseCase()
+            await usecase.execute(params)
 
-            initial_data = await usecase.execute(params)
-            yield {
-                'event': 'initial',
-                'data': msgspec.json.encode(initial_data)
-            }
-            update_prices_result = await usecase.get_price_after_update_in_temporal()
-            if update_prices_result is not None:
-                yield {
-                    'event': 'price_update',
-                    'data': msgspec.json.encode(update_prices_result)
-                }
             while True:
                 try:
-                    await anyio.sleep(55)
+                    new_data = await asyncio.wait_for(
+                        usecase.result_queue.get(),
+                        constants.SSE_KEEPALIVE_TIMEOUT,
+                    )
+                except TimeoutError:
                     yield {'comment': 'ping'}
-                except BaseException:
-                    break
+                else:
+                    usecase.result_queue.task_done()
+                    yield _get_response_message(new_data)
 
         return ServerSentEvent(
             content=_user_asset_stream(),
             retry_duration=3000,
-            # background=BackgroundTask(print, ('FINISH NAH', ))
         )

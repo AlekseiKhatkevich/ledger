@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from decimal import Decimal
 
@@ -28,7 +29,7 @@ from logic.exceptions import UserAssetNotFoundError
 class UserAssetUpsertUseCase:
 
     @staticmethod
-    async def execute(data: UserAssetData) ->  int | None:
+    async def execute(data: UserAssetData) -> int | None:
         return await PostgresUserAssetRepository().upsert(data)
 
 
@@ -46,10 +47,11 @@ class UserAssetListUseCase:
             cursor,
         )
 
+
 class UserAssetDetailUseCase:
 
     def __init__(self) -> None:
-        self._temporal_handle = None
+        self.result_queue = asyncio.Queue()
 
     @staticmethod
     def _calculate_operations_summary(
@@ -58,15 +60,15 @@ class UserAssetDetailUseCase:
         df = pl.DataFrame(
             asset_data_from_db.operations,
             schema_overrides={
-                "quantity": pl.Decimal(scale=10),
-                "unit_price": pl.Decimal(scale=10),
-                "summ": pl.Decimal(scale=10),
+                'quantity': pl.Decimal(scale=10),
+                'unit_price': pl.Decimal(scale=10),
+                'summ': pl.Decimal(scale=10),
             },
         )
         agg_exprs = [
-            pl.len().alias("count"),
-            pl.sum("quantity").alias("total_quantity"),
-            pl.sum("summ").alias("total_summ"),
+            pl.len().alias('count'),
+            pl.sum('quantity').alias('total_quantity'),
+            pl.sum('summ').alias('total_summ'),
         ]
         overall = [
             UserAssetOperationSummaryGrouped(key=r['type'], **r)
@@ -118,36 +120,33 @@ class UserAssetDetailUseCase:
             for row in details.to_dicts()
         ]
 
-    @staticmethod
     async def _check_if_price_outdated(
+            self,
             asset_data_from_db: UserAssetDetailCombinedOut,
-    ) -> WorkflowHandle | None:
+    ) -> list[UserAssetPriceSimple] | None:
         if asset_data_from_db.user_asset.outdated:
             temporal_client = await get_client()
-            workflow_handle = await temporal_client.start_workflow(
+            result = await temporal_client.execute_workflow(
                 TEMPORAL_UPDATE_PRICES_FLOW,
                 UpdatePricesWorkflowParams(
-                    tickers={asset_data_from_db.user_asset.ticker_id,},
+                    tickers={asset_data_from_db.user_asset.ticker_id},
                 ),
                 id=f'{TEMPORAL_UPDATE_PRICES_FLOW}-{uuid.uuid4()}',
                 task_queue=LEDGER_TASK_QUEUE,
             )
-            return workflow_handle
-
-    async def get_price_after_update_in_temporal(self) -> list[UserAssetPriceSimple] | None:
-        #  if we actually sent a request to temporal
-        if self._temporal_handle is not None:
-            update_prices_result = await self._temporal_handle.result()
-            return [UserAssetPriceSimple(**upr) for upr in update_prices_result]
+            updated_price_data = [UserAssetPriceSimple(**upr) for upr in result]
+            await self.result_queue.put(updated_price_data)
+            return updated_price_data
 
     async def execute(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailCombinedOut:
         asset_data_from_db = await PostgresUserAssetRepository().get_user_asset_detail(params)
         if asset_data_from_db is None:
             raise UserAssetNotFoundError({'ticker_id': params.ticker_id})
 
-        self._temporal_handle = await self._check_if_price_outdated(asset_data_from_db)
+        asyncio.create_task(self._check_if_price_outdated(asset_data_from_db))
 
         asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
         asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
+        await self.result_queue.put(asset_data_from_db)
 
         return asset_data_from_db
