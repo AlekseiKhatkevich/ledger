@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import uuid
 from decimal import Decimal
 
@@ -20,6 +21,7 @@ from aux.temporal.client import get_client
 from aux.temporal.domain import UpdatePricesWorkflowParams
 from aux.temporal.workflows import TEMPORAL_UPDATE_PRICES_FLOW
 from constants import LEDGER_TASK_QUEUE
+from database.postgres.repositories.asset_ticker_price import PostgresAssetTickerPriceRepository
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.db_models import AssetOperationType
@@ -50,8 +52,11 @@ class UserAssetListUseCase:
 
 class UserAssetDetailUseCase:
 
-    def __init__(self) -> None:
+    def __init__(self, price_update_interval: datetime.timedelta | None = None) -> None:
         self.result_queue = asyncio.Queue()
+        self._user_asset_repo = PostgresUserAssetRepository()
+        self._ticker_price_repo = PostgresAssetTickerPriceRepository()
+        self.price_update_interval = price_update_interval
 
     @staticmethod
     def _calculate_operations_summary(
@@ -120,26 +125,45 @@ class UserAssetDetailUseCase:
             for row in details.to_dicts()
         ]
 
+    async def update_price_periodically(self, asset_data_from_db: UserAssetDetailCombinedOut) -> None:
+        while True:
+            await asyncio.sleep(self.price_update_interval.total_seconds())
+            price_data_from_db = await self._ticker_price_repo.get_prices(
+                {asset_data_from_db.user_asset.ticker_id, }
+            )
+            outdated_tickers = {pd.name for pd in price_data_from_db if pd.outdated}
+            if outdated_tickers:
+                await wrap_create_task(self._update_prices_from_coingecko(outdated_tickers),)
+            return_data = [UserAssetPriceSimple(name=pd.name, price=pd.price) for pd in price_data_from_db]
+            await self.result_queue.put(return_data)
+
+
+    async def _update_prices_from_coingecko(
+            self,
+            ticker_names:set[str],
+    ) -> list[UserAssetPriceSimple]:
+        temporal_client = await get_client()
+        result = await temporal_client.execute_workflow(
+            TEMPORAL_UPDATE_PRICES_FLOW,
+            UpdatePricesWorkflowParams(tickers=ticker_names),
+            id=f'{TEMPORAL_UPDATE_PRICES_FLOW}-{uuid.uuid4()}',
+            task_queue=LEDGER_TASK_QUEUE,
+        )
+        updated_price_data = [UserAssetPriceSimple(**upr) for upr in result]
+        await self.result_queue.put(updated_price_data)
+        return updated_price_data
+
+
     async def _check_if_price_outdated(
             self,
             asset_data_from_db: UserAssetDetailCombinedOut,
     ) -> list[UserAssetPriceSimple] | None:
         if asset_data_from_db.user_asset.outdated:
-            temporal_client = await get_client()
-            result = await temporal_client.execute_workflow(
-                TEMPORAL_UPDATE_PRICES_FLOW,
-                UpdatePricesWorkflowParams(
-                    tickers={asset_data_from_db.user_asset.ticker_id},
-                ),
-                id=f'{TEMPORAL_UPDATE_PRICES_FLOW}-{uuid.uuid4()}',
-                task_queue=LEDGER_TASK_QUEUE,
-            )
-            updated_price_data = [UserAssetPriceSimple(**upr) for upr in result]
-            await self.result_queue.put(updated_price_data)
-            return updated_price_data
+            tickers = {asset_data_from_db.user_asset.ticker_id}
+            return await self._update_prices_from_coingecko(tickers)
 
     async def execute(self, params: GetUserAssetDetailInputParams) -> UserAssetDetailCombinedOut:
-        asset_data_from_db = await PostgresUserAssetRepository().get_user_asset_detail(params)
+        asset_data_from_db = await self._user_asset_repo.get_user_asset_detail(params)
         if asset_data_from_db is None:
             raise UserAssetNotFoundError({'ticker_id': params.ticker_id})
 
@@ -147,6 +171,11 @@ class UserAssetDetailUseCase:
             self._check_if_price_outdated(asset_data_from_db),
             True,
         )
+        if self.price_update_interval is not None:
+            await wrap_create_task(
+                self.update_price_periodically(asset_data_from_db),
+                True,
+            )
 
         asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
         asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)

@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from collections.abc import AsyncGenerator
 
 import msgspec.json
@@ -100,7 +101,7 @@ class UserAssetCrudController(Controller):
             Subsequent events ('price_update') will be emitted when
             the price-update mechanism is implemented.
             """
-            usecase = UserAssetDetailUseCase()
+            usecase = UserAssetDetailUseCase(datetime.timedelta(seconds=30))
             await usecase.execute(params)
 
             while True:
