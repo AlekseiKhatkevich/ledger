@@ -52,7 +52,6 @@ class UserAssetDetailUseCase:
 
     def __init__(self) -> None:
         self.result_queue = asyncio.Queue()
-        self._background_tasks = set()
 
     @staticmethod
     def _calculate_operations_summary(
@@ -146,7 +145,6 @@ class UserAssetDetailUseCase:
 
         await wrap_create_task(
             self._check_if_price_outdated(asset_data_from_db),
-            self._background_tasks,
             True,
         )
 
