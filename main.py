@@ -9,6 +9,7 @@ from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetail
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
@@ -42,6 +43,7 @@ def setup_opentelemetry() ->  OpenTelemetryConfig:
 
     trace.set_tracer_provider(provider)
 
+    AsyncioInstrumentor().instrument()
     LoggingInstrumentor().instrument(set_logging_format=True)
     SQLAlchemyInstrumentor().instrument(engine=db.engine.sync_engine, enable_commenter=True)
     HTTPXClientInstrumentor().instrument()
