@@ -57,6 +57,7 @@ class UserAssetDetailUseCase:
         self._user_asset_repo = PostgresUserAssetRepository()
         self._ticker_price_repo = PostgresAssetTickerPriceRepository()
         self.price_update_interval = price_update_interval
+        self.final_event = asyncio.Event()
 
     @staticmethod
     def _calculate_operations_summary(
@@ -126,7 +127,7 @@ class UserAssetDetailUseCase:
         ]
 
     async def update_price_periodically(self, asset_data_from_db: UserAssetDetailCombinedOut) -> None:
-        while True:
+        while not self.final_event.is_set():
             await asyncio.sleep(self.price_update_interval.total_seconds())
             price_data_from_db = await self._ticker_price_repo.get_prices(
                 {asset_data_from_db.user_asset.ticker_id, }

@@ -103,18 +103,20 @@ class UserAssetCrudController(Controller):
             """
             usecase = UserAssetDetailUseCase(datetime.timedelta(seconds=30))
             await usecase.execute(params)
-
-            while True:
-                try:
-                    new_data = await asyncio.wait_for(
-                        usecase.result_queue.get(),
-                        constants.SSE_KEEPALIVE_TIMEOUT,
-                    )
-                except TimeoutError:
-                    yield {'comment': 'ping'}
-                else:
-                    usecase.result_queue.task_done()
-                    yield _get_response_message(new_data)
+            try:
+                while True:
+                    try:
+                        new_data = await asyncio.wait_for(
+                            usecase.result_queue.get(),
+                            constants.SSE_KEEPALIVE_TIMEOUT,
+                        )
+                    except TimeoutError:
+                        yield {'comment': 'ping'}
+                    else:
+                        usecase.result_queue.task_done()
+                        yield _get_response_message(new_data)
+            finally:
+                usecase.final_event.set()
 
         return ServerSentEvent(
             content=_user_asset_stream(),
