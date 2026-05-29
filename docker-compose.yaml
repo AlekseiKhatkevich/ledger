@@ -52,9 +52,12 @@ services:
         - action: sync+restart
           path: ./docker-compose.yaml
           target: ./app/docker-compose.yaml
-        - action: sync+restart
+        - action: rebuild
           path: ./pyproject.toml
-          target: ./app/pyproject.toml
+        - action: rebuild
+          path: ./uv.lock
+        - action: rebuild
+          path: ./Dockerfile
 
 #  ---
 

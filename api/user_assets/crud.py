@@ -107,7 +107,7 @@ class UserAssetCrudController(Controller):
                 }
             while True:
                 try:
-                    await anyio.sleep(10)
+                    await anyio.sleep(55)
                     yield {'comment': 'ping'}
                 except BaseException:
                     break
