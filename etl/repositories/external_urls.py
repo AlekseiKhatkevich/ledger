@@ -5,6 +5,7 @@ import httpx
 import ijson
 import msgspec
 
+import constants
 from config import settings
 from repositories.serializers import CoinGeckoSimplePriceElementDataSchema
 
@@ -35,6 +36,7 @@ class ExternalUrlsRepository:
             'symbols': ','.join(ticker_names),
             'vs_currencies': 'usd',
             'include_last_updated_at': True,
+            'precision': constants.LEDGER_PRICES_PRECISION,
         }
         async with httpx.AsyncClient(timeout=5.0,) as client:
             response = await client.get(

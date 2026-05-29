@@ -3,6 +3,7 @@ import datetime
 import uuid
 from decimal import Decimal
 
+import msgspec
 import polars as pl
 
 from api.user_asset_operations.domain import (
@@ -135,7 +136,10 @@ class UserAssetDetailUseCase:
             outdated_tickers = {pd.name for pd in price_data_from_db if pd.outdated}
             if outdated_tickers:
                 await wrap_create_task(self._update_prices_from_coingecko(outdated_tickers),)
-            return_data = [UserAssetPriceSimple(name=pd.name, price=pd.price) for pd in price_data_from_db]
+            # return_data = [UserAssetPriceSimple(name=pd.name, price=pd.price) for pd in price_data_from_db]
+            return_data = msgspec.convert(
+                price_data_from_db, type=list[UserAssetPriceSimple], from_attributes=True
+            )
             await self.result_queue.put(return_data)
 
 
@@ -150,7 +154,9 @@ class UserAssetDetailUseCase:
             id=f'{TEMPORAL_UPDATE_PRICES_FLOW}-{uuid.uuid4()}',
             task_queue=LEDGER_TASK_QUEUE,
         )
-        updated_price_data = [UserAssetPriceSimple(**upr) for upr in result]
+        updated_price_data = msgspec.convert(
+            result, type=list[UserAssetPriceSimple], from_attributes=True
+        )
         await self.result_queue.put(updated_price_data)
         return updated_price_data
 
