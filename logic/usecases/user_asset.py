@@ -3,7 +3,6 @@ import uuid
 from decimal import Decimal
 
 import polars as pl
-from temporalio.client import WorkflowHandle
 
 from api.user_asset_operations.domain import (
     UserAssertOperationsSummaryOut,
@@ -16,6 +15,7 @@ from api.user_assets.domain import (
     GetUserAssetDetailInputParams,
     UserAssetDetailCombinedOut,
 )
+from aux.helpers.async_helpers import wrap_create_task
 from aux.temporal.client import get_client
 from aux.temporal.domain import UpdatePricesWorkflowParams
 from aux.temporal.workflows import TEMPORAL_UPDATE_PRICES_FLOW
@@ -52,6 +52,7 @@ class UserAssetDetailUseCase:
 
     def __init__(self) -> None:
         self.result_queue = asyncio.Queue()
+        self._background_tasks = set()
 
     @staticmethod
     def _calculate_operations_summary(
@@ -143,7 +144,11 @@ class UserAssetDetailUseCase:
         if asset_data_from_db is None:
             raise UserAssetNotFoundError({'ticker_id': params.ticker_id})
 
-        asyncio.create_task(self._check_if_price_outdated(asset_data_from_db))
+        await wrap_create_task(
+            self._check_if_price_outdated(asset_data_from_db),
+            self._background_tasks,
+            True,
+        )
 
         asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
         asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
