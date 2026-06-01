@@ -1,10 +1,10 @@
 from litestar import Litestar, get
-from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
 from litestar.di import Provide
 from litestar.middleware import DefineMiddleware
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import RedocRenderPlugin
 from litestar.openapi.spec import Components, SecurityScheme
+from litestar.plugins.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
 from litestar.plugins.problem_details import ProblemDetailsConfig, ProblemDetailsPlugin
 from litestar.plugins.structlog import StructlogPlugin
 from opentelemetry import trace

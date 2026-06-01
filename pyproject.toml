@@ -35,6 +35,7 @@ dev = [
     "pytest-env>=1.6.0",
     "pytest-httpx>=0.36.0",
     "pytest-randomly>=4.0.1",
+    "pytest-xdist[psutil]>=3.8.0",
     "remote-pdb>=2.1.0",
     "ty>=0.0.35",
     "web-pdb>=1.6.3",
@@ -53,7 +54,7 @@ addopts = "-vv --pytest-env-verbose"
 PGDATABASE = "ledger-db-test"
 POOL_CLASS = "null"
 PGHOSTADDR = "postgres"
-OTEL_EXPORTER_OTLP_ENDPOINT = "dev/null"
+OTEL_SDK_DISABLED = "true"
 
 [tool.uv.workspace]
 members = [

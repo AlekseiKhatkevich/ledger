@@ -64,7 +64,7 @@ class UserAssetCrudController(Controller):
     async def get_all_paginated(
             self,
             kc_user: User,
-            cursor: str | None = None,
+            cursor: FromQuery[str | None] = None,
             results_per_page: int = PAGE_SIZE_PARAMETER,
     ) -> AdvancedCursorPagination[str, UserAssetAggregatedData]:
         paginator = UserAssetsPaginator(user_id=kc_user.id)

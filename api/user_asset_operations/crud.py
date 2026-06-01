@@ -1,5 +1,6 @@
 from litestar import Controller, post, put, delete
 from litestar.dto import DTOData
+from litestar.params import FromPath
 
 from api.exceptions_handling import base_error_handler_factory
 from api.user_asset_operations.domain import (
@@ -66,5 +67,5 @@ class UserAssetAddressOperationController(Controller):
         return await UserAssetOperationUpdateUseCase().execute(user_asset_operation_data)
 
     @delete('/{_id:int}',)
-    async def delete(self, _id:int, kc_user: User) -> None:
+    async def delete(self, _id: FromPath[int], kc_user: User) -> None:
         return await UserAssetOperationDeleteUseCase().execute(_id, kc_user.sub)
