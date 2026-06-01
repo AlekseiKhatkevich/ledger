@@ -136,9 +136,10 @@ class UserAssetDetailUseCase:
             outdated_tickers = {pd.name for pd in price_data_from_db if pd.outdated}
             if outdated_tickers:
                 await wrap_create_task(self._update_prices_from_coingecko(outdated_tickers),)
-            # return_data = [UserAssetPriceSimple(name=pd.name, price=pd.price) for pd in price_data_from_db]
             return_data = msgspec.convert(
-                price_data_from_db, type=list[UserAssetPriceSimple], from_attributes=True
+                price_data_from_db,
+                type=list[UserAssetPriceSimple],
+                from_attributes=True
             )
             await self.result_queue.put(return_data)
 

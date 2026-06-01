@@ -88,7 +88,7 @@ class AssetTicker(Base):
         return f'{self.__class__.__name__}: {self.name = })'
 
 
-class AssetTickerPrice(UpdatedAtMixin, Base):
+class AssetTickerPrice(Base):
     __tablename__ = 'asset_tickers_price'
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
@@ -96,6 +96,7 @@ class AssetTickerPrice(UpdatedAtMixin, Base):
         ForeignKey('asset_tickers.name', ondelete='CASCADE'),
     )
     price: Mapped[decimal.Decimal]
+    updated_at: Mapped[datetime.datetime]
     saved_at: Mapped[datetime.datetime] = mapped_column(
         init=False,
         server_default=func.now(),

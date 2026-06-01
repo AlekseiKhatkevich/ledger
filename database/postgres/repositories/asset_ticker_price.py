@@ -4,6 +4,7 @@ from functools import cache
 from sqlalchemy import select, func
 from sqlalchemy.orm import with_expression
 
+import constants
 from database.postgres.repositories.base_repository import PostgresBaseRepository
 from logic.db_models import AssetTickerPrice
 from logic.repositories.asset_ticer_price import BaseAssetTickerPriceRepository
@@ -21,7 +22,8 @@ class PostgresAssetTickerPriceRepository(
             with_expression(
                 self.model.outdated,
                 func.coalesce(
-                    func.now() - self.model.updated_at > datetime.timedelta(minutes=5),
+                    func.now() - self.model.updated_at > \
+                    datetime.timedelta(minutes=constants.ASSET_PRICE_CONSIDER_STALE_AFTER),
                     True,
                 ),
             ),

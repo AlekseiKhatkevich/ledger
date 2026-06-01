@@ -1,8 +1,10 @@
+import datetime
 import decimal
 
 from faker import Faker
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
+import constants
 from database.postgres.connection import db
 from logic.db_models import (
     UserAssetAddress,
@@ -66,3 +68,9 @@ class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
     @classmethod
     def name(cls) -> str:
         return cls.__faker__.unique.pystr(max_chars=50, min_chars=3)
+
+    @classmethod
+    def updated_at(cls) -> datetime.datetime:
+        return datetime.datetime.now(tz=datetime.UTC) - \
+                 datetime.timedelta(minutes=constants.ASSET_PRICE_CONSIDER_STALE_AFTER / 2)
+
