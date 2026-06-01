@@ -167,6 +167,15 @@ services:
       - "5432"
     ports:
       - "9090:9090"
+    volumes:
+      # Mount embedded postgres PGDATA as tmpfs so it's clean on every restart.
+      # This prevents the 'database "pgcache_cache" already exists' error.
+      # Mode 0777 needed because postgres user (uid 70) is not the tmpfs owner.
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+        tmpfs:
+          size: 16G
+          mode: 0777
     env_file: secrets/pgcache/.env
     environment:
       NUM_WORKERS: 4
@@ -359,6 +368,7 @@ services:
     profiles: [temporal]
     healthcheck:
       test: ["CMD-SHELL", "python3 workers/healtcheck/ledger.py || exit 1"]
+      start_period: 30s
     depends_on:
       - temporal
     environment:
@@ -367,7 +377,7 @@ services:
       OTEL_SERVICE_NAME: "ledger-etl-worker"
     networks:
       [ ledger-network ]
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - ./etl:/app:Z
 
