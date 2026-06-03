@@ -67,7 +67,7 @@ class UserAssetDetailOut:
 @dataclass(frozen=True)
 class AssetPublicKeyDetailOut:
     public_key: str
-    in_tock: decimal.Decimal
+    in_stock: decimal.Decimal
     market_value: decimal.Decimal | None = None
 
 

@@ -5,7 +5,7 @@ from logic.db_models import AssetOperationType
 from logic.usecases.user_asset import UserAssetDetailUseCase
 
 
-async def test_user_asset_detail_use_case_calculate_operations_summary(
+def test_user_asset_detail_use_case_calculate_operations_summary(
         user_asset_detail_combined_out_factory,
         user_asset_operation_detail_out_factory,
 ):
@@ -53,3 +53,39 @@ async def test_user_asset_detail_use_case_calculate_operations_summary(
         assert by_pk[0].count == 2
         assert by_pk[0].total_quantity == sum(op.quantity for op in op_collection)
         assert by_pk[0].total_summ == sum(op.summ for op in op_collection)
+
+
+def test_calculate_public_key_details(
+        user_asset_detail_combined_out_factory,
+        user_asset_operation_detail_out_factory,
+):
+    use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=30))
+    operation_pk1 = user_asset_operation_detail_out_factory.batch(
+        size=10,
+        public_key='PUBKEY1',
+    )
+    operation_pk2 = user_asset_operation_detail_out_factory.batch(
+        size=10,
+        public_key='PUBKEY2',
+    )
+    asset_data_from_db = user_asset_detail_combined_out_factory.build(
+        operations=[*operation_pk1, *operation_pk2]
+    )
+    aggregated_data = use_case._calculate_public_key_details(asset_data_from_db)
+
+    assert len(aggregated_data) == 2
+
+    groups = defaultdict(list)
+    for obj in aggregated_data:
+        groups[obj.public_key].append(obj)
+
+    for key, operation_group in zip(('PUBKEY1', 'PUBKEY2', ), (operation_pk1, operation_pk2, )):
+        pk_data = groups[key]
+        assert pk_data[0].public_key == key
+        in_stock_expected = max(
+            sum(op.quantity for op in operation_group if op.type == AssetOperationType.PURCHASE) - \
+               sum(op.quantity for op in operation_group if op.type == AssetOperationType.SELL),
+            0,
+        )
+        assert pk_data[0].in_stock == in_stock_expected
+        assert pk_data[0].market_value == pk_data[0].in_stock * asset_data_from_db.user_asset.price

@@ -115,14 +115,14 @@ class UserAssetDetailUseCase:
             pl.max_horizontal(
                 pl.col(AssetOperationType.PURCHASE) - pl.col(AssetOperationType.SELL),
                 pl.lit(Decimal(0)),
-            ).alias('in_tock'),
+            ).alias('in_stock'),
         )
 
         return [
             AssetPublicKeyDetailOut(
                 public_key=row['public_key'],
-                in_tock=(in_tock := row['in_tock']),
-                market_value=in_tock * price if price is not None else None,
+                in_stock=(in_stock := row['in_stock']),
+                market_value=in_stock * price if price is not None else None,
             )
             for row in details.to_dicts()
         ]
