@@ -8,6 +8,7 @@ from sqlalchemy import func, select, Integer
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
 
+import constants
 from api.user_asset_operations.domain import UserAssetOperationDetailOut
 from api.user_assets.domain import UserAssetData, GetUserAssetDetailInputParams, UserAssetDetailOut, \
     UserAssetDetailCombinedOut
@@ -50,7 +51,8 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
             self.model.ticker_id,
             AssetTickerPrice.price,
             func.coalesce(
-                func.now() - AssetTickerPrice.updated_at > datetime.timedelta(minutes=5),
+                func.now() - AssetTickerPrice.updated_at > \
+                datetime.timedelta(minutes=constants.ASSET_PRICE_CONSIDER_STALE_AFTER),
                 True,
             ).label('outdated'),
             AssetTickerPrice.saved_at.label('time_when_price_was_update_in_db'),

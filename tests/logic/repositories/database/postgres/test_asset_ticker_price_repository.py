@@ -45,4 +45,4 @@ async def test_get_prices_negative(
         {'Random_ticker_name', }
     )
 
-    assert not len(prices_from_db)
+    assert not prices_from_db
