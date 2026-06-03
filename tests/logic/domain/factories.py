@@ -67,11 +67,12 @@ class UserAssetDetailOutFactory(CustomDataClassFactory[UserAssetDetailOut]):
 
     @classmethod
     def price(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(positive=True, right_digits=8, max_value=100_000, )
+        return cls.__faker__.pydecimal(positive=True, right_digits=4, max_value=100_000, )
 
 
 def _calculate_summ(name: str, values: dict[str, Any], *args: Any, **kwargs: Any) -> decimal.Decimal:
-    return values['quantity'] * values['unit_price']
+    result = decimal.Decimal(values['quantity'] * values['unit_price'])
+    return result.quantize(decimal.Decimal('0.001'), rounding=decimal.ROUND_HALF_UP)
 
 
 class UserAssetOperationDetailOutFactory(CustomDataClassFactory[UserAssetOperationDetailOut]):
@@ -83,11 +84,11 @@ class UserAssetOperationDetailOutFactory(CustomDataClassFactory[UserAssetOperati
 
     @classmethod
     def quantity(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(positive=True, right_digits=8, max_value=100, )
+        return cls.__faker__.pydecimal(positive=True, right_digits=4, max_value=100, )
 
     @classmethod
     def unit_price(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(positive=True, right_digits=8, max_value=100_000, )
+        return cls.__faker__.pydecimal(positive=True, right_digits=4, max_value=100_000, )
 
 
 class UserAssetDetailCombinedOutFactory(CustomDataClassFactory[UserAssetDetailCombinedOut]):

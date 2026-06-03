@@ -101,7 +101,7 @@ class UserAssetCrudController(Controller):
             Subsequent events ('price_update') will be emitted when
             the price-update mechanism is implemented.
             """
-            usecase = UserAssetDetailUseCase(datetime.timedelta(seconds=30))
+            usecase = UserAssetDetailUseCase(constants.ASSET_PRICE_UPDATE_INTERVAL)
             await usecase.execute(params)
             try:
                 while True:

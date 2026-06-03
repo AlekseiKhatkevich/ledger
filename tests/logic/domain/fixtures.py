@@ -6,6 +6,9 @@ from tests.logic.domain.factories import (
     UserAssetAddressUpdateDataFactory,
     UserAssetAddressDeleteDataFactory,
     UserAssetOperationDataFactory,
+    UserAssetDetailOutFactory,
+    UserAssetOperationDetailOutFactory,
+    UserAssetDetailCombinedOutFactory,
 )
 
 register_fixture(UserAssetDataFactory)
@@ -13,4 +16,8 @@ register_fixture(UserAssetAddressDataFactory)
 register_fixture(UserAssetAddressUpdateDataFactory)
 register_fixture(UserAssetAddressDeleteDataFactory)
 register_fixture(UserAssetOperationDataFactory)
+register_fixture(UserAssetDetailOutFactory)
+register_fixture(UserAssetOperationDetailOutFactory)
+register_fixture(UserAssetDetailCombinedOutFactory)
+
 
