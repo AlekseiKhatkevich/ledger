@@ -1,6 +1,11 @@
+import asyncio
 import datetime
 from collections import defaultdict
+from unittest.mock import patch, AsyncMock
 
+import pytest
+
+from aux.helpers.async_helpers import wrap_create_task
 from logic.db_models import AssetOperationType
 from logic.usecases.user_asset import UserAssetDetailUseCase
 
@@ -89,3 +94,43 @@ def test_calculate_public_key_details(
         )
         assert pk_data[0].in_stock == in_stock_expected
         assert pk_data[0].market_value == pk_data[0].in_stock * asset_data_from_db.user_asset.price
+
+
+@pytest.mark.parametrize(
+    ['asset_ticker_price_in_db', 'coingecko_called'],
+    [('outdated', True), ('fresh', False)],
+    indirect=['asset_ticker_price_in_db']
+)
+async def test_update_price_periodically(
+        user_asset_detail_combined_out_factory,
+        asset_ticker_price_in_db,
+        user_asset_detail_out_factory,
+        coingecko_called,
+):
+    use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=0))
+    asset_data_from_db = user_asset_detail_combined_out_factory.build(
+        user_asset=user_asset_detail_out_factory.build(
+            ticker_id=asset_ticker_price_in_db.name,
+        )
+    )
+    with patch.object(
+                UserAssetDetailUseCase,
+                '_update_prices_from_coingecko',
+                new=AsyncMock(return_value=[]),
+            ) as mock_update_prices:
+        task = await wrap_create_task(
+            use_case.update_price_periodically(asset_data_from_db),
+            True,
+        )
+        use_case.final_event.set()
+
+        await task
+        new_prices = use_case.result_queue.get_nowait()
+        assert len(new_prices) == 1
+        new_price = new_prices[0]
+        assert new_price.name == asset_data_from_db.user_asset.ticker_id
+        assert new_price.price == asset_ticker_price_in_db.price
+        if coingecko_called:
+            mock_update_prices.assert_awaited_once_with({asset_data_from_db.user_asset.ticker_id, })
+        else:
+            mock_update_prices.assert_not_awaited()

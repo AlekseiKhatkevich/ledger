@@ -1,3 +1,4 @@
+import datetime
 import decimal
 import uuid
 from typing import TYPE_CHECKING, Iterable
@@ -5,6 +6,7 @@ from typing import TYPE_CHECKING, Iterable
 import pytest
 from polyfactory.pytest_plugin import register_fixture
 
+import constants
 from database.postgres.repositories.asset_popularity import PostgresPopularityRepository
 from database.postgres.repositories.asset_ticker import PostgresAssetTickerRepository
 from database.postgres.repositories.asset_ticker_price import PostgresAssetTickerPriceRepository
@@ -58,10 +60,17 @@ def pg_asset_popularity_repo() -> PostgresPopularityRepository:
 
 @pytest.fixture
 async def asset_ticker_price_in_db(
+        request,
         asset_ticker_price_factory: AssetTickerPriceFactory,
-        asset_ticker_in_db:AssetTicker,
+        asset_ticker_in_db: AssetTicker,
 ) -> AssetTickerPrice:
-    return await asset_ticker_price_factory.create_async(name=asset_ticker_in_db.name)
+    outdated = hasattr(request, 'param') and request.param == 'outdated'
+    kwargs = {'name': asset_ticker_in_db.name}
+    if outdated:
+        kwargs['updated_at'] = datetime.datetime.now(tz=datetime.UTC) - \
+                                datetime.timedelta(minutes=constants.ASSET_PRICE_CONSIDER_STALE_AFTER * 2)
+
+    return await asset_ticker_price_factory.create_async(**kwargs)
 
 @pytest.fixture
 async def user_asset_address_in_db(
