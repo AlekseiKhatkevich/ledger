@@ -28,6 +28,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx-sse>=0.4.3",
     "ipython>=9.10.0",
     "pydevd-pycharm~=253.30387.173",
     "pytest>=9.0.2",

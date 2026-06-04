@@ -174,15 +174,19 @@ async def test_update_prices_from_coingecko(monkeypatch):
     assert new_prices == updated_price_data
 
 
-@pytest.mark.parametrize('asset_ticker_price_in_db', ['outdated',], indirect=True,)
-async def test_check_if_price_outdated(user_asset_detail_combined_out_factory, asset_ticker_price_in_db):
+async def test_check_if_price_outdated(
+        user_asset_detail_combined_out_factory,
+        user_asset_detail_out_factory,
+):
     use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=0))
     with patch.object(
             UserAssetDetailUseCase,
             '_update_prices_from_coingecko',
             new=AsyncMock(),
     ) as mock_update_prices_from_coingecko:
-        asset_data_from_db = user_asset_detail_combined_out_factory.build()
+        asset_data_from_db = user_asset_detail_combined_out_factory.build(
+            user_asset=user_asset_detail_out_factory.build(outdated=True)
+        )
         tickers = {asset_data_from_db.user_asset.ticker_id, }
 
         await use_case._check_if_price_outdated(asset_data_from_db)

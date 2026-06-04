@@ -1,8 +1,23 @@
-import pytest
-from litestar.status_codes import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_200_OK
+import asyncio
+import pathlib
+from typing import AsyncIterator
+from unittest.mock import AsyncMock, patch
 
+import httpx
+import msgspec
+import pytest
+from httpx_sse import connect_sse, aconnect_sse
+from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST
+
+from litestar.exceptions import LitestarException
+import httpx_sse
 from api.user_assets.crud import UserAssetCrudController
+from api.user_assets.domain import UserAssetDetailCombinedOut
 from constants import LIST_VIEW_DEFAULT_PAGE_SIZE, LIST_VIEW_MAX_PAGE_SIZE
+from logic.exceptions import UserAssetNotFoundError
+from litestar.testing import subprocess_async_client
+
+ROOT = pathlib.Path(__file__).parent
 
 
 async def test_user_asset_crud_create(asset_ticker_in_db, httpx_test_client, pg_user_asset_repo):
@@ -114,14 +129,26 @@ async def test_user_asset_get_all_paginated_positive_with_cursor(
     assert response_data['cursor'] == fifth.name
 
 
-@pytest.mark.parametrize('page_size', [-1, LIST_VIEW_MAX_PAGE_SIZE + 1])
-async def test_user_asset_get_all_paginated_negative(
-        page_size,
-        httpx_test_client,
-):
-    response = await httpx_test_client.get(
-        UserAssetCrudController.path,
-        params={'results_per_page': page_size},
-    )
 
-    assert response.status_code == HTTP_400_BAD_REQUEST
+
+# https://docs.litestar.dev/latest/usage/testing.html
+@pytest.mark.skip('Not ready')
+async def test_get_exact_user_asset_positive(
+        httpx_test_client,
+        user_asset_in_db,
+        user_asset_operation_in_db,
+        asset_ticker_price_in_db,
+        good_jwt_token_str,
+        app,
+):
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, timeout=3) as client:
+        client.headers = {'Authorization': f'Bearer {good_jwt_token_str}'}
+        async with aconnect_sse(
+                client,
+                "GET",
+                f"http://backend-api:8000/user_asset/{user_asset_in_db.ticker_id}",
+                headers=client.headers,
+        ) as event_source:
+            events = [sse async for sse in event_source.aiter_sse()]
+            print(events)

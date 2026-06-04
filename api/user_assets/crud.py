@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 from collections.abc import AsyncGenerator
-
+from litestar.types import SSEData
 import msgspec.json
 from litestar import Controller, route, get
 from litestar.dto import DTOData
@@ -77,6 +77,7 @@ class UserAssetCrudController(Controller):
             kc_user: User,
             ticker_id: FromPath[str],
             with_rank: FromQuery[bool] = False,
+            timeout: FromQuery[float] = 0
     ) -> ServerSentEvent:
         params = GetUserAssetDetailInputParams(
             user_id=kc_user.id,
@@ -94,7 +95,7 @@ class UserAssetCrudController(Controller):
                 'data': msgspec.json.encode(data)
             }
 
-        async def _user_asset_stream() -> AsyncGenerator[dict[str, str | bytes], None]:
+        async def _user_asset_stream() -> AsyncGenerator[SSEData, None]:
             """SSE generator for user asset detail.
 
             First event ('initial') sends full asset data.
@@ -103,6 +104,7 @@ class UserAssetCrudController(Controller):
             """
             usecase = UserAssetDetailUseCase(constants.ASSET_PRICE_UPDATE_INTERVAL)
             await usecase.execute(params)
+
             try:
                 while True:
                     try:
