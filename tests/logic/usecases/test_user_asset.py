@@ -1,17 +1,21 @@
+import asyncio
+import contextlib
 import datetime
 import unittest
+import uuid
 from collections import defaultdict
 from unittest.mock import patch, AsyncMock
 
 import msgspec
 import pytest
 
-from api.user_assets.domain import UserAssetPriceSimple
+from api.user_assets.domain import UserAssetPriceSimple, GetUserAssetDetailInputParams, UserAssetDetailCombinedOut
 from aux.helpers.async_helpers import wrap_create_task
 from aux.temporal.domain import UpdatePricesWorkflowParams
 from aux.temporal.workflows import TEMPORAL_UPDATE_PRICES_FLOW
 from constants import LEDGER_TASK_QUEUE
 from logic.db_models import AssetOperationType
+from logic.exceptions import UserAssetNotFoundError
 from logic.usecases.user_asset import UserAssetDetailUseCase
 
 
@@ -179,9 +183,57 @@ async def test_check_if_price_outdated(user_asset_detail_combined_out_factory, a
             new=AsyncMock(),
     ) as mock_update_prices_from_coingecko:
         asset_data_from_db = user_asset_detail_combined_out_factory.build()
-        tickers = {asset_data_from_db.user_asset.ticker_id}
+        tickers = {asset_data_from_db.user_asset.ticker_id, }
 
         await use_case._check_if_price_outdated(asset_data_from_db)
 
         mock_update_prices_from_coingecko.assert_awaited_once_with(tickers)
 
+
+async def test_execute_positive(
+    user_asset_in_db,
+    user_asset_operation_in_db,
+    user_asset_address_in_db,
+    asset_ticker_price_in_db,
+):
+    use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=30))
+    params = GetUserAssetDetailInputParams(
+        user_id=user_asset_in_db.user_id,
+        ticker_id=user_asset_in_db.ticker_id,
+        with_rank=False,
+    )
+
+    await use_case.execute(params)
+
+    task_name_check = f'{use_case.__class__.__name__}::check_if_price_outdated'
+    tasks_check = {t for t in asyncio.all_tasks() if t.get_name() == task_name_check}
+    if tasks_check:
+        task = tasks_check.pop()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    task_name = f'{use_case.__class__.__name__}::update_price_periodically'
+    tasks = {t for t in asyncio.all_tasks() if t.get_name() == task_name}
+    assert len(tasks) == 1, f'Task {task_name} not found among running tasks'
+    task = tasks.pop()
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+
+    result = use_case.result_queue.get_nowait()
+    assert isinstance(result, UserAssetDetailCombinedOut)
+    assert result.operations_summary is not None
+    assert result.public_key_details is not None
+
+
+async def test_execute_negative():
+    use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=30))
+    with pytest.raises(UserAssetNotFoundError):
+        params = GetUserAssetDetailInputParams(
+            user_id=uuid.uuid4(),
+            ticker_id='Random_Ticker_Id',
+            with_rank=False,
+        )
+
+        await use_case.execute(params)

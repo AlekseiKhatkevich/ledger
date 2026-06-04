@@ -91,11 +91,8 @@ class UserAssetDetailUseCase:
         )
 
     @staticmethod
-    def _calculate_public_key_details(
-        asset_data_from_db: UserAssetDetailCombinedOut,
-    ) -> list[AssetPublicKeyDetailOut]:
+    def _calculate_public_key_details(asset_data_from_db: UserAssetDetailCombinedOut) -> list[AssetPublicKeyDetailOut]:
         price = asset_data_from_db.user_asset.price
-
         df = pl.DataFrame(
             asset_data_from_db.operations,
             schema_overrides={
@@ -111,13 +108,23 @@ class UserAssetDetailUseCase:
             aggregate_function='sum',
         ).fill_null(Decimal(0))
 
+        # Handle cases where PURCHASE or SELL columns may be absent after pivot
+        purchase_expr = (
+            pl.col(AssetOperationType.PURCHASE)
+            if AssetOperationType.PURCHASE in pivot_df.columns
+            else pl.lit(Decimal(0))
+        )
+        sell_expr = (
+            pl.col(AssetOperationType.SELL)
+            if AssetOperationType.SELL in pivot_df.columns
+            else pl.lit(Decimal(0))
+        )
         details = pivot_df.with_columns(
             pl.max_horizontal(
-                pl.col(AssetOperationType.PURCHASE) - pl.col(AssetOperationType.SELL),
+                purchase_expr - sell_expr,
                 pl.lit(Decimal(0)),
             ).alias('in_stock'),
         )
-
         return [
             AssetPublicKeyDetailOut(
                 public_key=row['public_key'],
@@ -178,11 +185,13 @@ class UserAssetDetailUseCase:
         await wrap_create_task(
             self._check_if_price_outdated(asset_data_from_db),
             True,
+            name=f'{self.__class__.__name__}::check_if_price_outdated',
         )
         if self.price_update_interval is not None:
             await wrap_create_task(
                 self.update_price_periodically(asset_data_from_db),
                 True,
+                name=f'{self.__class__.__name__}::update_price_periodically',
             )
 
         asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)

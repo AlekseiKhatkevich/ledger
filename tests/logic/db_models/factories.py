@@ -52,18 +52,18 @@ class UserAssetOperationFactory(CustomFactory[UserAssetOperation]):
 
     @classmethod
     def quantity(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=1.0, max_value=20)
+        return cls.__faker__.pydecimal(min_value=1.0, max_value=20, right_digits=4)
 
     @classmethod
     def unit_price(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=1.0, max_value=100)
+        return cls.__faker__.pydecimal(min_value=1.0, max_value=100, right_digits=4)
 
 
 class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
 
     @classmethod
     def price(cls) -> decimal.Decimal:
-        return cls.__faker__.pydecimal(min_value=0.1, max_value=100_000)
+        return cls.__faker__.pydecimal(min_value=0.1, max_value=100_000, right_digits=4)
 
     @classmethod
     def name(cls) -> str:
