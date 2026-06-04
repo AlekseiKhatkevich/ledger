@@ -1,11 +1,16 @@
-import asyncio
 import datetime
+import unittest
 from collections import defaultdict
 from unittest.mock import patch, AsyncMock
 
+import msgspec
 import pytest
 
+from api.user_assets.domain import UserAssetPriceSimple
 from aux.helpers.async_helpers import wrap_create_task
+from aux.temporal.domain import UpdatePricesWorkflowParams
+from aux.temporal.workflows import TEMPORAL_UPDATE_PRICES_FLOW
+from constants import LEDGER_TASK_QUEUE
 from logic.db_models import AssetOperationType
 from logic.usecases.user_asset import UserAssetDetailUseCase
 
@@ -123,8 +128,8 @@ async def test_update_price_periodically(
             True,
         )
         use_case.final_event.set()
-
         await task
+
         new_prices = use_case.result_queue.get_nowait()
         assert len(new_prices) == 1
         new_price = new_prices[0]
@@ -134,3 +139,49 @@ async def test_update_price_periodically(
             mock_update_prices.assert_awaited_once_with({asset_data_from_db.user_asset.ticker_id, })
         else:
             mock_update_prices.assert_not_awaited()
+
+
+async def test_update_prices_from_coingecko(monkeypatch):
+    use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=0))
+    ticker_names = {'BTC', }
+
+    mock_execute_workflow, mock_client = AsyncMock(), AsyncMock()
+    mock_client.execute_workflow = mock_execute_workflow
+    expected_price_data = [{'name': 'BTC', 'price': '150000'}, ]
+    mock_execute_workflow.return_value = expected_price_data
+    monkeypatch.setattr(
+        'logic.usecases.user_asset.get_client',
+        AsyncMock(return_value=mock_client),
+    )
+
+    result = await use_case._update_prices_from_coingecko(ticker_names)
+    updated_price_data = msgspec.convert(
+            expected_price_data, type=list[UserAssetPriceSimple], from_attributes=True
+        )
+    assert result == updated_price_data
+    mock_execute_workflow.assert_awaited_once_with(
+        TEMPORAL_UPDATE_PRICES_FLOW,
+        UpdatePricesWorkflowParams(tickers=ticker_names),
+        id=unittest.mock.ANY,
+        task_queue= LEDGER_TASK_QUEUE,
+    )
+    new_prices = use_case.result_queue.get_nowait()
+    assert len(new_prices) == 1
+    assert new_prices == updated_price_data
+
+
+@pytest.mark.parametrize('asset_ticker_price_in_db', ['outdated',], indirect=True,)
+async def test_check_if_price_outdated(user_asset_detail_combined_out_factory, asset_ticker_price_in_db):
+    use_case = UserAssetDetailUseCase(datetime.timedelta(seconds=0))
+    with patch.object(
+            UserAssetDetailUseCase,
+            '_update_prices_from_coingecko',
+            new=AsyncMock(),
+    ) as mock_update_prices_from_coingecko:
+        asset_data_from_db = user_asset_detail_combined_out_factory.build()
+        tickers = {asset_data_from_db.user_asset.ticker_id}
+
+        await use_case._check_if_price_outdated(asset_data_from_db)
+
+        mock_update_prices_from_coingecko.assert_awaited_once_with(tickers)
+
