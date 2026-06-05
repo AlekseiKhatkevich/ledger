@@ -1,7 +1,7 @@
 FROM caddy:builder AS builder
 RUN xcaddy build \
-    --with github.com/ss098/certmagic-s3 \
-    --with github.com/ggicci/caddy-jwt
+    --with github.com/ggicci/caddy-jwt \
+    --with github.com/mholt/caddy-ratelimit
 COPY . /etc/caddy
 
 FROM caddy

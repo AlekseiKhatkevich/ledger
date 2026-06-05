@@ -2,6 +2,7 @@
     debug
     grace_period 10s
     order jwtauth before basicauth
+    order rate_limit after jwtauth
 }
 
 (keykloack_healthcheck) {
@@ -60,6 +61,7 @@
         span "{method} {path}"
         span_attributes {
             user_id {http.auth.user.id}
+            rate_limit_zone {http.rate_limit.exceeded.name}
         }
     }
 }
@@ -142,6 +144,23 @@
             issuer_whitelist {$KC_ISSUER_WHITELIST}
             audience_whitelist {$KC_AUDIENCE_WHITELIST}
         }
+
+        rate_limit {
+              zone per_jwt_user_1m {
+                    key {http.auth.user.id}
+                    events 300
+                    window 1m
+                    ipv6_prefix 64
+                  }
+              zone per_jwt_user_5s {
+                    key {http.auth.user.id}
+                    events 70
+                    window 5s
+                    ipv6_prefix 64
+                  }
+                log_key
+                jitter 0.1
+            }
 
         reverse_proxy backend-api:8000 {
             import ledger_healthcheck
