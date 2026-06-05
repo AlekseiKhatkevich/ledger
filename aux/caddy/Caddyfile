@@ -66,6 +66,19 @@
     }
 }
 
+
+(rate_limit_by_ip) {
+rate_limit {
+            zone {args[0]} {
+                key {remote_host}
+                events {args[1]}
+                window {args[2]}
+            }
+            log_key
+            jitter 0.1
+        }
+}
+
 # Caddy self healthcheck
 :8001 {
     @ready path /_caddy_ready
@@ -89,15 +102,9 @@
     handle @static {
         import basic_tracing
         root * /srv
-        rate_limit {
-            zone static_per_ip_3s {
-                key {remote_host}
-                events 500
-                window 3s
-            }
-            log_key
-            jitter 0.1
-        }
+
+        import rate_limit_by_ip   static_per_ip_3s 500 3s
+
         file_server {
             hide /error-descriptions/templates/*
         }
@@ -107,15 +114,9 @@
     handle_path /ext-files/* {
         import basic_tracing
         rewrite * /{$S3_EXT_FILES_BUCKET}{path}
-        rate_limit {
-            zone extfiles_per_ip_5s {
-                key {remote_host}
-                events 500
-                window 5s
-            }
-            log_key
-            jitter 0.1
-        }
+
+        import rate_limit_by_ip extfiles_per_ip_5s 500 5s
+
         reverse_proxy http://minio:9000
     }
 
@@ -128,15 +129,7 @@
         import basic_tracing
         rewrite * {vars.KC_BASE_URL}/token
 
-        rate_limit {
-            zone auth_per_ip_1m {
-                key {remote_host}
-                events 20
-                window 1m
-            }
-            log_key
-            jitter 0.1
-        }
+        import rate_limit_by_ip auth_per_ip_1m 20 1m
 
         reverse_proxy keycloak:8080 {
             import keykloack_healthcheck
@@ -151,15 +144,7 @@
     handle @exclude_from_auth {
         import basic_tracing
 
-        rate_limit {
-            zone health_per_ip_1m {
-                key {remote_host}
-                events 120
-                window 1m
-            }
-            log_key
-            jitter 0.1
-        }
+        import rate_limit_by_ip health_per_ip_1m 120 1m
 
         import ledger_reverse_proxy
     }
@@ -171,15 +156,7 @@
     handle @userinfo {
         import basic_tracing
 
-        rate_limit {
-            zone userinfo_per_ip_1m {
-                key {remote_host}
-                events 20
-                window 1m
-            }
-            log_key
-            jitter 0.1
-        }
+        import rate_limit_by_ip userinfo_per_ip_1m 20 1m
 
         reverse_proxy keycloak:8080 {
             rewrite {vars.KC_BASE_URL}/userinfo
