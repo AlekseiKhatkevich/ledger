@@ -67,8 +67,8 @@ downgrade where='-1':
 
 # open keycloak web ui
 [group('keycloak')]
-keycloak:
-    xdg-open http://localhost:8080/admin/master/console/#/test
+keycloak-ui:
+    nohup xdg-open 'http://localhost:8080/admin/master/console/#/test' >/dev/null 2>&1 &
 
 # reloads caddy web server config file
 [group('caddy')]

@@ -5,18 +5,22 @@
     order rate_limit after jwtauth
 }
 
+# ── Healthcheck ──────────────────────────────────────────
+
 (keykloack_healthcheck) {
-    health_uri   /health/ready
+    health_uri      /health/ready
     health_interval 10s
     health_timeout  2s
     health_port     9000
 }
 
 (ledger_healthcheck) {
-    health_uri   /aux/health
+    health_uri      /aux/health
     health_interval 5s
     health_timeout  1s
 }
+
+# ── Authentication helpers ──────────────────────────────
 
 (headers_for_keycloak) {
     header_up X-Forwarded-For   {remote}
@@ -26,12 +30,6 @@
 
     header_up X-Forwarded-Host {$KEYCLOAK_DOMAIN}
     header_up X-Forwarded-Port {$KEYCLOAK_PORT}
-}
-
-(ledger_reverse_proxy) {
-    reverse_proxy backend-api:8000 {
-        import ledger_healthcheck
-    }
 }
 
 (handle_401_error) {
@@ -59,6 +57,16 @@
     }
 }
 
+# ── Reverse proxy ────────────────────────────────────────
+
+(ledger_reverse_proxy) {
+    reverse_proxy backend-api:8000 {
+        import ledger_healthcheck
+    }
+}
+
+# ── Infrastructure ──────────────────────────────────────
+
 (basic_tracing) {
     tracing {
         span "{method} {path}"
@@ -81,6 +89,20 @@
     }
 }
 
+(rate_limit_by_jwt) {
+    rate_limit {
+        zone {args[0]} {
+            key     {http.auth.user.id}
+            events  {args[1]}
+            window  {args[2]}
+        }
+        log_key
+        jitter 0.1
+    }
+}
+
+# ── Site definitions ───────────────────────────────────
+
 # Caddy self healthcheck
 :8001 {
     @ready path /_caddy_ready
@@ -91,6 +113,9 @@
 
 # Ledger backend
 :8000 {
+    import basic_tracing
+    import handle_401_error
+
     vars {
         KC_BASE_URL /realms/{$KEYCLOACK_LEDGER_REALM}/protocol/openid-connect
     }
@@ -101,7 +126,6 @@
         method  GET HEAD
     }
     handle @static {
-        import basic_tracing
         root * /srv
 
         import rate_limit_by_ip static_per_ip_3s 500 3s
@@ -113,7 +137,6 @@
 
     # S3 files
     handle_path /ext-files/* {
-        import basic_tracing
         rewrite * /{$S3_EXT_FILES_BUCKET}{path}
 
         import rate_limit_by_ip extfiles_per_ip_5s 500 5s
@@ -127,7 +150,6 @@
     }
     # Proxying token sourcing and refreshing to keycloak endpoint. Both operation use same EP.
     handle @login+refresh {
-        import basic_tracing
         rewrite * {vars.KC_BASE_URL}/token
 
         import rate_limit_by_ip auth_per_ip_1m 20 1m
@@ -143,7 +165,6 @@
         path    /aux/health /docs
     }
     handle @exclude_from_auth {
-        import basic_tracing
         import rate_limit_by_ip health_per_ip_1m 120 1m
         import ledger_reverse_proxy
     }
@@ -153,7 +174,6 @@
         path    /user
     }
     handle @userinfo {
-        import basic_tracing
         import rate_limit_by_ip userinfo_per_ip_1m 20 1m
 
         reverse_proxy keycloak:8080 {
@@ -163,36 +183,21 @@
     }
 
     handle * {
-        import basic_tracing
         jwtauth {
             jwk_url             http://keycloak:8080{vars.KC_BASE_URL}/certs
             issuer_whitelist    {$KC_ISSUER_WHITELIST}
             audience_whitelist  {$KC_AUDIENCE_WHITELIST}
         }
 
-        rate_limit {
-            zone jwt_per_user_1m {
-                key     {http.auth.user.id}
-                events  300
-                window  1m
-            }
-            zone jwt_per_user_5s {
-                key     {http.auth.user.id}
-                events  70
-                window  5s
-            }
-            log_key
-            jitter 0.1
-        }
+        import rate_limit_by_jwt jwt_per_user_1m 300 1m
+        import rate_limit_by_jwt jwt_per_user_5s 70 5s
 
         reverse_proxy backend-api:8000 {
             import ledger_healthcheck
-            lb_policy header Bearer {
+            lb_policy header X-User-Id {
                 fallback least_conn
             }
             header_up X-User-Id {http.auth.user.id}
         }
     }
-
-    import handle_401_error
 }
