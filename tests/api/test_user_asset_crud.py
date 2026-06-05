@@ -129,8 +129,6 @@ async def test_user_asset_get_all_paginated_positive_with_cursor(
     assert response_data['cursor'] == fifth.name
 
 
-
-
 # https://docs.litestar.dev/latest/usage/testing.html
 @pytest.mark.skip('Not ready')
 async def test_get_exact_user_asset_positive(

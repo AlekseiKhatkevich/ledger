@@ -462,6 +462,44 @@ services:
       - ./aux/jaeger/jaeger-config.yaml:/etc/jaeger/jaeger-config.yaml:ro
       - ./aux/jaeger/jaeger-ui-config.json:/etc/jaeger/jaeger-ui-config.json:ro
 
+    #  ---
+#todo замениь на валкей
+  redis:
+      image: redis:alpine
+      expose:
+        - 6379
+      ports:
+        - "6379:6379"
+      networks: [ ledger-network ]
+      container_name: redis
+      profiles: [ ratelimit ]
+      restart: unless-stopped
+      volumes:
+        - redis_data:/data
+
+  ratelimit:
+    image: envoyproxy/ratelimit:master
+    container_name: ratelimit
+    profiles: [ ratelimit ]
+    restart: unless-stopped
+    ports:
+      - "10080:8080"
+      - "10081:8081"
+      - "10070:6070"
+    depends_on:
+      - redis
+    networks: [ ledger-network]
+    volumes:
+      - ./examples:/data
+    environment:
+      - USE_STATSD=false
+      - LOG_LEVEL=debug
+      - REDIS_SOCKET_TYPE=tcp
+      - REDIS_URL=redis:6379
+      - RUNTIME_ROOT=/data
+      - RUNTIME_SUBDIRECTORY=ratelimit
+      - MEMCACHE_HOST_PORT=memcached:11211
+
 
 networks:
     ledger-network:
@@ -474,3 +512,4 @@ volumes:
   caddy_config:
   minio_data:
   jaeger_data:
+  redis_data:
