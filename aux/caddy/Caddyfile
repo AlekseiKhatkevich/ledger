@@ -6,26 +6,25 @@
 }
 
 (keykloack_healthcheck) {
-    health_uri /health/ready
+    health_uri   /health/ready
     health_interval 10s
-    health_timeout 2s
-    health_port 9000
+    health_timeout  2s
+    health_port     9000
 }
 
 (ledger_healthcheck) {
-    health_uri /aux/health
+    health_uri   /aux/health
     health_interval 5s
-    health_timeout 1s
+    health_timeout  1s
 }
 
 (headers_for_keycloak) {
-    header_up X-Forwarded-For {remote}
+    header_up X-Forwarded-For   {remote}
     # As backend uses HTTP connection to Keycloak internally we have to use it too here
     # in order to have same ISS field inside JWT
     header_up X-Forwarded-Proto http
 
     header_up X-Forwarded-Host {$KEYCLOAK_DOMAIN}
-
     header_up X-Forwarded-Port {$KEYCLOAK_PORT}
 }
 
@@ -48,10 +47,14 @@
         }
 
         route {
-            respond @jwt_expired `{"error":"token_expired","message":"JWT token has expired. Please refresh your token."}` 401
-            respond @jwt_invalid_signature `{"error":"invalid_signature","message":"JWT signature is invalid."}` 401
-            respond @jwt_invalid_audience `{"error":"invalid_audience","message":"JWT audience is invalid."}` 401
-            respond * `{"error":"unauthorized","message":"Authentication required. Please provide a valid JWT token."}` 401
+            respond @jwt_expired \
+                `{"error":"token_expired","message":"JWT token has expired. Please refresh your token."}` 401
+            respond @jwt_invalid_signature \
+                `{"error":"invalid_signature","message":"JWT signature is invalid."}` 401
+            respond @jwt_invalid_audience \
+                `{"error":"invalid_audience","message":"JWT audience is invalid."}` 401
+            respond * \
+                `{"error":"unauthorized","message":"Authentication required. Please provide a valid JWT token."}` 401
         }
     }
 }
@@ -60,23 +63,22 @@
     tracing {
         span "{method} {path}"
         span_attributes {
-            user_id {http.auth.user.id}
-            rate_limit_zone {http.rate_limit.exceeded.name}
+            user_id           {http.auth.user.id}
+            rate_limit_zone   {http.rate_limit.exceeded.name}
         }
     }
 }
 
-
 (rate_limit_by_ip) {
-rate_limit {
-            zone {args[0]} {
-                key {remote_host}
-                events {args[1]}
-                window {args[2]}
-            }
-            log_key
-            jitter 0.1
+    rate_limit {
+        zone {args[0]} {
+            key     {remote_host}
+            events  {args[1]}
+            window  {args[2]}
         }
+        log_key
+        jitter 0.1
+    }
 }
 
 # Caddy self healthcheck
@@ -95,15 +97,14 @@ rate_limit {
 
     # STATIC FILES
     @static {
-        path /error-descriptions/* /assets/*
-        method GET HEAD
+        path    /error-descriptions/* /assets/*
+        method  GET HEAD
     }
-
     handle @static {
         import basic_tracing
         root * /srv
 
-        import rate_limit_by_ip   static_per_ip_3s 500 3s
+        import rate_limit_by_ip static_per_ip_3s 500 3s
 
         file_server {
             hide /error-descriptions/templates/*
@@ -121,8 +122,8 @@ rate_limit {
     }
 
     @login+refresh {
-        method POST
-        path /user/login /user/refresh
+        method  POST
+        path    /user/login /user/refresh
     }
     # Proxying token sourcing and refreshing to keycloak endpoint. Both operation use same EP.
     handle @login+refresh {
@@ -138,24 +139,21 @@ rate_limit {
     }
 
     @exclude_from_auth {
-        method GET HEAD TRACE
-        path /aux/health /docs
+        method  GET HEAD TRACE
+        path    /aux/health /docs
     }
     handle @exclude_from_auth {
         import basic_tracing
-
         import rate_limit_by_ip health_per_ip_1m 120 1m
-
         import ledger_reverse_proxy
     }
 
     @userinfo {
-        method GET
-        path /user
+        method  GET
+        path    /user
     }
     handle @userinfo {
         import basic_tracing
-
         import rate_limit_by_ip userinfo_per_ip_1m 20 1m
 
         reverse_proxy keycloak:8080 {
@@ -167,21 +165,21 @@ rate_limit {
     handle * {
         import basic_tracing
         jwtauth {
-            jwk_url http://keycloak:8080{vars.KC_BASE_URL}/certs
-            issuer_whitelist {$KC_ISSUER_WHITELIST}
-            audience_whitelist {$KC_AUDIENCE_WHITELIST}
+            jwk_url             http://keycloak:8080{vars.KC_BASE_URL}/certs
+            issuer_whitelist    {$KC_ISSUER_WHITELIST}
+            audience_whitelist  {$KC_AUDIENCE_WHITELIST}
         }
 
         rate_limit {
             zone jwt_per_user_1m {
-                key {http.auth.user.id}
-                events 300
-                window 1m
+                key     {http.auth.user.id}
+                events  300
+                window  1m
             }
             zone jwt_per_user_5s {
-                key {http.auth.user.id}
-                events 70
-                window 5s
+                key     {http.auth.user.id}
+                events  70
+                window  5s
             }
             log_key
             jitter 0.1
