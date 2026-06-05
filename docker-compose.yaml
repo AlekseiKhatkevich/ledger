@@ -462,20 +462,6 @@ services:
       - ./aux/jaeger/jaeger-config.yaml:/etc/jaeger/jaeger-config.yaml:ro
       - ./aux/jaeger/jaeger-ui-config.json:/etc/jaeger/jaeger-ui-config.json:ro
 
-    #  ---
-##todo замениь на валкей
-#  redis:
-#      image: redis:alpine
-#      expose:
-#        - 6379
-#      ports:
-#        - "6379:6379"
-#      networks: [ ledger-network ]
-#      container_name: redis
-#      profiles: [ ratelimit ]
-#      restart: unless-stopped
-#      volumes:
-#        - redis_data:/data
 
 networks:
     ledger-network:
@@ -488,4 +474,3 @@ volumes:
   caddy_config:
   minio_data:
   jaeger_data:
-  redis_data:

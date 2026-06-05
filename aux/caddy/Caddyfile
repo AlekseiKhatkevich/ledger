@@ -89,6 +89,15 @@
     handle @static {
         import basic_tracing
         root * /srv
+        rate_limit {
+            zone static_per_ip_3s {
+                key {remote_host}
+                events 500
+                window 3s
+            }
+            log_key
+            jitter 0.1
+        }
         file_server {
             hide /error-descriptions/templates/*
         }
@@ -98,6 +107,15 @@
     handle_path /ext-files/* {
         import basic_tracing
         rewrite * /{$S3_EXT_FILES_BUCKET}{path}
+        rate_limit {
+            zone extfiles_per_ip_5s {
+                key {remote_host}
+                events 500
+                window 5s
+            }
+            log_key
+            jitter 0.1
+        }
         reverse_proxy http://minio:9000
     }
 
@@ -109,6 +127,16 @@
     handle @login+refresh {
         import basic_tracing
         rewrite * {vars.KC_BASE_URL}/token
+
+        rate_limit {
+            zone auth_per_ip_1m {
+                key {remote_host}
+                events 20
+                window 1m
+            }
+            log_key
+            jitter 0.1
+        }
 
         reverse_proxy keycloak:8080 {
             import keykloack_healthcheck
@@ -122,6 +150,17 @@
     }
     handle @exclude_from_auth {
         import basic_tracing
+
+        rate_limit {
+            zone health_per_ip_1m {
+                key {remote_host}
+                events 120
+                window 1m
+            }
+            log_key
+            jitter 0.1
+        }
+
         import ledger_reverse_proxy
     }
 
@@ -131,6 +170,17 @@
     }
     handle @userinfo {
         import basic_tracing
+
+        rate_limit {
+            zone userinfo_per_ip_1m {
+                key {remote_host}
+                events 20
+                window 1m
+            }
+            log_key
+            jitter 0.1
+        }
+
         reverse_proxy keycloak:8080 {
             rewrite {vars.KC_BASE_URL}/userinfo
             import headers_for_keycloak
@@ -146,21 +196,19 @@
         }
 
         rate_limit {
-              zone per_jwt_user_1m {
-                    key {http.auth.user.id}
-                    events 300
-                    window 1m
-                    ipv6_prefix 64
-                  }
-              zone per_jwt_user_5s {
-                    key {http.auth.user.id}
-                    events 70
-                    window 5s
-                    ipv6_prefix 64
-                  }
-                log_key
-                jitter 0.1
+            zone jwt_per_user_1m {
+                key {http.auth.user.id}
+                events 300
+                window 1m
             }
+            zone jwt_per_user_5s {
+                key {http.auth.user.id}
+                events 70
+                window 5s
+            }
+            log_key
+            jitter 0.1
+        }
 
         reverse_proxy backend-api:8000 {
             import ledger_healthcheck
