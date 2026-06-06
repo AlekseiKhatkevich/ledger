@@ -27,7 +27,6 @@
     # As backend uses HTTP connection to Keycloak internally we have to use it too here
     # in order to have same ISS field inside JWT
     header_up X-Forwarded-Proto http
-
     header_up X-Forwarded-Host {$KEYCLOAK_DOMAIN}
     header_up X-Forwarded-Port {$KEYCLOAK_PORT}
 }
