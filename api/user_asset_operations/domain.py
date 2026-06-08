@@ -2,9 +2,13 @@ import datetime
 import decimal
 import uuid
 from dataclasses import dataclass
+from typing import Self
 
 import msgspec
 from litestar.dto import DTOConfig, MsgspecDTO
+from litestar.params import FromQuery
+from pydantic import BaseModel, model_validator
+
 
 from logic.db_models import AssetOperationType
 
@@ -77,3 +81,17 @@ class UserAssetOperationDTOOut(MsgspecDTO[UserAssetOperationData]):
 
 class UserAssetOperationUpdateDTOIn(MsgspecDTO[UserAssetOperationData]):
     config = DTOConfig(exclude={'user_id', })
+
+
+class UserAssetOperationsFilter(BaseModel):
+    time__gte: datetime.datetime | None = None
+    time__lte: datetime.datetime | None = None
+    id: list[int] | None = None
+    type: AssetOperationType | None = None
+    address_id: list[int] | None = None
+
+    @model_validator(mode='after')
+    def check_time_consistency(self) -> Self:
+        if self.time__gte and self.time__lte and self.time__gte > self.time__lte:
+            raise ValueError('time__gte field should be lighter then time__lte field')
+        return self

@@ -1,20 +1,23 @@
 import asyncio
 import datetime
 from collections.abc import AsyncGenerator
-from litestar.types import SSEData
+
 import msgspec.json
 from litestar import Controller, route, get
+from litestar.di import Provide
 from litestar.dto import DTOData
 from litestar.openapi import ResponseSpec
 from litestar.params import FromPath, FromQuery
 from litestar.response.sse import ServerSentEvent
 from litestar.status_codes import HTTP_400_BAD_REQUEST
+from litestar.types import SSEData
 from sqlalchemy.exc import IntegrityError
 
 import constants
 from api.common_domain import ProblemDetailResponse
 from api.exceptions_handling import integrity_error_handler_factory, base_error_handler_factory
 from api.pagination import PAGE_SIZE_PARAMETER, UserAssetsPaginator, AdvancedCursorPagination
+from api.user_asset_operations.domain import UserAssetOperationsFilter
 from api.user_assets.domain import (
     UserAssetData,
     UserAssetDto,
@@ -22,9 +25,27 @@ from api.user_assets.domain import (
     GetUserAssetDetailInputParams, UserAssetDetailCombinedOut,
 )
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
+from logic.db_models import AssetOperationType
 from logic.exceptions import UserAssetNotFoundError
 from logic.usecases.user_asset import UserAssetUpsertUseCase, UserAssetDetailUseCase
 from user.domain import User
+
+
+# noinspection PyShadowingBuiltins
+def fill_filter(
+    time__gte: FromQuery[datetime.datetime | None] = None,
+    time__lte: FromQuery[datetime.datetime | None] = None,
+    id: FromQuery[list[int] | None] = None,
+    type: FromQuery[AssetOperationType | None] = None,
+    address_id: FromQuery[list[int] | None] = None
+) -> UserAssetOperationsFilter:
+    return UserAssetOperationsFilter(
+        time__gte=time__gte,
+        time__lte=time__lte,
+        id=id,
+        type=type,
+        address_id=address_id,
+    )
 
 
 class UserAssetCrudController(Controller):
@@ -70,14 +91,13 @@ class UserAssetCrudController(Controller):
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
 
-
-    @get('/{ticker_id: str}')
+    @get('/{ticker_id: str}', dependencies={'op_filter': Provide(fill_filter)})
     async def get_exact_user_asset(
             self,
             kc_user: User,
+            op_filter: UserAssetOperationsFilter,
             ticker_id: FromPath[str],
             with_rank: FromQuery[bool] = False,
-            timeout: FromQuery[float] = 0
     ) -> ServerSentEvent:
         params = GetUserAssetDetailInputParams(
             user_id=kc_user.id,
