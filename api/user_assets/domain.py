@@ -7,7 +7,8 @@ from typing import Annotated
 import msgspec
 from litestar.dto import DTOConfig, MsgspecDTO
 
-from api.user_asset_operations.domain import UserAssetOperationDetailOut, UserAssertOperationsSummaryOut
+from api.user_asset_operations.domain import UserAssetOperationDetailOut, UserAssertOperationsSummaryOut, \
+    UserAssetOperationsFilter
 
 
 class UserAssetData(msgspec.Struct):
@@ -84,6 +85,7 @@ class GetUserAssetDetailInputParams:
     user_id: uuid.UUID
     ticker_id: str
     with_rank: bool
+    op_filter: UserAssetOperationsFilter
 
     def __post_init__(self) -> None:
         self.ticker_id = self.ticker_id.upper()

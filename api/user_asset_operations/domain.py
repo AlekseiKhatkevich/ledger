@@ -1,14 +1,12 @@
 import datetime
 import decimal
 import uuid
-from dataclasses import dataclass
-from typing import Self
+from dataclasses import dataclass, field
 
 import msgspec
+from advanced_alchemy import filters as sa_filters
+from advanced_alchemy.filters import StatementFilter
 from litestar.dto import DTOConfig, MsgspecDTO
-from litestar.params import FromQuery
-from pydantic import BaseModel, model_validator
-
 
 from logic.db_models import AssetOperationType
 
@@ -83,15 +81,24 @@ class UserAssetOperationUpdateDTOIn(MsgspecDTO[UserAssetOperationData]):
     config = DTOConfig(exclude={'user_id', })
 
 
-class UserAssetOperationsFilter(BaseModel):
+@dataclass(frozen=True)
+class UserAssetOperationsFilter:
     time__gte: datetime.datetime | None = None
     time__lte: datetime.datetime | None = None
-    id: list[int] | None = None
-    type: AssetOperationType | None = None
+    op_id: list[int] | None = None
+    op_type: tuple[AssetOperationType, ...] = field(default_factory=lambda: tuple(AssetOperationType))
     address_id: list[int] | None = None
 
-    @model_validator(mode='after')
-    def check_time_consistency(self) -> Self:
+    def __post_init__(self) -> None:
         if self.time__gte and self.time__lte and self.time__gte > self.time__lte:
             raise ValueError('time__gte field should be lighter then time__lte field')
-        return self
+
+    @property
+    def alchemy_filters(self) -> list[StatementFilter]:
+        return [
+            sa_filters.BeforeAfter(field_name='time', before=self.time__lte, after=self.time__gte, ),
+            sa_filters.CollectionFilter(field_name='id', values=self.op_id),
+            sa_filters.CollectionFilter(field_name='address_id', values=self.address_id),
+            sa_filters.CollectionFilter(field_name='type', values=self.op_type),
+        ]
+

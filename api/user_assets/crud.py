@@ -32,18 +32,21 @@ from user.domain import User
 
 
 # noinspection PyShadowingBuiltins
-def fill_filter(
+def operations_filter(
     time__gte: FromQuery[datetime.datetime | None] = None,
     time__lte: FromQuery[datetime.datetime | None] = None,
-    id: FromQuery[list[int] | None] = None,
-    type: FromQuery[AssetOperationType | None] = None,
+    op_id: FromQuery[list[int] | None] = None,
+    op_type: FromQuery[tuple[AssetOperationType, ...]] = tuple(AssetOperationType),
     address_id: FromQuery[list[int] | None] = None
 ) -> UserAssetOperationsFilter:
+    """
+    Request list[int] data like &address_id=1&address_id=2
+    """
     return UserAssetOperationsFilter(
         time__gte=time__gte,
         time__lte=time__lte,
-        id=id,
-        type=type,
+        op_id=op_id,
+        op_type=op_type,
         address_id=address_id,
     )
 
@@ -91,7 +94,8 @@ class UserAssetCrudController(Controller):
         paginator = UserAssetsPaginator(user_id=kc_user.id)
         return await paginator(cursor=cursor, results_per_page=results_per_page)
 
-    @get('/{ticker_id: str}', dependencies={'op_filter': Provide(fill_filter)})
+
+    @get('/{ticker_id: str}', dependencies={'op_filter': Provide(operations_filter)})
     async def get_exact_user_asset(
             self,
             kc_user: User,
@@ -103,6 +107,7 @@ class UserAssetCrudController(Controller):
             user_id=kc_user.id,
             ticker_id=ticker_id,
             with_rank=with_rank,
+            op_filter=op_filter,
         )
 
         def _get_response_message(data) -> dict[str, str | bytes]:

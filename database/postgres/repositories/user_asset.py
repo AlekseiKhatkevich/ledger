@@ -95,6 +95,7 @@ class PostgresUserAssetRepository(PostgresBaseRepository[UserAsset], BaseUserAss
                 operations_repo.get_user_asset_operations_stmt(
                     user_id=params.user_id,
                     user_asset_id=asset_result.id,
+                    filters=params.op_filter
                 )
             )
             operations_result = row.all()
