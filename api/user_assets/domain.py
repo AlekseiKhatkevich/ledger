@@ -85,7 +85,7 @@ class GetUserAssetDetailInputParams:
     user_id: uuid.UUID
     ticker_id: str
     with_rank: bool
-    op_filter: UserAssetOperationsFilter
+    op_filter: UserAssetOperationsFilter = UserAssetOperationsFilter()
 
     def __post_init__(self) -> None:
         self.ticker_id = self.ticker_id.upper()

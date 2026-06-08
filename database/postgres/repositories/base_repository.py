@@ -1,16 +1,30 @@
+import abc
 from typing import Iterable
+from typing import Protocol
 
-from sqlalchemy import select
+from advanced_alchemy.filters import StatementFilter
+from sqlalchemy import select, Executable
 
 from database.postgres.base import Base
 from database.postgres.connection import db as _db, DB
 
+
+class FilterBase(Protocol):
+    @abc.abstractmethod
+    @property
+    def alchemy_filters(self)  -> Iterable[StatementFilter]:
+        pass
 
 class PostgresBaseRepository[T, bound=Base]:
     model: T
 
     def __init__(self, db: DB = _db) -> None:
         self.db = db
+
+    def apply_filters[S: Executable, F: FilterBase](self, stmt: S, filters: F) -> S:
+        for alchemy_filter in filters.alchemy_filters:
+            stmt = alchemy_filter.append_to_statement(stmt, self.model)
+        return stmt
 
     async def get_by_field_names(self, **conditions) -> T:
         async with self.db.session() as session:

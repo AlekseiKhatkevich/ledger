@@ -193,9 +193,10 @@ class UserAssetDetailUseCase:
                 True,
                 name=f'{self.__class__.__name__}::update_price_periodically',
             )
+        if asset_data_from_db.operations:
+            asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
+            asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
 
-        asset_data_from_db.operations_summary = self._calculate_operations_summary(asset_data_from_db)
-        asset_data_from_db.public_key_details = self._calculate_public_key_details(asset_data_from_db)
         await self.result_queue.put(asset_data_from_db)
 
         return asset_data_from_db

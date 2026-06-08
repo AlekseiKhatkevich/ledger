@@ -7,7 +7,9 @@ import msgspec
 from advanced_alchemy import filters as sa_filters
 from advanced_alchemy.filters import StatementFilter
 from litestar.dto import DTOConfig, MsgspecDTO
+from sqlalchemy import Select, Executable
 
+from database.postgres.base import Base
 from logic.db_models import AssetOperationType
 
 
@@ -101,4 +103,3 @@ class UserAssetOperationsFilter:
             sa_filters.CollectionFilter(field_name='address_id', values=self.address_id),
             sa_filters.CollectionFilter(field_name='type', values=self.op_type),
         ]
-
