@@ -1,6 +1,7 @@
 import uuid
 
-from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData
+from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData, \
+    UserAssetOperationsFilter
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -63,3 +64,14 @@ class UserAssetOperationDeleteUseCase:
     async def execute(_id: int, user_id: uuid.UUID) -> None:
         deleted_id = await PostgresUserAssetOperationRepository().delete_if_valid(_id, user_id)
         _check_if_deleted(_id, deleted_id=deleted_id)
+
+
+class UserAssetOperationNettoPositionUseCase:
+
+    @staticmethod
+    async def execute(
+            user_asset_id: int,
+            user_id: uuid.UUID,
+            op_filter: UserAssetOperationsFilter,
+    ):
+        pass

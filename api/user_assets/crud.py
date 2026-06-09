@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 from collections.abc import AsyncGenerator
 
 import msgspec.json
@@ -15,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 import constants
 from api.common_domain import ProblemDetailResponse
+from api.dependencies import operations_filter
 from api.exceptions_handling import integrity_error_handler_factory, base_error_handler_factory
 from api.pagination import PAGE_SIZE_PARAMETER, UserAssetsPaginator, AdvancedCursorPagination
 from api.user_asset_operations.domain import UserAssetOperationsFilter
@@ -25,30 +25,9 @@ from api.user_assets.domain import (
     GetUserAssetDetailInputParams, UserAssetDetailCombinedOut,
 )
 from constants import PG_FOREIGN_KEY_CONSTRAINT_VIOLATION_CODE
-from logic.db_models import AssetOperationType
 from logic.exceptions import UserAssetNotFoundError
 from logic.usecases.user_asset import UserAssetUpsertUseCase, UserAssetDetailUseCase
 from user.domain import User
-
-
-# noinspection PyShadowingBuiltins
-def operations_filter(
-    time__gte: FromQuery[datetime.datetime | None] = None,
-    time__lte: FromQuery[datetime.datetime | None] = None,
-    op_id: FromQuery[list[int] | None] = None,
-    op_type: FromQuery[tuple[AssetOperationType, ...]] = tuple(AssetOperationType),
-    address_id: FromQuery[list[int] | None] = None
-) -> UserAssetOperationsFilter:
-    """
-    Request list[int] data like &address_id=1&address_id=2
-    """
-    return UserAssetOperationsFilter(
-        time__gte=time__gte,
-        time__lte=time__lte,
-        op_id=op_id,
-        op_type=op_type,
-        address_id=address_id,
-    )
 
 
 class UserAssetCrudController(Controller):

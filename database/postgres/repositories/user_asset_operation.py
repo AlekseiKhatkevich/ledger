@@ -628,3 +628,11 @@ class PostgresUserAssetOperationRepository(
             )
 
         return self.apply_filters(stmt, filters)
+
+    async def netto_position(
+            self,
+            user_asset_id: int,
+            user_id: uuid.UUID,
+            op_filter: UserAssetOperationsFilter,
+    ):
+        pass

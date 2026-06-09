@@ -1,13 +1,15 @@
-from litestar import Controller, post, put, delete
+from litestar import Controller, post, put, delete, get
+from litestar.di import Provide
 from litestar.dto import DTOData
 from litestar.params import FromPath
 
+from api.dependencies import operations_filter
 from api.exceptions_handling import base_error_handler_factory
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
     UserAssetOperationDTOIn,
-    UserAssetOperationUpdateDTOIn,
+    UserAssetOperationUpdateDTOIn, UserAssetOperationsFilter,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -18,7 +20,7 @@ from logic.exceptions import (
 from logic.usecases.user_asset_operation import (
     UserAssetOperationInsertUseCase,
     UserAssetOperationUpdateUseCase,
-    UserAssetOperationDeleteUseCase,
+    UserAssetOperationDeleteUseCase, UserAssetOperationNettoPositionUseCase,
 )
 from user.domain import User
 
@@ -69,3 +71,13 @@ class UserAssetAddressOperationController(Controller):
     @delete('/{_id:int}',)
     async def delete(self, _id: FromPath[int], kc_user: User) -> None:
         return await UserAssetOperationDeleteUseCase().execute(_id, kc_user.sub)
+
+    @get('/netto-position/{user_asset_id:int}', dependencies={'op_filter': Provide(operations_filter)})
+    async def netto_position(
+            self,
+            user_asset_id: FromPath[int],
+            kc_user: User,
+            op_filter: UserAssetOperationsFilter,
+    ):
+        return await UserAssetOperationNettoPositionUseCase().execute(user_asset_id, kc_user.sub, op_filter)
+
