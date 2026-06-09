@@ -28,6 +28,14 @@ class NettoPositionData:
     price_recover_50pct: decimal.Decimal | None
     current_price: decimal.Decimal | None
     unrealized_pnl: decimal.Decimal | None
+    roi_pct: decimal.Decimal | None
+    avg_purchase_price: decimal.Decimal | None
+    avg_sell_price: decimal.Decimal | None
+    current_position_value: decimal.Decimal | None
+    unique_addresses_cnt: int
+    first_trade_at: datetime.datetime | None
+    last_trade_at: datetime.datetime | None
+    days_in_position: int | None
 
 
 class UserAssetOperationData(msgspec.Struct):

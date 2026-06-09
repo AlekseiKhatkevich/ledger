@@ -479,11 +479,17 @@ class PostgresUserAssetOperationRepository(
     ) -> NettoPositionData | None:
         """Calculate netto position metrics for a given user asset.
 
-        Returns total_invested, net_quantity, break_even_price,
-        price_recover_50pct, current_price and unrealized_pnl.
+        Returns comprehensive position analysis including:
+        total_invested, net_quantity, break_even_price,
+        price_recover_50pct, current_price, unrealized_pnl,
+        roi_pct, avg_purchase_price, avg_sell_price,
+        current_position_value, unique_addresses_cnt,
+        first_trade_at, last_trade_at, days_in_position.
         """
+        # CTE with aggregated metrics from operations
         calc = (
             select(
+                # total_invested: PURCHASE adds summ, SELL subtracts summ
                 func.coalesce(
                     func.sum(
                         case(
@@ -493,6 +499,7 @@ class PostgresUserAssetOperationRepository(
                     ),
                     decimal.Decimal(0),
                 ).label('total_invested'),
+                # net_quantity: PURCHASE adds qty, SELL subtracts qty
                 func.coalesce(
                     func.sum(
                         case(
@@ -505,21 +512,70 @@ class PostgresUserAssetOperationRepository(
                     ),
                     decimal.Decimal(0),
                 ).label('net_quantity'),
+                # avg_purchase_price: total spent on purchases / total purchased qty
+                func.coalesce(
+                    func.sum(UserAssetOperation.summ).filter(
+                        UserAssetOperation.type == AssetOperationType.PURCHASE,
+                    ) / func.nullif(
+                        func.sum(UserAssetOperation.quantity).filter(
+                            UserAssetOperation.type == AssetOperationType.PURCHASE,
+                        ),
+                        0,
+                    ),
+                    decimal.Decimal(0),
+                ).label('avg_purchase_price'),
+                # avg_sell_price: total revenue from sells / total sold qty
+                func.coalesce(
+                    func.sum(UserAssetOperation.summ).filter(
+                        UserAssetOperation.type == AssetOperationType.SELL,
+                    ) / func.nullif(
+                        func.sum(UserAssetOperation.quantity).filter(
+                            UserAssetOperation.type == AssetOperationType.SELL,
+                        ),
+                        0,
+                    ),
+                    decimal.Decimal(0),
+                ).label('avg_sell_price'),
+                # unique_addresses_cnt: number of distinct addresses used
+                func.count(UserAssetOperation.address_id.distinct()).label('unique_addresses_cnt'),
+                # first_trade_at / last_trade_at: time range of operations
+                func.min(UserAssetOperation.time).label('first_trade_at'),
+                func.max(UserAssetOperation.time).label('last_trade_at'),
             )
             .where(UserAssetOperation.user_asset_id == user_asset_id)
-            .cte('calc')
         )
-        calc = self.apply_filters(calc, op_filter)
+        calc = self.apply_filters(calc, op_filter).cte('calc')
+
+        # Final SELECT: combine calc CTE with asset info and current price
         stmt = (
             select(
                 calc.c.total_invested,
                 calc.c.net_quantity,
+                # break_even_price: price at which selling all remaining coins covers investment
                 (calc.c.total_invested / func.nullif(calc.c.net_quantity, 0)).label('break_even_price'),
+                # price_recover_50pct: price at which selling 50% covers all investment
                 (2 * calc.c.total_invested / func.nullif(calc.c.net_quantity, 0)).label('price_recover_50pct'),
                 AssetTickerPrice.price.label('current_price'),
+                # unrealized_pnl: current value - total invested
                 (
                     calc.c.net_quantity * AssetTickerPrice.price - calc.c.total_invested
                 ).label('unrealized_pnl'),
+                # roi_pct: (current_value / total_invested - 1) * 100
+                (
+                    (
+                        calc.c.net_quantity * AssetTickerPrice.price / func.nullif(calc.c.total_invested, 0)
+                        - 1
+                    ) * 100
+                ).label('roi_pct'),
+                calc.c.avg_purchase_price,
+                calc.c.avg_sell_price,
+                # current_position_value: net_quantity * current_price
+                (calc.c.net_quantity * AssetTickerPrice.price).label('current_position_value'),
+                calc.c.unique_addresses_cnt,
+                calc.c.first_trade_at,
+                calc.c.last_trade_at,
+                # days_in_position: now - first trade
+                func.extract('day', func.now() - calc.c.first_trade_at).label('days_in_position'),
             )
             .select_from(calc)
             .join(UserAsset, UserAsset.id == user_asset_id)
@@ -531,7 +587,7 @@ class PostgresUserAssetOperationRepository(
                 AssetTickerPrice, AssetTickerPrice.name == UserAsset.ticker_id,
             )
         )
-        # stmt = self.apply_filters(stmt, op_filter)
+
         async with self.db.session() as session:
             row = await session.execute(stmt)
             result = row.one_or_none()
