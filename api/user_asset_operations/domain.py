@@ -20,6 +20,16 @@ class DbCRUDOperationReturnData:
     balance_ok: bool
 
 
+@dataclass(frozen=True)
+class NettoPositionData:
+    total_invested: decimal.Decimal
+    net_quantity: decimal.Decimal
+    break_even_price: decimal.Decimal | None
+    price_recover_50pct: decimal.Decimal | None
+    current_price: decimal.Decimal | None
+    unrealized_pnl: decimal.Decimal | None
+
+
 class UserAssetOperationData(msgspec.Struct):
     time: datetime.datetime
     type: AssetOperationType

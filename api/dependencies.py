@@ -10,9 +10,9 @@ from logic.db_models import AssetOperationType
 def operations_filter(
     time__gte: FromQuery[datetime.datetime | None] = None,
     time__lte: FromQuery[datetime.datetime | None] = None,
-    op_id: Annotated[list[int] | None, QueryParameter(ge=1)] = None,
+    op_id: FromQuery[list[int] | None] = None,
     op_type: FromQuery[tuple[AssetOperationType, ...]] = tuple(AssetOperationType),
-    address_id: Annotated[list[int] | None, QueryParameter(ge=1)] = None
+    address_id: FromQuery[list[int] | None] = None
 ) -> UserAssetOperationsFilter:
     """
     Request list[int] data like &address_id=1&address_id=2

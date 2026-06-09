@@ -9,7 +9,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
     UserAssetOperationDTOIn,
-    UserAssetOperationUpdateDTOIn, UserAssetOperationsFilter,
+    UserAssetOperationUpdateDTOIn, UserAssetOperationsFilter, NettoPositionData,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -78,6 +78,6 @@ class UserAssetAddressOperationController(Controller):
             user_asset_id: FromPath[int],
             kc_user: User,
             op_filter: UserAssetOperationsFilter,
-    ):
+    ) -> NettoPositionData:
         return await UserAssetOperationNettoPositionUseCase().execute(user_asset_id, kc_user.sub, op_filter)
 

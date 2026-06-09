@@ -10,8 +10,8 @@ from database.postgres.connection import db as _db, DB
 
 
 class FilterBase(Protocol):
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def alchemy_filters(self)  -> Iterable[StatementFilter]:
         pass
 

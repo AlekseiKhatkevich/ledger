@@ -1,7 +1,7 @@
 import uuid
 
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData, \
-    UserAssetOperationsFilter
+    UserAssetOperationsFilter, NettoPositionData
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -73,5 +73,9 @@ class UserAssetOperationNettoPositionUseCase:
             user_asset_id: int,
             user_id: uuid.UUID,
             op_filter: UserAssetOperationsFilter,
-    ):
-        pass
+    ) -> NettoPositionData | None:
+        return await PostgresUserAssetOperationRepository().netto_position(
+            user_asset_id=user_asset_id,
+            user_id=user_id,
+            op_filter=op_filter,
+        )

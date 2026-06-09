@@ -19,10 +19,10 @@ from sqlalchemy import (
 )
 
 from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData, \
-    UserAssetOperationsFilter
+    UserAssetOperationsFilter, NettoPositionData
 from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
-from logic.db_models import AssetOperationType, UserAssetOperation, UserAsset, UserAssetAddress
+from logic.db_models import AssetOperationType, UserAssetOperation, UserAsset, UserAssetAddress, AssetTickerPrice
 from logic.repositories.user_asset_operation import BaseUserAssetOperationRepository
 
 """
@@ -471,6 +471,76 @@ class PostgresUserAssetOperationRepository(
 
         return deleted_id
 
+    async def netto_position(
+        self,
+        user_asset_id: int,
+        user_id: uuid.UUID,
+        op_filter: UserAssetOperationsFilter,
+    ) -> NettoPositionData | None:
+        """Calculate netto position metrics for a given user asset.
+
+        Returns total_invested, net_quantity, break_even_price,
+        price_recover_50pct, current_price and unrealized_pnl.
+        """
+        calc = (
+            select(
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (UserAssetOperation.type == AssetOperationType.PURCHASE, UserAssetOperation.summ),
+                            else_=-UserAssetOperation.summ,
+                        ),
+                    ),
+                    decimal.Decimal(0),
+                ).label('total_invested'),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                UserAssetOperation.type == AssetOperationType.PURCHASE,
+                                UserAssetOperation.quantity,
+                            ),
+                            else_=-UserAssetOperation.quantity,
+                        ),
+                    ),
+                    decimal.Decimal(0),
+                ).label('net_quantity'),
+            )
+            .where(UserAssetOperation.user_asset_id == user_asset_id)
+            .cte('calc')
+        )
+        calc = self.apply_filters(calc, op_filter)
+        stmt = (
+            select(
+                calc.c.total_invested,
+                calc.c.net_quantity,
+                (calc.c.total_invested / func.nullif(calc.c.net_quantity, 0)).label('break_even_price'),
+                (2 * calc.c.total_invested / func.nullif(calc.c.net_quantity, 0)).label('price_recover_50pct'),
+                AssetTickerPrice.price.label('current_price'),
+                (
+                    calc.c.net_quantity * AssetTickerPrice.price - calc.c.total_invested
+                ).label('unrealized_pnl'),
+            )
+            .select_from(calc)
+            .join(UserAsset, UserAsset.id == user_asset_id)
+            .where(
+                UserAsset.user_id == user_id,
+                UserAsset.id == user_asset_id,
+            )
+            .outerjoin(
+                AssetTickerPrice, AssetTickerPrice.name == UserAsset.ticker_id,
+            )
+        )
+        # stmt = self.apply_filters(stmt, op_filter)
+        async with self.db.session() as session:
+            row = await session.execute(stmt)
+            result = row.one_or_none()
+
+        if result is None:
+            return None
+
+        return NettoPositionData(*result)
+
     async def get_user_asset_aggregates(
         self,
         user_id: uuid.UUID,
@@ -629,10 +699,3 @@ class PostgresUserAssetOperationRepository(
 
         return self.apply_filters(stmt, filters)
 
-    async def netto_position(
-            self,
-            user_asset_id: int,
-            user_id: uuid.UUID,
-            op_filter: UserAssetOperationsFilter,
-    ):
-        pass
