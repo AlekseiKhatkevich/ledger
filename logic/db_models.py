@@ -11,7 +11,7 @@ from sqlalchemy import (
     Computed,
     Index,
     UniqueConstraint,
-    CheckConstraint, SQLColumnExpression, select, func, case,
+    CheckConstraint, SQLColumnExpression, select, func, case, Table, Column,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM
@@ -40,6 +40,12 @@ class UpdatedAtMixin(MappedAsDataclass):
         init=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+class CreatedAtMixin(MappedAsDataclass):
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        init=False,
+        server_default=func.now(),
     )
 
 
@@ -114,6 +120,14 @@ class AssetTickerPrice(Base):
         return f'{self.__class__.__name__} @ {self.price})'
 
 
+notes_association_table = Table(
+    "notes_association_table",
+    Base.metadata,
+    Column("op_id", ForeignKey("user_asset_operations.id"), primary_key=True,),
+    Column("note_id", ForeignKey("notes.id"), primary_key=True,),
+)
+
+
 class UserAssetOperation(Base):
     __tablename__ = 'user_asset_operations'
 
@@ -147,6 +161,11 @@ class UserAssetOperation(Base):
         init=False,
         passive_deletes=True,
     )
+    notes: Mapped[list[Note]] = relationship(
+        secondary=notes_association_table,
+        passive_deletes=True,
+        init=False,
+    )
 
     __table_args__ = (
         Index('ix_user_asset_id', 'user_asset_id'),
@@ -156,6 +175,23 @@ class UserAssetOperation(Base):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.user_asset_id = })'
+
+
+class Note(CreatedAtMixin, Base):
+    __tablename__ = 'notes'
+
+    id: Mapped[bigint_pk] = mapped_column(init=False)
+    note: Mapped[str]
+
+    operations: Mapped[UserAssetOperation] = relationship(
+        init=False,
+        passive_deletes=True,
+        secondary=notes_association_table,
+        back_populates='notes',
+    )
+    # todo BM25 index
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}: {self.id = })'
 
 
 class UserAsset(Base):
