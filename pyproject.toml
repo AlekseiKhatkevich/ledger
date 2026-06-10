@@ -52,6 +52,9 @@ filterwarnings = [
 asyncio_mode = "auto"
 addopts = "-vv --pytest-env-verbose"
 
+[tool.uv]
+exclude-newer = "7 days"
+
 [tool.pytest_env]
 PGDATABASE = "ledger-db-test"
 POOL_CLASS = "null"

@@ -16,7 +16,6 @@ from sqlalchemy import (
     select,
     func,
     case,
-    and_,
     Table,
     Column,
 )
@@ -45,6 +44,8 @@ __all__ = (
     'UserAsset',
     'AssetTickerPrice',
     'AssetPopularity',
+    'Note',
+    'notes_association_table',
 )
 
 

@@ -18,7 +18,6 @@ from sqlalchemy import (
     select,
     update,
 )
-from sqlalchemy.orm import joinedload, selectinload, subqueryload
 
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
@@ -772,20 +771,60 @@ class PostgresUserAssetOperationRepository(
 
 
     async def get_by_notes(
-            self,
-            user_id: uuid.UUID,
-            op_filter: UserAssetOperationsFilter,
-            notes: str,
-    ):
-        stmt = select(
-            self.model,
-        ).where(
-            self.model.asset.has(user_id=user_id),
-            self.model.notes.any(Note.note.ilike(f'%{notes}%')),
+        self,
+        user_id: uuid.UUID,
+        op_filter: UserAssetOperationsFilter,
+        notes: str,
+    ) -> list[tuple[UserAssetOperation, list[dict]]]:
+
+        # CTE: aggregate all notes per operation in a single pass (not N+1 like LATERAL).
+        # When paradedb replaces the placehoder, the filter goes here, before grouping.
+        all_notes_cte = (
+            select(
+                notes_association_table.c.op_id,
+                func.jsonb_agg(
+                    func.jsonb_build_object(
+                        'id', Note.id,
+                        'note', Note.note,
+                        'created_at', Note.created_at,
+                    ),
+                ).label('notes'),
+            )
+            .select_from(
+                notes_association_table,
+            )
+            .join(
+                Note,
+                Note.id == notes_association_table.c.note_id,
+            )
+            .group_by(
+                notes_association_table.c.op_id,
+            )
+            .cte(
+                'all_notes',
+            )
+        )
+
+        stmt = (
+            select(self.model, all_notes_cte.c.notes)
+            .select_from(self.model)
+            .join(
+                UserAsset,
+                UserAsset.id == self.model.user_asset_id,
+            )
+            .outerjoin(
+                all_notes_cte,
+                all_notes_cte.c.op_id == self.model.id,
+            )
+            .where(
+                UserAsset.user_id == user_id,
+            )
+            .order_by(self.model.time.desc())
         )
         stmt = self.apply_filters(stmt, op_filter)
 
         async with self.db.session() as session:
             rows = await session.execute(stmt)
 
-        return rows.scalars().all()
+        return [(op, notes_) for op, notes_ in rows]
+  # todo медленный запрос (возможно ilike)

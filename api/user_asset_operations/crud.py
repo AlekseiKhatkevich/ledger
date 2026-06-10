@@ -82,7 +82,7 @@ class UserAssetAddressOperationController(Controller):
         return await UserAssetOperationNettoPositionUseCase().execute(user_asset_id, kc_user.sub, op_filter)
 
     # todo POST notes create
-
+    # todo пагинация
     @get('notes', dependencies={'op_filter': Provide(operations_filter)})
     async def notes(
             self,
