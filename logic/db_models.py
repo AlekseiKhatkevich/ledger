@@ -4,20 +4,33 @@ import enum
 import uuid
 from typing import Annotated
 
-import sqlalchemy as sa
+from paradedb.sqlalchemy import indexing
 from sqlalchemy import (
     String,
     ForeignKey,
     Computed,
     Index,
     UniqueConstraint,
-    CheckConstraint, SQLColumnExpression, select, func, case, Table, Column,
+    CheckConstraint,
+    SQLColumnExpression,
+    select,
+    func,
+    case,
+    and_,
+    Table,
+    Column,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import mapped_column, Mapped, relationship, MappedAsDataclass, query_expression
+from sqlalchemy.orm import (
+    mapped_column,
+    Mapped,
+    relationship,
+    MappedAsDataclass,
+    query_expression,
+)
 
 from database.postgres.base import Base
 from database.postgres.model_types import bigint_pk
@@ -176,7 +189,6 @@ class UserAssetOperation(Base):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.user_asset_id = })'
 
-
 class Note(CreatedAtMixin, Base):
     __tablename__ = 'notes'
 
@@ -189,9 +201,30 @@ class Note(CreatedAtMixin, Base):
         secondary=notes_association_table,
         back_populates='notes',
     )
-    # todo BM25 index
+    related_user_assets: Mapped[list['UserAsset']] = relationship(
+        'UserAsset',
+        secondary=UserAssetOperation.__table__,
+        primaryjoin='and_('
+        'Note.id == notes_association_table.c.note_id, '
+        'notes_association_table.c.op_id == UserAssetOperation.id'
+        ')',
+        secondaryjoin='UserAssetOperation.user_asset_id == UserAsset.id',
+        viewonly=True,
+        init=False,
+        default_factory=list,
+    )
+
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.id = })'
+
+
+Index(
+    'notes_search_idx',
+    indexing.BM25Field(Note.note),
+    indexing.BM25Field(Note.created_at),
+    postgresql_using='bm25',
+    postgresql_with={'key_field': 'id'},
+)
 
 
 class UserAsset(Base):

@@ -11,10 +11,11 @@ from sqlalchemy.sql.schema import SchemaItem
 from config import settings
 from database.postgres.base import Base
 from aux.helpers.common import iter_subclasses
+import paradedb.sqlalchemy.alembic  # noqa: F401
 
 # do not delete import below !
-from user import *
-from logic.db_models import *
+from user import *  # noqa: F401
+from logic.db_models import *  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

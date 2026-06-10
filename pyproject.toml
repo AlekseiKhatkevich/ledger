@@ -24,6 +24,7 @@ dependencies = [
     "temporalio>=1.26.0",
     "polars>=1.40.1",
     "opentelemetry-instrumentation-asyncio>=0.52b0",
+    "sqlalchemy-paradedb>=0.6.0",
 ]
 
 [dependency-groups]
