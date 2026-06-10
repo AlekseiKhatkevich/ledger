@@ -544,6 +544,7 @@ class PostgresUserAssetOperationRepository(
             )
             .where(UserAssetOperation.user_asset_id == user_asset_id)
         )
+        
         calc = self.apply_filters(calc, op_filter).cte('calc')
 
         # Final SELECT: combine calc CTE with asset info and current price

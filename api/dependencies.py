@@ -1,7 +1,6 @@
 import datetime
-from typing import Annotated
 
-from litestar.params import FromQuery, QueryParameter
+from litestar.params import FromQuery
 
 from api.user_asset_operations.domain import UserAssetOperationsFilter
 from logic.db_models import AssetOperationType
@@ -15,7 +14,7 @@ def operations_filter(
     address_id: FromQuery[list[int] | None] = None
 ) -> UserAssetOperationsFilter:
     """
-    Request list[int] data like &address_id=1&address_id=2
+    Request list[int] data like &address_id=1&address_id=2&...
     """
     return UserAssetOperationsFilter(
         time__gte=time__gte,
