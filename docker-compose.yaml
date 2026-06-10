@@ -112,7 +112,7 @@ services:
       "-c", "password_encryption=scram-sha-256",
       "-c", "idle_in_transaction_session_timeout=1min",
       "-c", "idle_session_timeout=5min",
-      "-c", "shared_preload_libraries=pg_stat_statements,pg_ivm",
+      "-c", "shared_preload_libraries=pg_stat_statements,pg_ivm,pg_search",
       "-c", "pg_stat_statements.track=all"
     ]
     env_file: secrets/postgres/.env
