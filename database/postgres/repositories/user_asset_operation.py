@@ -14,15 +14,29 @@ from sqlalchemy import (
     func,
     insert,
     literal,
+    literal_column,
     select,
     update,
 )
+from sqlalchemy.orm import joinedload, selectinload, subqueryload
 
-from api.user_asset_operations.domain import UserAssetOperationData, DbCRUDOperationReturnData, \
-    UserAssetOperationsFilter, NettoPositionData
+from api.user_asset_operations.domain import (
+    UserAssetOperationData,
+    DbCRUDOperationReturnData,
+    UserAssetOperationsFilter,
+    NettoPositionData,
+)
 from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
-from logic.db_models import AssetOperationType, UserAssetOperation, UserAsset, UserAssetAddress, AssetTickerPrice
+from logic.db_models import (
+    AssetOperationType,
+    UserAssetOperation,
+    UserAsset,
+    UserAssetAddress,
+    AssetTickerPrice,
+    Note,
+    notes_association_table,
+)
 from logic.repositories.user_asset_operation import BaseUserAssetOperationRepository
 
 """
@@ -756,3 +770,22 @@ class PostgresUserAssetOperationRepository(
 
         return self.apply_filters(stmt, filters)
 
+
+    async def get_by_notes(
+            self,
+            user_id: uuid.UUID,
+            op_filter: UserAssetOperationsFilter,
+            notes: str,
+    ):
+        stmt = select(
+            self.model,
+        ).where(
+            self.model.asset.has(user_id=user_id),
+            self.model.notes.any(Note.note.ilike(f'%{notes}%')),
+        )
+        stmt = self.apply_filters(stmt, op_filter)
+
+        async with self.db.session() as session:
+            rows = await session.execute(stmt)
+
+        return rows.scalars().all()

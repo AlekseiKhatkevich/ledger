@@ -83,3 +83,13 @@ class UserAssetOperationNettoPositionUseCase:
             user_id=user_id,
             op_filter=op_filter,
         )
+
+class UserAssetOperationsByNotesUseCase:
+
+    @staticmethod
+    async def execute(
+        user_id: uuid.UUID,
+        op_filter: UserAssetOperationsFilter,
+        notes: str,
+    ):
+        pass

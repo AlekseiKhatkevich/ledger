@@ -189,6 +189,7 @@ class UserAssetOperation(Base):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.user_asset_id = })'
 
+# Note.related_user_assets.any(UserAsset.user_id == '7f4296f5-ba32-434e-9c18-2ad2e40b9526')
 class Note(CreatedAtMixin, Base):
     __tablename__ = 'notes'
 

@@ -1,7 +1,7 @@
 from litestar import Controller, post, put, delete, get
 from litestar.di import Provide
 from litestar.dto import DTOData
-from litestar.params import FromPath
+from litestar.params import FromPath, FromQuery
 
 from api.dependencies import operations_filter
 from api.exceptions_handling import base_error_handler_factory
@@ -20,7 +20,7 @@ from logic.exceptions import (
 from logic.usecases.user_asset_operation import (
     UserAssetOperationInsertUseCase,
     UserAssetOperationUpdateUseCase,
-    UserAssetOperationDeleteUseCase, UserAssetOperationNettoPositionUseCase,
+    UserAssetOperationDeleteUseCase, UserAssetOperationNettoPositionUseCase, UserAssetOperationsByNotesUseCase,
 )
 from user.domain import User
 
@@ -80,4 +80,19 @@ class UserAssetAddressOperationController(Controller):
             op_filter: UserAssetOperationsFilter,
     ) -> NettoPositionData:
         return await UserAssetOperationNettoPositionUseCase().execute(user_asset_id, kc_user.sub, op_filter)
+
+    # todo POST notes create
+
+    @get('notes', dependencies={'op_filter': Provide(operations_filter)})
+    async def notes(
+            self,
+            kc_user: User,
+            op_filter: UserAssetOperationsFilter,
+            notes: FromQuery[str],
+    ) -> None:
+        return await UserAssetOperationsByNotesUseCase.execute(
+            user_id=kc_user.id,
+            notes=notes,
+            op_filter=op_filter,
+        )
 
