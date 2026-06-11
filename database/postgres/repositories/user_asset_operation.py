@@ -1,4 +1,6 @@
 import decimal
+import functools
+import operator
 import uuid
 from functools import cache
 from typing import Any
@@ -16,7 +18,9 @@ from sqlalchemy import (
     insert,
     literal,
     select,
-    update, and_,
+    update,
+    and_,
+    or_,
 )
 
 from api.notes.domain import NoteOut
@@ -24,7 +28,8 @@ from api.user_asset_operations.domain import (
     UserAssetOperationData,
     DbCRUDOperationReturnData,
     UserAssetOperationsFilter,
-    NettoPositionData, UserAssetOperationWithNotesOut,
+    NettoPositionData,
+    UserAssetOperationWithNotesOut,
 )
 from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
@@ -775,8 +780,12 @@ class PostgresUserAssetOperationRepository(
         self,
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
-        notes: str,
+        notes: list[str],
     ) -> list[UserAssetOperationWithNotesOut]:
+
+        #  words in each search term are connected with AND logic (new bicycle = new and bicycle)
+        #  multiple search terms are joined with OR logic ((new and bicycle) or (old and motorcycle)
+        search_criteria = functools.reduce(or_, (search.match_all(Note.note, note) for note in notes))
 
         all_notes_cte = (
             select(
@@ -790,6 +799,7 @@ class PostgresUserAssetOperationRepository(
                         'score', pdb.score(Note.id),
                     ),
                 ).label('notes'),
+                #  this is for future sorting by score
                 (func.max(pdb.score(Note.id)) + func.ln(func.count('*'))).label('score'),
             )
             .select_from(
@@ -799,15 +809,13 @@ class PostgresUserAssetOperationRepository(
                 Note,
                 and_(
                     Note.id == notes_association_table.c.note_id,
-                    search.match_all(Note.note, notes),
+                    search_criteria,
                 )
             )
             .group_by(
                 notes_association_table.c.op_id,
             )
-            .cte(
-                'all_notes',
-            )
+            .cte('all_notes')
         )
         stmt = (
             select(
@@ -843,7 +851,7 @@ class PostgresUserAssetOperationRepository(
             UserAssetOperationWithNotesOut(
                 **model_instance.as_fields_dict(),
                 score=score,
-                notes=[NoteOut(**note) for note in notes],
+                notes=[NoteOut(**note) for note in sorted(notes, key=operator.itemgetter('score'), reverse=True)],
             )
             for model_instance, score, notes in rows.all()
         ]

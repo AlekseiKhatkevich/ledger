@@ -72,6 +72,9 @@
         span_attributes {
             user_id           {http.auth.user.id}
             rate_limit_zone   {http.rate_limit.exceeded.name}
+            trace_id          {http.vars.trace_id}
+            span_id           {http.vars.span_id}
+            query_params      {http.request.orig_uri.query}
         }
     }
 }

@@ -90,7 +90,7 @@ class UserAssetOperationsByNotesUseCase:
     async def execute(
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
-        notes: str,
+        notes: list[str],
     ) -> list[UserAssetOperationWithNotesOut]:
         return await PostgresUserAssetOperationRepository().get_by_notes(
             user_id,

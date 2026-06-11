@@ -88,7 +88,7 @@ class UserAssetAddressOperationController(Controller):
             self,
             kc_user: User,
             op_filter: UserAssetOperationsFilter,
-            notes: FromQuery[str],
+            notes: FromQuery[list[str]],
     ) -> list[UserAssetOperationWithNotesOut]:
         return await UserAssetOperationsByNotesUseCase.execute(
             user_id=kc_user.id,
