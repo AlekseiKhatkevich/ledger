@@ -4,7 +4,7 @@ import enum
 import uuid
 from typing import Annotated
 
-from paradedb.sqlalchemy import indexing
+from paradedb.sqlalchemy import indexing, tokenizer
 from sqlalchemy import (
     String,
     ForeignKey,
@@ -222,7 +222,12 @@ class Note(CreatedAtMixin, Base):
 
 Index(
     'notes_search_idx',
-    indexing.BM25Field(Note.note),
+indexing.BM25Field(Note.id),
+    indexing.BM25Field(
+        Note.note,
+        tokenizer=tokenizer.unicode_words(
+            options={'stemmer': 'russian', 'ascii_folding': True, 'stopwords_language': 'russian', 'trim': True}),
+    ),
     indexing.BM25Field(Note.created_at),
     postgresql_using='bm25',
     postgresql_with={'key_field': 'id'},
