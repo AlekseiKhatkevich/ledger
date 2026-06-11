@@ -4,7 +4,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationData,
     DbCRUDOperationReturnData,
     UserAssetOperationsFilter,
-    NettoPositionData,
+    NettoPositionData, UserAssetOperationWithNotesOut,
 )
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.exceptions import (
@@ -91,5 +91,9 @@ class UserAssetOperationsByNotesUseCase:
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
         notes: str,
-    ):
-        pass
+    ) -> list[UserAssetOperationWithNotesOut]:
+        return await PostgresUserAssetOperationRepository().get_by_notes(
+            user_id,
+            op_filter,
+            notes,
+        )

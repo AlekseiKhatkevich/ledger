@@ -8,6 +8,7 @@ from advanced_alchemy import filters as sa_filters
 from advanced_alchemy.filters import StatementFilter
 from litestar.dto import DTOConfig, MsgspecDTO
 
+from api.notes.domain import NoteOut
 from logic.db_models import AssetOperationType
 
 
@@ -119,3 +120,16 @@ class UserAssetOperationsFilter:
             sa_filters.CollectionFilter(field_name='address_id', values=self.address_id),
             sa_filters.CollectionFilter(field_name='type', values=self.op_type),
         ]
+
+@dataclass
+class UserAssetOperationWithNotesOut:
+    id: int
+    time: datetime.datetime
+    type: AssetOperationType
+    user_asset_id: int
+    quantity: decimal.Decimal
+    unit_price: decimal.Decimal
+    summ: decimal.Decimal
+    address_id: int
+    score:  float
+    notes: list[NoteOut]

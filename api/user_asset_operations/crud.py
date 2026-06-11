@@ -9,7 +9,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
     UserAssetOperationDTOIn,
-    UserAssetOperationUpdateDTOIn, UserAssetOperationsFilter, NettoPositionData,
+    UserAssetOperationUpdateDTOIn, UserAssetOperationsFilter, NettoPositionData, UserAssetOperationWithNotesOut,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -89,7 +89,7 @@ class UserAssetAddressOperationController(Controller):
             kc_user: User,
             op_filter: UserAssetOperationsFilter,
             notes: FromQuery[str],
-    ) -> None:
+    ) -> list[UserAssetOperationWithNotesOut]:
         return await UserAssetOperationsByNotesUseCase.execute(
             user_id=kc_user.id,
             notes=notes,
