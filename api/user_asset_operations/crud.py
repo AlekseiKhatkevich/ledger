@@ -1,7 +1,9 @@
+from typing import Annotated
+
 from litestar import Controller, post, put, delete, get
 from litestar.di import Provide
 from litestar.dto import DTOData
-from litestar.params import FromPath, FromQuery
+from litestar.params import FromPath, FromQuery, QueryParameter
 
 from api.dependencies import operations_filter
 from api.exceptions_handling import base_error_handler_factory
@@ -9,7 +11,10 @@ from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
     UserAssetOperationDTOIn,
-    UserAssetOperationUpdateDTOIn, UserAssetOperationsFilter, NettoPositionData, UserAssetOperationWithNotesOut,
+    UserAssetOperationUpdateDTOIn,
+    UserAssetOperationsFilter,
+    NettoPositionData,
+    UserAssetOperationWithNotesOut,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -20,7 +25,9 @@ from logic.exceptions import (
 from logic.usecases.user_asset_operation import (
     UserAssetOperationInsertUseCase,
     UserAssetOperationUpdateUseCase,
-    UserAssetOperationDeleteUseCase, UserAssetOperationNettoPositionUseCase, UserAssetOperationsByNotesUseCase,
+    UserAssetOperationDeleteUseCase,
+    UserAssetOperationNettoPositionUseCase,
+    UserAssetOperationsByNotesUseCase,
 )
 from user.domain import User
 
@@ -89,10 +96,12 @@ class UserAssetAddressOperationController(Controller):
             kc_user: User,
             op_filter: UserAssetOperationsFilter,
             notes: FromQuery[list[str]],
+            distance: Annotated[int, QueryParameter(ge=0)] = 0
     ) -> list[UserAssetOperationWithNotesOut]:
         return await UserAssetOperationsByNotesUseCase.execute(
             user_id=kc_user.id,
             notes=notes,
             op_filter=op_filter,
+            distance=distance,
         )
 

@@ -91,9 +91,11 @@ class UserAssetOperationsByNotesUseCase:
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
         notes: list[str],
+        distance: int,
     ) -> list[UserAssetOperationWithNotesOut]:
         return await PostgresUserAssetOperationRepository().get_by_notes(
             user_id,
             op_filter,
             notes,
+            distance,
         )

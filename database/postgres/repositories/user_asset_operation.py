@@ -781,11 +781,15 @@ class PostgresUserAssetOperationRepository(
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
         notes: list[str],
+        distance: int,
     ) -> list[UserAssetOperationWithNotesOut]:
 
         #  words in each search term are connected with AND logic (new bicycle = new and bicycle)
         #  multiple search terms are joined with OR logic ((new and bicycle) or (old and motorcycle)
-        search_criteria = functools.reduce(or_, (search.match_all(Note.note, note) for note in notes))
+        search_criteria = functools.reduce(
+            or_,
+            (search.match_all(Note.note, note, distance=distance) for note in notes),
+        )
 
         all_notes_cte = (
             select(

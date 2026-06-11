@@ -20,6 +20,7 @@ class BaseUserAssetOperationRepository(abc.ABC):
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
         notes: str,
+        distance: int,
     ) -> list[tuple['UserAssetOperation', list[dict]]]:
         """Get operations filtered by note text."""
         pass
