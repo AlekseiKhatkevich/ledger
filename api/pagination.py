@@ -5,12 +5,14 @@ from typing import Generic, Optional, List, TypeVar
 
 from litestar.params import Parameter
 
+from api.user_asset_operations.domain import UserAssetOperationWithNotesOut, UserAssetOperationSearchByNoteInputArgs
 from api.user_assets.domain import UserAssetAggregatedData
 from constants.api import (
     LIST_VIEW_DEFAULT_PAGE_SIZE,
     LIST_VIEW_MAX_PAGE_SIZE,
 )
 from logic.usecases.user_asset import UserAssetListUseCase
+from logic.usecases.user_asset_operation import UserAssetOperationsByNotesUseCase
 
 C = TypeVar("C", int, str, uuid.UUID)
 T = TypeVar("T")
@@ -40,13 +42,6 @@ PAGE_SIZE_PARAMETER = Parameter(
     le=LIST_VIEW_MAX_PAGE_SIZE,
     default=LIST_VIEW_DEFAULT_PAGE_SIZE,
 )
-
-
-@dataclasses.dataclass(frozen=True)
-class PaginationParams:
-    cursor: int | str| None
-    results_per_page: int
-
 
 class AdvancedCursorPaginator(ABC, Generic[C, T]):
     """Base cursor paginator that adds ``has_more`` support.
@@ -119,3 +114,18 @@ class UserAssetsPaginator(AdvancedCursorPaginator[str, UserAssetAggregatedData])
     ) -> tuple[list[UserAssetAggregatedData], str | None, bool]:
         data = await UserAssetListUseCase().execute(self.user_id, cursor, results_per_page)
         return data.items, data.cursor, data.has_more
+
+
+class UserAssetOperationsByNotesPaginator(AdvancedCursorPaginator[int, list[UserAssetOperationWithNotesOut]]):
+
+    def __init__(self, search_args: UserAssetOperationSearchByNoteInputArgs) -> None:
+        self.search_args = search_args
+
+    async def get_items(
+            self,
+            cursor: str | None,
+            results_per_page: int,
+    ) -> tuple[list[UserAssetAggregatedData], str | None, bool]:
+        data = await UserAssetOperationsByNotesUseCase.execute(self.search_args, cursor, results_per_page)
+        return data.items, data.cursor, data.has_more
+

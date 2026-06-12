@@ -3,14 +3,14 @@ import functools
 import operator
 import uuid
 from functools import cache
-from typing import Any, Callable
+from typing import Any
 
 import sqlalchemy as sa
 from paradedb.sqlalchemy import pdb, search
 from sqlalchemy import ColumnElement
-from sqlalchemy.orm import InstrumentedAttribute
 
 from api.notes.domain import NoteOut, SearchMethod
+from api.pagination_domain import PaginatedPage
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     DbCRUDOperationReturnData,
@@ -780,7 +780,9 @@ class PostgresUserAssetOperationRepository(
     async def get_by_notes(  # type: ignore
         self,
         search_args: UserAssetOperationSearchByNoteInputArgs,
-    ) -> list[UserAssetOperationWithNotesOut]:
+        cursor: int | None,
+        results_per_page: int,
+    ) -> PaginatedPage[UserAssetOperationWithNotesOut]:
 
         all_notes_cte = (
             sa.select(
@@ -843,18 +845,33 @@ class PostgresUserAssetOperationRepository(
                 self.model.time.desc(),  # type: ignore
             )
         )
-        stmt = self.apply_filters(stmt, search_args.op_filter)
+
+        if cursor is not None:
+            stmt = stmt.where(all_notes_cte.c.score < cursor)
+
+        stmt = self.apply_filters(stmt, search_args.op_filter).limit(results_per_page + 1)
 
         async with self.db.session() as session:
             rows = await session.execute(stmt)
 
-        return [
+        all_items = rows.all()
+        if len(all_items) > results_per_page:
+                has_more = True
+                all_items = all_items[:results_per_page]
+        else:
+             has_more = False
+
+        last_score = all_items[-1][1] if all_items else None
+
+        items =  [
             UserAssetOperationWithNotesOut(
                 **model_instance.as_fields_dict(),
                 score=score,
                 notes=[NoteOut(**note) for note in sorted(notes, key=operator.itemgetter('score'), reverse=True)],
             )
-            for model_instance, score, notes in rows.all()
+            for model_instance, score, notes in all_items
         ]
+
+        return PaginatedPage(items, cursor=last_score, has_more=has_more)
 
 # todo citus

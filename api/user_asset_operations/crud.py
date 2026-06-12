@@ -8,7 +8,8 @@ from litestar.params import FromPath, FromQuery, QueryParameter
 from api.dependencies import operations_filter, note_filter
 from api.exceptions_handling import base_error_handler_factory
 from api.notes.domain import SearchMethod
-from api.pagination import PaginationParams
+from api.pagination import AdvancedCursorPagination, UserAssetOperationsByNotesPaginator
+from api.pagination_domain import PaginationParams
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
@@ -110,13 +111,33 @@ class UserAssetAddressOperationController(Controller):
             notes: FromQuery[list[str]],
             search_method: FromQuery[SearchMethod] = SearchMethod.MATCH,
             distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0,
-    ) -> list[UserAssetOperationWithNotesOut]:
+    )-> AdvancedCursorPagination[int, list[UserAssetOperationWithNotesOut]]:
         search_args = UserAssetOperationSearchByNoteInputArgs(
-            user_id=kc_user.id,
-            notes=notes,
-            op_filter=op_filter,
-            note_filter=note_filter,
-            distance=distance,
-            search_method=search_method,
+                    user_id=kc_user.id,
+                    notes=notes,
+                    op_filter=op_filter,
+                    note_filter=note_filter,
+                    distance=distance,
+                    search_method=search_method,
+                    # pagination_params=pagination_params,
+                )
+
+        paginator = UserAssetOperationsByNotesPaginator(search_args)
+        return await paginator(
+            cursor=pagination_params.cursor,
+            results_per_page=pagination_params.results_per_page,
         )
-        return await UserAssetOperationsByNotesUseCase.execute(search_args)
+
+
+
+    # ) -> list[UserAssetOperationWithNotesOut]:
+    #     search_args = UserAssetOperationSearchByNoteInputArgs(
+    #         user_id=kc_user.id,
+    #         notes=notes,
+    #         op_filter=op_filter,
+    #         note_filter=note_filter,
+    #         distance=distance,
+    #         search_method=search_method,
+    #          pagination_params=pagination_params
+    #     )
+    #     return await UserAssetOperationsByNotesUseCase.execute(search_args)

@@ -1,9 +1,9 @@
 import datetime
-import uuid
 
 from litestar.params import FromQuery
 
-from api.pagination import PAGE_SIZE_PARAMETER, PaginationParams
+from api.pagination import PAGE_SIZE_PARAMETER
+from api.pagination_domain import PaginationParams
 from api.user_asset_operations.domain import UserAssetOperationsFilter, NoteFilter
 from logic.db_models import AssetOperationType
 

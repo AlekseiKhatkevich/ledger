@@ -16,7 +16,9 @@ class BaseUserAssetOperationRepository(abc.ABC):
     @abc.abstractmethod
     async def get_by_notes(
         self,
-        search_args: UserAssetOperationSearchByNoteInputArgs
+        search_args: UserAssetOperationSearchByNoteInputArgs,
+        cursor: int | None,
+        results_per_page: int,
     ) -> list[tuple['UserAssetOperation', list[dict]]]:
         """Get operations filtered by note text."""
         pass

@@ -90,5 +90,11 @@ class UserAssetOperationsByNotesUseCase:
     @staticmethod
     async def execute(
         search_args: UserAssetOperationSearchByNoteInputArgs,
+        cursor: int | None,
+        results_per_page: int,
     ) -> list[UserAssetOperationWithNotesOut]:
-        return await PostgresUserAssetOperationRepository().get_by_notes(search_args)
+        return await PostgresUserAssetOperationRepository().get_by_notes(
+            search_args,
+            cursor,
+            results_per_page,
+        )
