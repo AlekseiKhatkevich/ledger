@@ -156,7 +156,7 @@ class UserAssetOperationWithNotesOut:
 @dataclass(frozen=True)
 class UserAssetOperationSearchByNoteInputArgs:
     user_id: uuid.UUID
-    notes: str
+    notes: list[str]
     op_filter: UserAssetOperationsFilter
     note_filter: NoteFilter
     search_method: SearchMethod

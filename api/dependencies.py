@@ -1,7 +1,9 @@
 import datetime
+import uuid
 
 from litestar.params import FromQuery
 
+from api.pagination import PAGE_SIZE_PARAMETER, PaginationParams
 from api.user_asset_operations.domain import UserAssetOperationsFilter, NoteFilter
 from logic.db_models import AssetOperationType
 
@@ -29,3 +31,9 @@ def note_filter(
     note_time__lte: FromQuery[datetime.datetime | None] = None,
 ) -> NoteFilter:
     return NoteFilter(note_time__gte=note_time__gte, note_time__lte=note_time__lte)
+
+def pagination_params(
+    cursor: FromQuery[int | str |  None] = None,
+    results_per_page: int = PAGE_SIZE_PARAMETER,
+) -> PaginationParams:
+    return PaginationParams(cursor, results_per_page)

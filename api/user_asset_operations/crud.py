@@ -8,6 +8,7 @@ from litestar.params import FromPath, FromQuery, QueryParameter
 from api.dependencies import operations_filter, note_filter
 from api.exceptions_handling import base_error_handler_factory
 from api.notes.domain import SearchMethod
+from api.pagination import PaginationParams
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
@@ -95,16 +96,20 @@ class UserAssetAddressOperationController(Controller):
     # todo More like this new endpoint?
     @get(
         'notes',
-        dependencies={'op_filter': Provide(operations_filter), 'note_filter': Provide(note_filter)},
+        dependencies={
+            'op_filter': Provide(operations_filter),
+            'note_filter': Provide(note_filter),
+        },
     )
     async def notes(
             self,
             kc_user: User,
+            pagination_params: PaginationParams,
             op_filter: UserAssetOperationsFilter,
             note_filter: NoteFilter,
             notes: FromQuery[list[str]],
             search_method: FromQuery[SearchMethod] = SearchMethod.MATCH,
-            distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0
+            distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0,
     ) -> list[UserAssetOperationWithNotesOut]:
         search_args = UserAssetOperationSearchByNoteInputArgs(
             user_id=kc_user.id,

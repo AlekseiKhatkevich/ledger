@@ -18,6 +18,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from api import lifespan
+from api.dependencies import pagination_params
 from api.user_asset_addresses.crud import UserAssetAddressController
 from api.user_asset_operations.crud import UserAssetAddressOperationController
 from api.user_assets.crud import UserAssetCrudController
@@ -85,7 +86,10 @@ def create_app() -> Litestar:
         on_shutdown=lifespan.on_shutdown,
         lifespan=lifespan.lifespan,
         middleware=[auth_mw, ],
-        dependencies={'kc_user': Provide(keycloak_user)},
+        dependencies={
+            'kc_user': Provide(keycloak_user),
+            'pagination_params': Provide(pagination_params),
+        },
         openapi_config=OpenAPIConfig(
             title='Ledger',
             description='FOSS ledger 4 your crypto assets, you know...',

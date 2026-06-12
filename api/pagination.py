@@ -34,13 +34,18 @@ class AdvancedCursorPagination(Generic[C, T]):
     """Whether there are more results available."""
 
 
-
+"""Parameter for pagination page size with validation constraints."""
 PAGE_SIZE_PARAMETER = Parameter(
     ge=1,
     le=LIST_VIEW_MAX_PAGE_SIZE,
     default=LIST_VIEW_DEFAULT_PAGE_SIZE,
 )
-"""Parameter for pagination page size with validation constraints."""
+
+
+@dataclasses.dataclass(frozen=True)
+class PaginationParams:
+    cursor: int | str| None
+    results_per_page: int
 
 
 class AdvancedCursorPaginator(ABC, Generic[C, T]):
