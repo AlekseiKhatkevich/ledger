@@ -2,7 +2,7 @@ import datetime
 
 from litestar.params import FromQuery
 
-from api.user_asset_operations.domain import UserAssetOperationsFilter
+from api.user_asset_operations.domain import UserAssetOperationsFilter, NoteFilter
 from logic.db_models import AssetOperationType
 
 
@@ -23,3 +23,9 @@ def operations_filter(
         op_type=op_type,
         address_id=address_id,
     )
+
+def note_filter(
+    note_time__gte: FromQuery[datetime.datetime | None] = None,
+    note_time__lte: FromQuery[datetime.datetime | None] = None,
+) -> NoteFilter:
+    return NoteFilter(note_time__gte=note_time__gte, note_time__lte=note_time__lte)

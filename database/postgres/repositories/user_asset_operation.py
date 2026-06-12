@@ -29,7 +29,7 @@ from api.user_asset_operations.domain import (
     DbCRUDOperationReturnData,
     UserAssetOperationsFilter,
     NettoPositionData,
-    UserAssetOperationWithNotesOut,
+    UserAssetOperationWithNotesOut, NoteFilter,
 )
 from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
@@ -781,6 +781,7 @@ class PostgresUserAssetOperationRepository(
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
         notes: list[str],
+        note_filter: NoteFilter,
         distance: int,
     ) -> list[UserAssetOperationWithNotesOut]:
 
@@ -818,9 +819,11 @@ class PostgresUserAssetOperationRepository(
             )
             .group_by(
                 notes_association_table.c.op_id,
-            )
-            .cte('all_notes')
+            ).cte('all_notes')
         )
+
+        # all_notes_cte = self.apply_filters(all_notes_cte, note_filter).cte('all_notes')
+
         stmt = (
             select(
                 self.model,

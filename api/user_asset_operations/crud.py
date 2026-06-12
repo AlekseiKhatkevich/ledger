@@ -5,7 +5,7 @@ from litestar.di import Provide
 from litestar.dto import DTOData
 from litestar.params import FromPath, FromQuery, QueryParameter
 
-from api.dependencies import operations_filter
+from api.dependencies import operations_filter, note_filter
 from api.exceptions_handling import base_error_handler_factory
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
@@ -15,6 +15,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationsFilter,
     NettoPositionData,
     UserAssetOperationWithNotesOut,
+    NoteFilter,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -90,18 +91,24 @@ class UserAssetAddressOperationController(Controller):
 
     # todo POST notes create
     # todo пагинация
-    @get('notes', dependencies={'op_filter': Provide(operations_filter)})
+    # todo More like this new endpoint?
+    @get(
+        'notes',
+        dependencies={'op_filter': Provide(operations_filter), 'note_filter': Provide(note_filter)},
+    )
     async def notes(
             self,
             kc_user: User,
             op_filter: UserAssetOperationsFilter,
+            note_filter: NoteFilter,
             notes: FromQuery[list[str]],
-            distance: Annotated[int, QueryParameter(ge=0)] = 0
+            distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0
     ) -> list[UserAssetOperationWithNotesOut]:
         return await UserAssetOperationsByNotesUseCase.execute(
             user_id=kc_user.id,
             notes=notes,
             op_filter=op_filter,
+            note_filter=note_filter,
             distance=distance,
         )
 

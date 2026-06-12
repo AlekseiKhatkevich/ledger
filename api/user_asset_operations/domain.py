@@ -121,6 +121,24 @@ class UserAssetOperationsFilter:
             sa_filters.CollectionFilter(field_name='type', values=self.op_type),
         ]
 
+@dataclass(frozen=True)
+class NoteFilter:
+    note_time__gte: datetime.datetime | None = None
+    note_time__lte: datetime.datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.note_time__gte and self.note_time__lte and self.note_time__gte > self.note_time__lte:
+            raise ValueError('time__gte field should be lighter then time__lte field')
+
+    @property
+    def alchemy_filters(self) -> list[StatementFilter]:
+        return [
+            sa_filters.BeforeAfter(
+                field_name='created_at',
+                before=self.note_time__lte,
+                after=self.note_time__gte, ),
+        ]
+
 @dataclass
 class UserAssetOperationWithNotesOut:
     id: int
