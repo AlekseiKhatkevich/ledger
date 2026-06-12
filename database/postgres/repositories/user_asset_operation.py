@@ -5,23 +5,8 @@ import uuid
 from functools import cache
 from typing import Any
 
+import sqlalchemy as sa
 from paradedb.sqlalchemy import pdb, search
-from sqlalchemy import (
-    CTE,
-    ColumnElement,
-    Select,
-    case,
-    cast,
-    delete,
-    exists,
-    func,
-    insert,
-    literal,
-    select,
-    update,
-    and_,
-    or_,
-)
 
 from api.notes.domain import NoteOut
 from api.user_asset_operations.domain import (
@@ -254,10 +239,10 @@ class PostgresUserAssetOperationRepository(
     def _build_asset_check_cte(
         user_id: uuid.UUID,
         user_asset_id: int,
-    ) -> CTE:
+    ) -> sa.CTE:
         return (
-            select(
-                exists()
+            sa.select(
+                sa.exists()
                 .where(UserAsset.user_id == user_id, UserAsset.id == user_asset_id)
                 .label("ok"),
             )
@@ -268,10 +253,10 @@ class PostgresUserAssetOperationRepository(
     def _build_address_check_cte(
         user_id: uuid.UUID,
         address_id: int,
-    ) -> CTE:
+    ) -> sa.CTE:
         return (
-            select(
-                exists()
+            sa.select(
+                sa.exists()
                 .where(UserAssetAddress.user_id == user_id, UserAssetAddress.id == address_id)
                 .label("ok"),
             )
@@ -283,11 +268,11 @@ class PostgresUserAssetOperationRepository(
         address_id: int,
         user_asset_id: int,
         exclude_operation_id: int | None = None,
-    ) -> CTE:
-        stmt = select(
-            func.coalesce(
-                func.sum(
-                    case(
+    ) -> sa.CTE:
+        stmt = sa.select(
+            sa.func.coalesce(
+                sa.func.sum(
+                    sa.case(
                         (UserAssetOperation.type == AssetOperationType.PURCHASE, UserAssetOperation.quantity),
                         else_=-UserAssetOperation.quantity,
                     ),
@@ -308,47 +293,44 @@ class PostgresUserAssetOperationRepository(
     def _build_balance_ok_cte(
         type_: AssetOperationType,
         quantity: decimal.Decimal,
-        balance_check: CTE,
-    ) -> CTE:
-        return select(
-            case(
-                (
-                    type_ != AssetOperationType.SELL,
-                    literal(True),
-                ),
-                else_=(
-                    select(balance_check.c.balance).scalar_subquery() >= quantity
-                ),
-            ).label("ok"),
+        balance_check: sa.CTE,
+    ) -> sa.CTE:
+        if type_ != AssetOperationType.SELL:
+            # For PURCHASE, balance check always passes
+            return sa.select(
+                sa.literal(True).label("ok"),
+            ).cte("balance_ok")
+        return sa.select(
+            (sa.select(balance_check.c.balance).scalar_subquery() >= quantity).label("ok"),
         ).cte("balance_ok")
 
     @staticmethod
     def _build_value_columns(
         data: UserAssetOperationData,
-    ) -> list[ColumnElement[Any]]:
+    ) -> list[sa.ColumnElement[Any]]:
         return [
-            literal(data.time).label("time"),
-            cast(literal(data.type), UserAssetOperation.type.type).label("type"),
-            literal(data.user_asset_id).label("user_asset_id"),
-            literal(data.quantity).label("quantity"),
-            literal(data.unit_price).label("unit_price"),
-            literal(data.address_id).label("address_id"),
+            sa.literal(data.time).label("time"),
+            sa.cast(sa.literal(data.type), UserAssetOperation.type.type).label("type"),
+            sa.literal(data.user_asset_id).label("user_asset_id"),
+            sa.literal(data.quantity).label("quantity"),
+            sa.literal(data.unit_price).label("unit_price"),
+            sa.literal(data.address_id).label("address_id"),
         ]
 
     @staticmethod
     def _build_final_select(
-        asset_check: CTE,
-        address_check: CTE,
-        balance_check: CTE,
-        balance_ok: CTE,
-        op_cte: CTE,
-    ) -> Select:
-        return select(
-            select(asset_check.c.ok).scalar_subquery().label("asset_exists"),
-            select(address_check.c.ok).scalar_subquery().label("address_exists"),
-            select(balance_check.c.balance).scalar_subquery().label("balance"),
-            select(balance_ok.c.ok).scalar_subquery().label("balance_ok"),
-            select(op_cte.c.id).scalar_subquery().label("op_id"),
+        asset_check: sa.CTE,
+        address_check: sa.CTE,
+        balance_check: sa.CTE,
+        balance_ok: sa.CTE,
+        op_cte: sa.CTE,
+    ) -> sa.Select:
+        return sa.select(
+            sa.select(asset_check.c.ok).scalar_subquery().label("asset_exists"),
+            sa.select(address_check.c.ok).scalar_subquery().label("address_exists"),
+            sa.select(balance_check.c.balance).scalar_subquery().label("balance"),
+            sa.select(balance_ok.c.ok).scalar_subquery().label("balance_ok"),
+            sa.select(op_cte.c.id).scalar_subquery().label("op_id"),
         )
 
     async def insert_if_valid(
@@ -372,7 +354,7 @@ class PostgresUserAssetOperationRepository(
         values = self._build_value_columns(data)
 
         insert_op = (
-            insert(UserAssetOperation)
+            sa.insert(UserAssetOperation)
             .from_select(
                 [
                     UserAssetOperation.time,
@@ -382,10 +364,10 @@ class PostgresUserAssetOperationRepository(
                     UserAssetOperation.unit_price,
                     UserAssetOperation.address_id,
                 ],
-                select(*values).where(
-                    select(asset_check.c.ok).scalar_subquery(),
-                    select(address_check.c.ok).scalar_subquery(),
-                    select(balance_ok.c.ok).scalar_subquery(),
+                sa.select(*values).where(
+                    sa.select(asset_check.c.ok).scalar_subquery(),
+                    sa.select(address_check.c.ok).scalar_subquery(),
+                    sa.select(balance_ok.c.ok).scalar_subquery(),
                 ),
             )
             .returning(UserAssetOperation.id)
@@ -428,17 +410,17 @@ class PostgresUserAssetOperationRepository(
         values = self._build_value_columns(data)
 
         sq = (
-            select(*values)
+            sa.select(*values)
             .where(
-                select(asset_check.c.ok).scalar_subquery(),
-                select(address_check.c.ok).scalar_subquery(),
-                select(balance_ok.c.ok).scalar_subquery(),
+                sa.select(asset_check.c.ok).scalar_subquery(),
+                sa.select(address_check.c.ok).scalar_subquery(),
+                sa.select(balance_ok.c.ok).scalar_subquery(),
             )
             .subquery("sq")
         )
 
         update_op = (
-            update(UserAssetOperation)
+            sa.update(UserAssetOperation)
             .values(
                 {
                     UserAssetOperation.time: sq.c.time,
@@ -475,7 +457,7 @@ class PostgresUserAssetOperationRepository(
 
     async def delete_if_valid(self, _id: int, user_id: uuid.UUID) -> int | None:
         stmt = (
-            delete(UserAssetOperation)
+            sa.delete(UserAssetOperation)
             .where(
                 UserAssetOperation.id == _id,
                 UserAsset.id == UserAssetOperation.user_asset_id,
@@ -507,11 +489,11 @@ class PostgresUserAssetOperationRepository(
         """
         # CTE with aggregated metrics from operations
         calc = (
-            select(
+            sa.select(
                 # total_invested: PURCHASE adds summ, SELL subtracts summ
-                func.coalesce(
-                    func.sum(
-                        case(
+                sa.func.coalesce(
+                    sa.func.sum(
+                        sa.case(
                             (UserAssetOperation.type == AssetOperationType.PURCHASE, UserAssetOperation.summ),
                             else_=-UserAssetOperation.summ,
                         ),
@@ -519,9 +501,9 @@ class PostgresUserAssetOperationRepository(
                     decimal.Decimal(0),
                 ).label('total_invested'),
                 # net_quantity: PURCHASE adds qty, SELL subtracts qty
-                func.coalesce(
-                    func.sum(
-                        case(
+                sa.func.coalesce(
+                    sa.func.sum(
+                        sa.case(
                             (
                                 UserAssetOperation.type == AssetOperationType.PURCHASE,
                                 UserAssetOperation.quantity,
@@ -532,11 +514,11 @@ class PostgresUserAssetOperationRepository(
                     decimal.Decimal(0),
                 ).label('net_quantity'),
                 # avg_purchase_price: total spent on purchases / total purchased qty
-                func.coalesce(
-                    func.sum(UserAssetOperation.summ).filter(
+                sa.func.coalesce(
+                    sa.func.sum(UserAssetOperation.summ).filter(
                         UserAssetOperation.type == AssetOperationType.PURCHASE,
-                    ) / func.nullif(
-                        func.sum(UserAssetOperation.quantity).filter(
+                    ) / sa.func.nullif(
+                        sa.func.sum(UserAssetOperation.quantity).filter(
                             UserAssetOperation.type == AssetOperationType.PURCHASE,
                         ),
                         0,
@@ -544,11 +526,11 @@ class PostgresUserAssetOperationRepository(
                     decimal.Decimal(0),
                 ).label('avg_purchase_price'),
                 # avg_sell_price: total revenue from sells / total sold qty
-                func.coalesce(
-                    func.sum(UserAssetOperation.summ).filter(
+                sa.func.coalesce(
+                    sa.func.sum(UserAssetOperation.summ).filter(
                         UserAssetOperation.type == AssetOperationType.SELL,
-                    ) / func.nullif(
-                        func.sum(UserAssetOperation.quantity).filter(
+                    ) / sa.func.nullif(
+                        sa.func.sum(UserAssetOperation.quantity).filter(
                             UserAssetOperation.type == AssetOperationType.SELL,
                         ),
                         0,
@@ -556,10 +538,10 @@ class PostgresUserAssetOperationRepository(
                     decimal.Decimal(0),
                 ).label('avg_sell_price'),
                 # unique_addresses_cnt: number of distinct addresses used
-                func.count(UserAssetOperation.address_id.distinct()).label('unique_addresses_cnt'),
+                sa.func.count(UserAssetOperation.address_id.distinct()).label('unique_addresses_cnt'),
                 # first_trade_at / last_trade_at: time range of operations
-                func.min(UserAssetOperation.time).label('first_trade_at'),
-                func.max(UserAssetOperation.time).label('last_trade_at'),
+                sa.func.min(UserAssetOperation.time).label('first_trade_at'),
+                sa.func.max(UserAssetOperation.time).label('last_trade_at'),
             )
             .where(UserAssetOperation.user_asset_id == user_asset_id)
         )
@@ -568,13 +550,13 @@ class PostgresUserAssetOperationRepository(
 
         # Final SELECT: combine calc CTE with asset info and current price
         stmt = (
-            select(
+            sa.select(
                 calc.c.total_invested,
                 calc.c.net_quantity,
                 # break_even_price: price at which selling all remaining coins covers investment
-                (calc.c.total_invested / func.nullif(calc.c.net_quantity, 0)).label('break_even_price'),
+                (calc.c.total_invested / sa.func.nullif(calc.c.net_quantity, 0)).label('break_even_price'),
                 # price_recover_50pct: price at which selling 50% covers all investment
-                (2 * calc.c.total_invested / func.nullif(calc.c.net_quantity, 0)).label('price_recover_50pct'),
+                (2 * calc.c.total_invested / sa.func.nullif(calc.c.net_quantity, 0)).label('price_recover_50pct'),
                 AssetTickerPrice.price.label('current_price'),
                 # unrealized_pnl: current value - total invested
                 (
@@ -583,7 +565,7 @@ class PostgresUserAssetOperationRepository(
                 # roi_pct: (current_value / total_invested - 1) * 100
                 (
                     (
-                        calc.c.net_quantity * AssetTickerPrice.price / func.nullif(calc.c.total_invested, 0)
+                        calc.c.net_quantity * AssetTickerPrice.price / sa.func.nullif(calc.c.total_invested, 0)
                         - 1
                     ) * 100
                 ).label('roi_pct'),
@@ -595,7 +577,7 @@ class PostgresUserAssetOperationRepository(
                 calc.c.first_trade_at,
                 calc.c.last_trade_at,
                 # days_in_position: now - first trade
-                func.extract('day', func.now() - calc.c.first_trade_at).label('days_in_position'),
+                sa.func.extract('day', sa.func.now() - calc.c.first_trade_at).label('days_in_position'),
             )
             .select_from(calc)
             .join(UserAsset, UserAsset.id == user_asset_id)
@@ -644,8 +626,8 @@ class PostgresUserAssetOperationRepository(
         # inside aggregate expressions. The outer query then applies
         # array_agg(DISTINCT ...) on the result of this subquery.
         inner_unnest = (
-            select(
-                func.unnest(UserAssetAddress.wallet_name).label("w"),
+            sa.select(
+                sa.func.unnest(UserAssetAddress.wallet_name).label("w"),
             )
             .select_from(UserAssetOperation)
             .join(UserAssetAddress)
@@ -654,7 +636,7 @@ class PostgresUserAssetOperationRepository(
             .subquery()
         )
         wallet_names_subq = (
-            select(func.array_agg(func.distinct(inner_unnest.c.w)))
+            sa.select(sa.func.array_agg(sa.func.distinct(inner_unnest.c.w)))
             .select_from(inner_unnest)
             .scalar_subquery()
         )
@@ -665,11 +647,11 @@ class PostgresUserAssetOperationRepository(
             where_conditions.append(UserAsset.ticker_id > cursor)
 
         stmt = (
-            select(
+            sa.select(
                 # Current token quantity: PURCHASE adds, SELL subtracts
-                func.coalesce(
-                    func.sum(
-                        case(
+                sa.func.coalesce(
+                    sa.func.sum(
+                        sa.case(
                             (UserAssetOperation.type == AssetOperationType.PURCHASE, UserAssetOperation.quantity),
                             else_=-UserAssetOperation.quantity,
                         ),
@@ -677,27 +659,27 @@ class PostgresUserAssetOperationRepository(
                     decimal.Decimal(0),
                 ).label("coin_qty_now"),
                 # Number of unique addresses used for this token
-                func.count(UserAssetOperation.address_id.distinct()).label("unique_addresses_cnt"),
+                sa.func.count(UserAssetOperation.address_id.distinct()).label("unique_addresses_cnt"),
                 # Total USDT spent on purchases
-                func.coalesce(
-                    func.sum(UserAssetOperation.summ).filter(UserAssetOperation.type == AssetOperationType.PURCHASE),
+                sa.func.coalesce(
+                    sa.func.sum(UserAssetOperation.summ).filter(UserAssetOperation.type == AssetOperationType.PURCHASE),
                     decimal.Decimal(0),
                 ).label("purchased_for_usdt"),
                 # Total USDT received from sells
-                func.coalesce(
-                    func.sum(UserAssetOperation.summ).filter(UserAssetOperation.type == AssetOperationType.SELL),
+                sa.func.coalesce(
+                    sa.func.sum(UserAssetOperation.summ).filter(UserAssetOperation.type == AssetOperationType.SELL),
                     decimal.Decimal(0),
                 ).label("sold_for_usdt"),
                 # How many purchase/sell operations
-                func.count("*").filter(UserAssetOperation.type == AssetOperationType.PURCHASE).label("num_purchases"),
-                func.count("*").filter(UserAssetOperation.type == AssetOperationType.SELL).label("num_sells"),
+                sa.func.count("*").filter(UserAssetOperation.type == AssetOperationType.PURCHASE).label("num_purchases"),
+                sa.func.count("*").filter(UserAssetOperation.type == AssetOperationType.SELL).label("num_sells"),
                 UserAsset.name,
                 UserAsset.ticker_id,
                 UserAsset.id,
                 # Scalar correlated subquery for wallet names
-                func.coalesce(
+                sa.func.coalesce(
                     wallet_names_subq,
-                    literal([]),
+                    sa.literal([]),
                 ).label("wallet_names"),
             )
             .select_from(UserAssetOperation)
@@ -734,7 +716,7 @@ class PostgresUserAssetOperationRepository(
         user_asset_id: int,
         user_id: uuid.UUID,
         filters: UserAssetOperationsFilter,
-    ) -> Select:
+    ) -> sa.Select:
         """Build a SELECT statement for user asset operations with address details.
 
         Corresponding SQL:
@@ -753,16 +735,16 @@ class PostgresUserAssetOperationRepository(
               AND uaa.user_id = :user_id
             ORDER BY uao.time DESC
         """
-        stmt = select(
-                self.model.id,
-                self.model.type,
-                self.model.quantity,
-                self.model.unit_price,
-                self.model.summ,
-                self.model.time,
-                UserAssetAddress.wallet_name,
-                UserAssetAddress.public_key,
-            ).select_from(
+        stmt = sa.select(  # type: ignore
+            self.model.id,
+            self.model.type,
+            self.model.quantity,
+            self.model.unit_price,
+            self.model.summ,
+            self.model.time,
+            UserAssetAddress.wallet_name,
+            UserAssetAddress.public_key,
+        ).select_from(
                 self.model,
             ).join(
                 self.model.address,
@@ -770,13 +752,13 @@ class PostgresUserAssetOperationRepository(
                 self.model.user_asset_id == user_asset_id,
                 UserAssetAddress.user_id == user_id,
             ).order_by(
-                self.model.time.desc(),
+                self.model.time.desc(),  # type: ignore
             )
 
         return self.apply_filters(stmt, filters)
 
 
-    async def get_by_notes(
+    async def get_by_notes(  # type: ignore
         self,
         user_id: uuid.UUID,
         op_filter: UserAssetOperationsFilter,
@@ -788,44 +770,44 @@ class PostgresUserAssetOperationRepository(
         #  words in each search term are connected with AND logic (new bicycle = new and bicycle)
         #  multiple search terms are joined with OR logic ((new and bicycle) or (old and motorcycle)
         search_criteria = functools.reduce(
-            or_,
-            (search.match_all(Note.note, note, distance=distance) for note in notes),
+            sa.or_,
+            (search.match_all(Note.note, note, distance=distance) for note in notes),  # type: ignore
         )
 
         all_notes_cte = (
-            select(
+            sa.select(
                 notes_association_table.c.op_id,
-                func.jsonb_agg(
-                    func.jsonb_build_object(
+                sa.func.jsonb_agg(
+                    sa.func.jsonb_build_object(
                         'id', Note.id,
                         'note', Note.note,
                         'created_at', Note.created_at,
-                        'snippet', pdb.snippet(Note.note, max_num_chars=75),
-                        'score', pdb.score(Note.id),
+                        'snippet', pdb.snippet(Note.note, max_num_chars=75),  # type: ignore
+                        'score', pdb.score(Note.id),  # type: ignore
                     ),
                 ).label('notes'),
                 #  this is for future sorting by score
-                (func.max(pdb.score(Note.id)) + func.ln(func.count('*'))).label('score'),
+                (sa.func.max(pdb.score(Note.id)) + sa.func.ln(sa.func.count('*'))).label('score'),  # type: ignore
             )
             .select_from(
                 notes_association_table,
             )
             .join(
                 Note,
-                and_(
+                sa.and_(
                     Note.id == notes_association_table.c.note_id,
                     search_criteria,
                 )
             )
-            .group_by(
-                notes_association_table.c.op_id,
-            ).cte('all_notes')
         )
 
-        # all_notes_cte = self.apply_filters(all_notes_cte, note_filter).cte('all_notes')
+        all_notes_cte = self.apply_filters(all_notes_cte, note_filter, Note).group_by(  # type: ignore
+                notes_association_table.c.op_id,
+            ).cte('all_notes')
+
 
         stmt = (
-            select(
+            sa.select(  # type: ignore
                 self.model,
                 all_notes_cte.c.score,
                 all_notes_cte.c.notes,
@@ -835,7 +817,7 @@ class PostgresUserAssetOperationRepository(
             )
             .join(
                 UserAsset,
-                and_(
+                sa.and_(
                     UserAsset.id == self.model.user_asset_id,
                     UserAsset.user_id == user_id,
                 )
@@ -846,7 +828,7 @@ class PostgresUserAssetOperationRepository(
             )
             .order_by(
                 all_notes_cte.c.score.desc().nulls_last(),
-                self.model.time.desc(),
+                self.model.time.desc(),  # type: ignore
             )
         )
         stmt = self.apply_filters(stmt, op_filter)

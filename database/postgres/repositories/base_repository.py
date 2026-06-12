@@ -21,9 +21,12 @@ class PostgresBaseRepository[T, bound=Base]:
     def __init__(self, db: DB = _db) -> None:
         self.db = db
 
-    def apply_filters[S: Executable, F: FilterBase](self, stmt: S, filters: F) -> S:
+    def apply_filters[S: Executable, F: FilterBase](self, stmt: S, filters: F, model: T | None = None) -> S:
+        model = model or self.model
+
         for alchemy_filter in filters.alchemy_filters:
-            stmt = alchemy_filter.append_to_statement(stmt, self.model)
+            stmt = alchemy_filter.append_to_statement(stmt, model)
+
         return stmt
 
     async def get_by_field_names(self, **conditions) -> T:
