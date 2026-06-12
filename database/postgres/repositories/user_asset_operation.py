@@ -3,12 +3,14 @@ import functools
 import operator
 import uuid
 from functools import cache
-from typing import Any
+from typing import Any, Callable
 
 import sqlalchemy as sa
 from paradedb.sqlalchemy import pdb, search
+from sqlalchemy import ColumnElement
+from sqlalchemy.orm import InstrumentedAttribute
 
-from api.notes.domain import NoteOut
+from api.notes.domain import NoteOut, SearchMethod
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     DbCRUDOperationReturnData,
@@ -758,17 +760,27 @@ class PostgresUserAssetOperationRepository(
         return self.apply_filters(stmt, filters)
 
 
-    async def get_by_notes(  # type: ignore
-        self,
-        search_args: UserAssetOperationSearchByNoteInputArgs
-    ) -> list[UserAssetOperationWithNotesOut]:
+    @staticmethod
+    def _build_search_criteria(search_args: UserAssetOperationSearchByNoteInputArgs, ) -> ColumnElement[bool]:
+        match search_args.search_method:
+            case SearchMethod.MATCH:
+                op = search.match_all
+                kwargs = dict(distance=search_args.distance)
+            case SearchMethod.PHRASE:
+                op = search.phrase
+                kwargs = dict(slop=search_args.distance)
+            case _:
+                raise NotImplemented('This search method has not been implemented yet...')
 
         #  words in each search term are connected with AND logic (new bicycle = new and bicycle)
         #  multiple search terms are joined with OR logic ((new and bicycle) or (old and motorcycle)
-        search_criteria = functools.reduce(
-            sa.or_,
-            (search.match_all(Note.note, note, distance=search_args.distance) for note in search_args.notes),  # type: ignore
-        )
+        return functools.reduce(sa.or_,(op(Note.note, note.lower(), **kwargs) for note in search_args.notes))  # type: ignore
+
+
+    async def get_by_notes(  # type: ignore
+        self,
+        search_args: UserAssetOperationSearchByNoteInputArgs,
+    ) -> list[UserAssetOperationWithNotesOut]:
 
         all_notes_cte = (
             sa.select(
@@ -792,14 +804,18 @@ class PostgresUserAssetOperationRepository(
                 Note,
                 sa.and_(
                     Note.id == notes_association_table.c.note_id,
-                    search_criteria,
+                    self._build_search_criteria(search_args),
                 )
             )
         )
 
-        all_notes_cte = self.apply_filters(all_notes_cte, search_args.note_filter, Note).group_by(  # type: ignore
-                notes_association_table.c.op_id,
-            ).cte('all_notes')
+        all_notes_cte = self.apply_filters(
+            all_notes_cte,
+            search_args.note_filter,
+            Note,
+        ).group_by(  # type: ignore
+            notes_association_table.c.op_id,
+        ).cte('all_notes')
 
 
         stmt = (

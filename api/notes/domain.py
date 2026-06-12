@@ -13,5 +13,5 @@ class NoteOut:
 
 
 class SearchMethod(enum.StrEnum):
-    MATCH = 'MATCH'
-    PHRASE = 'PHRASE'
+    MATCH = 'match'
+    PHRASE = 'phrase'
