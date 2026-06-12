@@ -1,11 +1,13 @@
 import uuid
 
-from api.notes.domain import SearchMethod
+from api.pagination_domain import PaginatedPage
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     DbCRUDOperationReturnData,
     UserAssetOperationsFilter,
-    NettoPositionData, UserAssetOperationWithNotesOut, NoteFilter, UserAssetOperationSearchByNoteInputArgs,
+    NettoPositionData,
+    UserAssetOperationWithNotesOut,
+    UserAssetOperationSearchByNoteInputArgs,
 )
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.exceptions import (
@@ -90,9 +92,9 @@ class UserAssetOperationsByNotesUseCase:
     @staticmethod
     async def execute(
         search_args: UserAssetOperationSearchByNoteInputArgs,
-        cursor: int | None,
+        cursor: float | None,
         results_per_page: int,
-    ) -> list[UserAssetOperationWithNotesOut]:
+    ) -> PaginatedPage[UserAssetOperationWithNotesOut]:
         return await PostgresUserAssetOperationRepository().get_by_notes(
             search_args,
             cursor,

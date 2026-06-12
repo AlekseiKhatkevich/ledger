@@ -780,7 +780,7 @@ class PostgresUserAssetOperationRepository(
     async def get_by_notes(  # type: ignore
         self,
         search_args: UserAssetOperationSearchByNoteInputArgs,
-        cursor: int | None,
+        cursor: float | None,
         results_per_page: int,
     ) -> PaginatedPage[UserAssetOperationWithNotesOut]:
 
@@ -854,14 +854,7 @@ class PostgresUserAssetOperationRepository(
         async with self.db.session() as session:
             rows = await session.execute(stmt)
 
-        all_items = rows.all()
-        if len(all_items) > results_per_page:
-                has_more = True
-                all_items = all_items[:results_per_page]
-        else:
-             has_more = False
-
-        last_score = all_items[-1][1] if all_items else None
+        all_items, has_more, new_cursor = self.paginate_items(rows.all(), results_per_page, 'score')
 
         items =  [
             UserAssetOperationWithNotesOut(
@@ -872,6 +865,6 @@ class PostgresUserAssetOperationRepository(
             for model_instance, score, notes in all_items
         ]
 
-        return PaginatedPage(items, cursor=last_score, has_more=has_more)
+        return PaginatedPage(items, cursor=new_cursor, has_more=has_more)
 
 # todo citus

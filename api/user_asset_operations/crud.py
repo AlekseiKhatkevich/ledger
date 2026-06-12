@@ -111,7 +111,7 @@ class UserAssetAddressOperationController(Controller):
             notes: FromQuery[list[str]],
             search_method: FromQuery[SearchMethod] = SearchMethod.MATCH,
             distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0,
-    )-> AdvancedCursorPagination[int, list[UserAssetOperationWithNotesOut]]:
+    )-> AdvancedCursorPagination[float, list[UserAssetOperationWithNotesOut]]:
         search_args = UserAssetOperationSearchByNoteInputArgs(
                     user_id=kc_user.id,
                     notes=notes,
@@ -119,25 +119,10 @@ class UserAssetAddressOperationController(Controller):
                     note_filter=note_filter,
                     distance=distance,
                     search_method=search_method,
-                    # pagination_params=pagination_params,
                 )
 
         paginator = UserAssetOperationsByNotesPaginator(search_args)
         return await paginator(
-            cursor=pagination_params.cursor,
+            cursor=float(pagination_params.cursor),
             results_per_page=pagination_params.results_per_page,
         )
-
-
-
-    # ) -> list[UserAssetOperationWithNotesOut]:
-    #     search_args = UserAssetOperationSearchByNoteInputArgs(
-    #         user_id=kc_user.id,
-    #         notes=notes,
-    #         op_filter=op_filter,
-    #         note_filter=note_filter,
-    #         distance=distance,
-    #         search_method=search_method,
-    #          pagination_params=pagination_params
-    #     )
-    #     return await UserAssetOperationsByNotesUseCase.execute(search_args)

@@ -1,5 +1,5 @@
 import abc
-from typing import Iterable
+from typing import Iterable, Any
 from typing import Protocol
 
 from advanced_alchemy.filters import StatementFilter
@@ -47,3 +47,19 @@ class PostgresBaseRepository[T, bound=Base]:
         async with self.db.session() as session:
             res = await session.scalars(select(self.model))
             return res.all()
+
+    @staticmethod
+    def paginate_items(
+            items: list,
+            results_per_page: int,
+            cursor_field: str,
+    ) -> tuple[list, bool, Any | None]:
+        if len(items) > results_per_page:
+            has_more = True
+            items = items[:results_per_page]
+        else:
+            has_more = False
+
+        new_cursor = getattr(items[-1], cursor_field) if items else None
+
+        return items, has_more, new_cursor
