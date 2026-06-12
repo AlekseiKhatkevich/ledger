@@ -1,4 +1,5 @@
 import datetime
+import enum
 from dataclasses import dataclass
 
 
@@ -9,3 +10,8 @@ class NoteOut:
     created_at: datetime.datetime
     snippet: str
     score: float
+
+
+class SearchMethod(enum.StrEnum):
+    MATCH = 'MATCH'
+    PHRASE = 'PHRASE'

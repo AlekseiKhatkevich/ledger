@@ -8,7 +8,7 @@ from advanced_alchemy import filters as sa_filters
 from advanced_alchemy.filters import StatementFilter
 from litestar.dto import DTOConfig, MsgspecDTO
 
-from api.notes.domain import NoteOut
+from api.notes.domain import NoteOut, SearchMethod
 from logic.db_models import AssetOperationType
 
 
@@ -151,3 +151,13 @@ class UserAssetOperationWithNotesOut:
     address_id: int
     score:  float
     notes: list[NoteOut]
+
+
+@dataclass(frozen=True)
+class UserAssetOperationSearchByNoteInputArgs:
+    user_id: uuid.UUID
+    notes: str
+    op_filter: UserAssetOperationsFilter
+    note_filter: NoteFilter
+    search_method: SearchMethod
+    distance: int

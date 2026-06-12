@@ -14,7 +14,7 @@ from api.user_asset_operations.domain import (
     DbCRUDOperationReturnData,
     UserAssetOperationsFilter,
     NettoPositionData,
-    UserAssetOperationWithNotesOut, NoteFilter,
+    UserAssetOperationWithNotesOut, UserAssetOperationSearchByNoteInputArgs,
 )
 from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
@@ -760,18 +760,14 @@ class PostgresUserAssetOperationRepository(
 
     async def get_by_notes(  # type: ignore
         self,
-        user_id: uuid.UUID,
-        op_filter: UserAssetOperationsFilter,
-        notes: list[str],
-        note_filter: NoteFilter,
-        distance: int,
+        search_args: UserAssetOperationSearchByNoteInputArgs
     ) -> list[UserAssetOperationWithNotesOut]:
 
         #  words in each search term are connected with AND logic (new bicycle = new and bicycle)
         #  multiple search terms are joined with OR logic ((new and bicycle) or (old and motorcycle)
         search_criteria = functools.reduce(
             sa.or_,
-            (search.match_all(Note.note, note, distance=distance) for note in notes),  # type: ignore
+            (search.match_all(Note.note, note, distance=search_args.distance) for note in search_args.notes),  # type: ignore
         )
 
         all_notes_cte = (
@@ -801,7 +797,7 @@ class PostgresUserAssetOperationRepository(
             )
         )
 
-        all_notes_cte = self.apply_filters(all_notes_cte, note_filter, Note).group_by(  # type: ignore
+        all_notes_cte = self.apply_filters(all_notes_cte, search_args.note_filter, Note).group_by(  # type: ignore
                 notes_association_table.c.op_id,
             ).cte('all_notes')
 
@@ -819,7 +815,7 @@ class PostgresUserAssetOperationRepository(
                 UserAsset,
                 sa.and_(
                     UserAsset.id == self.model.user_asset_id,
-                    UserAsset.user_id == user_id,
+                    UserAsset.user_id == search_args.user_id,
                 )
             )
             .join(
@@ -831,7 +827,7 @@ class PostgresUserAssetOperationRepository(
                 self.model.time.desc(),  # type: ignore
             )
         )
-        stmt = self.apply_filters(stmt, op_filter)
+        stmt = self.apply_filters(stmt, search_args.op_filter)
 
         async with self.db.session() as session:
             rows = await session.execute(stmt)

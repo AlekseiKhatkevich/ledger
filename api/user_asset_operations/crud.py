@@ -7,6 +7,7 @@ from litestar.params import FromPath, FromQuery, QueryParameter
 
 from api.dependencies import operations_filter, note_filter
 from api.exceptions_handling import base_error_handler_factory
+from api.notes.domain import SearchMethod
 from api.user_asset_operations.domain import (
     UserAssetOperationData,
     UserAssetOperationDTOOut,
@@ -15,7 +16,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationsFilter,
     NettoPositionData,
     UserAssetOperationWithNotesOut,
-    NoteFilter,
+    NoteFilter, UserAssetOperationSearchByNoteInputArgs,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -102,13 +103,15 @@ class UserAssetAddressOperationController(Controller):
             op_filter: UserAssetOperationsFilter,
             note_filter: NoteFilter,
             notes: FromQuery[list[str]],
+            search_method: FromQuery[SearchMethod] = SearchMethod.MATCH,
             distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0
     ) -> list[UserAssetOperationWithNotesOut]:
-        return await UserAssetOperationsByNotesUseCase.execute(
+        search_args = UserAssetOperationSearchByNoteInputArgs(
             user_id=kc_user.id,
             notes=notes,
             op_filter=op_filter,
             note_filter=note_filter,
             distance=distance,
+            search_method=search_method,
         )
-
+        return await UserAssetOperationsByNotesUseCase.execute(search_args)

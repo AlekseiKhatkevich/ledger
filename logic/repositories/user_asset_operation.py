@@ -1,11 +1,10 @@
 import abc
-import uuid
 from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
     from logic.db_models import UserAssetOperation
-    from api.user_asset_operations.domain import UserAssetOperationsFilter, NoteFilter
+    from api.user_asset_operations.domain import UserAssetOperationSearchByNoteInputArgs
 
 
 class BaseUserAssetOperationRepository(abc.ABC):
@@ -17,11 +16,7 @@ class BaseUserAssetOperationRepository(abc.ABC):
     @abc.abstractmethod
     async def get_by_notes(
         self,
-        user_id: uuid.UUID,
-        op_filter: UserAssetOperationsFilter,
-        notes: str,
-        note_filter: NoteFilter,
-        distance: int,
+        search_args: UserAssetOperationSearchByNoteInputArgs
     ) -> list[tuple['UserAssetOperation', list[dict]]]:
         """Get operations filtered by note text."""
         pass
