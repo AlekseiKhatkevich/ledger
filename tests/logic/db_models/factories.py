@@ -12,6 +12,7 @@ from logic.db_models import (
     UserAsset,
     UserAssetOperation,
     AssetTickerPrice,
+    Note,
 )
 
 
@@ -74,3 +75,9 @@ class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
         return datetime.datetime.now(tz=datetime.UTC) - \
                  datetime.timedelta(minutes=constants.ASSET_PRICE_CONSIDER_STALE_AFTER / 2)
 
+
+class NotesFactory(CustomFactory[Note]):
+
+    @classmethod
+    def note(cls):
+        return cls.__faker__.unique.text(max_nb_chars=500)

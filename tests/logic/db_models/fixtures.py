@@ -20,6 +20,7 @@ from tests.logic.db_models.factories import (
     UserAssetFactory,
     UserAssetOperationFactory,
     AssetTickerPriceFactory,
+    NotesFactory,
 )
 from user.domain import User
 
@@ -31,6 +32,7 @@ register_fixture(AssetTickerFactory)
 register_fixture(UserAssetFactory)
 register_fixture(UserAssetOperationFactory)
 register_fixture(AssetTickerPriceFactory)
+register_fixture(NotesFactory)
 
 
 @pytest.fixture(scope='session')
@@ -99,11 +101,19 @@ async def user_asset_operation_in_db(
         user_asset_operation_factory: UserAssetOperationFactory,
         user_asset_in_db: UserAsset,
         user_asset_address_in_db:UserAssetAddress,
+        notes_factory: NotesFactory,
+        db,
 ) -> UserAssetOperation:
-    return await user_asset_operation_factory.create_async(
+    note = notes_factory.build()
+    op = user_asset_operation_factory.build(
         user_asset_id=user_asset_in_db.id,
         address_id=user_asset_address_in_db.id,
     )
+    op.notes.append(note)
+    async with db.session() as session:
+        session.add_all([op, note])
+        await session.commit()
+    return op
 
 
 @pytest.fixture

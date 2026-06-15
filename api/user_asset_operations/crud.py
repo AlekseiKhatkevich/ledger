@@ -127,4 +127,3 @@ class UserAssetAddressOperationController(Controller):
             cursor=cursor,
             results_per_page=pagination_params.results_per_page,
         )
-# https://docs.litestar.dev/2/usage/dependency-injection.html#marking-dependencies
