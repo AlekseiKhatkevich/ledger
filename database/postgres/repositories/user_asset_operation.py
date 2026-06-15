@@ -763,8 +763,11 @@ class PostgresUserAssetOperationRepository(
     @staticmethod
     def _build_search_criteria(search_args: UserAssetOperationSearchByNoteInputArgs, ) -> ColumnElement[bool]:
         match search_args.search_method:
-            case SearchMethod.MATCH:
+            case SearchMethod.MATCH_ALL:
                 op = search.match_all
+                kwargs = dict(distance=search_args.distance)
+            case SearchMethod.MATCH_ANY:
+                op = search.match_any
                 kwargs = dict(distance=search_args.distance)
             case SearchMethod.PHRASE:
                 op = search.phrase

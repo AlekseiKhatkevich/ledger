@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from litestar import Controller, post, put, delete, get
-from litestar.di import Provide
+from litestar.di import Provide, NamedDependency
 from litestar.dto import DTOData
 from litestar.params import FromPath, FromQuery, QueryParameter
 
@@ -93,7 +93,7 @@ class UserAssetAddressOperationController(Controller):
         return await UserAssetOperationNettoPositionUseCase().execute(user_asset_id, kc_user.sub, op_filter)
 
     # todo POST notes create
-    # todo пагинация
+    # todo векторный поиск
     # todo More like this new endpoint?
     @get(
         'notes',
@@ -105,11 +105,12 @@ class UserAssetAddressOperationController(Controller):
     async def notes(
             self,
             kc_user: User,
-            pagination_params: PaginationParams,
+            pagination_params: NamedDependency[PaginationParams[float]],
             op_filter: UserAssetOperationsFilter,
             note_filter: NoteFilter,
             notes: FromQuery[list[str]],
-            search_method: FromQuery[SearchMethod] = SearchMethod.MATCH,
+            cursor: FromQuery[float | None] = None,
+            search_method: FromQuery[SearchMethod] = SearchMethod.MATCH_ALL,
             distance: Annotated[int, QueryParameter(ge=0, le=2)] = 0,
     )-> AdvancedCursorPagination[float, list[UserAssetOperationWithNotesOut]]:
         search_args = UserAssetOperationSearchByNoteInputArgs(
@@ -123,6 +124,7 @@ class UserAssetAddressOperationController(Controller):
 
         paginator = UserAssetOperationsByNotesPaginator(search_args)
         return await paginator(
-            cursor=float(pagination_params.cursor),
+            cursor=cursor,
             results_per_page=pagination_params.results_per_page,
         )
+# https://docs.litestar.dev/2/usage/dependency-injection.html#marking-dependencies

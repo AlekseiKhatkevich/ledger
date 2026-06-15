@@ -33,7 +33,7 @@ def note_filter(
     return NoteFilter(note_time__gte=note_time__gte, note_time__lte=note_time__lte)
 
 def pagination_params(
-    cursor: FromQuery[int | str | float | None] = None,
-    results_per_page: int = PAGE_SIZE_PARAMETER,
+    cursor: FromQuery[ str | None] = None,
+    results_per_page: FromQuery[int] = PAGE_SIZE_PARAMETER,
 ) -> PaginationParams:
     return PaginationParams(cursor, results_per_page)
