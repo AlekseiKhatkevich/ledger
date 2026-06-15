@@ -1,10 +1,12 @@
+import datetime
 import decimal
+import random
 
 import pytest
 from sqlalchemy import func, select
 
 from api.notes.domain import SearchMethod
-from api.user_asset_operations.domain import DbCRUDOperationReturnData
+from api.user_asset_operations.domain import DbCRUDOperationReturnData, UserAssetOperationsFilter, NoteFilter
 from api.user_assets.domain import UserAssetAggregatedPage
 from database.postgres.connection import db
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
@@ -649,3 +651,73 @@ def test_build_search_criteria(
     for part, note in zip(sql.split('OR'), search_args.notes):
         assert sql_op in part
         assert f"'{note}'::{relaxer}({search_args.distance})".lower() in part
+
+
+@pytest.fixture
+def op_with_a_note(user_asset_operation_in_db, notes_factory, db):
+    async def _inner(note_text: str):
+        note = notes_factory.build(note=note_text)
+        user_asset_operation_in_db.notes = [note]
+        async with db.session() as session:
+            session.add_all([note, user_asset_operation_in_db])
+            await session.commit()
+        return user_asset_operation_in_db
+    return _inner
+
+@pytest.mark.parametrize(
+    ['search_method', 'search_therms',],
+    [
+        (SearchMethod.MATCH_ALL, ['строка', 'ведь'],),
+        (SearchMethod.MATCH_ANY, ['строка', 'ведь'],),
+        (SearchMethod.PHRASE, ['должна найтись', ],),
+    ]
+)
+async def test_get_by_notes_positive(
+        search_method,
+        search_therms,
+        user_asset_operations_in_db_many,
+        user_asset_operation_search_by_note_input_args_factory,
+        jwt_user,
+        pg_user_asset_operation_repo,
+        op_with_a_note,
+):
+    note = 'Эта строка обязательно должна найтись ведь иначе и не может быть.'
+    target_op = await op_with_a_note(note)
+
+    search_args = user_asset_operation_search_by_note_input_args_factory.build(
+        user_id=jwt_user.id,
+        notes=search_therms,
+        op_filter=UserAssetOperationsFilter(),
+        note_filter=NoteFilter(),
+        search_method=search_method,
+        distance=0,
+    )
+    result = await pg_user_asset_operation_repo.get_by_notes(
+        search_args=search_args,
+        cursor=None,
+        results_per_page=100,
+    )
+
+    assert result.cursor is not None
+    assert not result.has_more
+    assert len(result.items) == 1
+
+    item = result.items[0]
+    assert item.score == result.cursor
+    assert item.id == target_op.id
+    assert item.time == target_op.time
+    assert item.type == target_op.type
+    assert item.user_asset_id == target_op.user_asset_id
+    assert item.quantity == target_op.quantity
+    assert item.unit_price == target_op.unit_price
+    assert item.summ == target_op.summ
+    assert item.address_id == target_op.address_id
+
+    assert len(item.notes) == 1
+    note = item.notes[0]
+    target_op_note = target_op.notes[0]
+    assert note.id == target_op_note.id
+    assert note.note == target_op_note.note
+    assert datetime.datetime.fromisoformat(note.created_at) == target_op_note.created_at
+    assert note.snippet is not None
+    assert note.score == pytest.approx(result.cursor)

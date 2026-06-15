@@ -81,7 +81,7 @@ class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
 
 
 class NotesFactory(CustomFactory[Note]):
-
-    @classmethod
-    def note(cls):
-        return cls.__faker__.unique.text(max_nb_chars=500)
+    pass
+    # @classmethod
+    # def note(cls):
+    #     return cls.__faker__.unique.text(max_nb_chars=500)

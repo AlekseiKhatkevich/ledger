@@ -7,7 +7,7 @@ from dataclasses import dataclass
 class NoteOut:
     id: int
     note: str
-    created_at: datetime.datetime
+    created_at: str
     snippet: str | None
     score: float
 

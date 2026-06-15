@@ -23,6 +23,7 @@ from tests.logic.db_models.factories import (
     NotesFactory,
 )
 from user.domain import User
+from logic.db_models import AssetOperationType
 
 if TYPE_CHECKING:
     from logic.db_models import (
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
         AssetTicker,
         UserAsset,
         UserAssetOperation,
-        AssetOperationType,
         AssetTickerPrice,
         Note,
     )
@@ -175,6 +175,7 @@ async def user_asset_operations_in_db_many(
         user_asset_operation_factory: UserAssetOperationFactory,
         user_asset_address_in_db_many: list[UserAssetAddress],
         pg_user_asset_operation_repo: PostgresUserAssetOperationRepository,
+        notes_factory,
 ) -> list[UserAssetOperation] :
     operations = []
     for user_asset, address in zip(user_asset_in_db_many, user_asset_address_in_db_many):
@@ -193,6 +194,8 @@ async def user_asset_operations_in_db_many(
                 address_id=address.id,
             )
         )
+    for operation in operations:
+        operation.notes.append(notes_factory.build())
     return await pg_user_asset_operation_repo.add_all(operations)
 
 
