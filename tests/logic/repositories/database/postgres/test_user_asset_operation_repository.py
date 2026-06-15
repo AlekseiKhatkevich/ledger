@@ -1,6 +1,8 @@
 import datetime
 import decimal
+import operator
 import random
+import uuid
 
 import pytest
 from sqlalchemy import func, select
@@ -721,3 +723,62 @@ async def test_get_by_notes_positive(
     assert datetime.datetime.fromisoformat(note.created_at) == target_op_note.created_at
     assert note.snippet is not None
     assert note.score == pytest.approx(result.cursor)
+
+async def test_get_by_notes_negative_wrong_user(
+        user_asset_operations_in_db_many,
+        pg_user_asset_operation_repo,
+        user_asset_operation_search_by_note_input_args_factory,
+        jwt_user,
+        op_with_a_note,
+):
+    note = 'Эта строка обязательно должна найтись ведь иначе и не может быть.'
+    await op_with_a_note(note)
+
+    search_args = user_asset_operation_search_by_note_input_args_factory.build(
+        user_id=uuid.uuid7(),
+        notes=['обязательно', ],
+        op_filter=UserAssetOperationsFilter(),
+        note_filter=NoteFilter(),
+        search_method=SearchMethod.MATCH_ANY,
+        distance=2,
+    )
+    result = await pg_user_asset_operation_repo.get_by_notes(
+        search_args=search_args,
+        cursor=None,
+        results_per_page=100,
+    )
+    assert not result.items
+
+@pytest.mark.parametrize(
+    ['filter_', 'op'],
+    [
+        ('note_time__lte', operator.sub,),
+        ('note_time__gte', operator.add,),
+    ]
+)
+async def test_get_by_notes_negative_note_filter(
+        filter_,
+        op,
+        user_asset_operations_in_db_many,
+        pg_user_asset_operation_repo,
+        user_asset_operation_search_by_note_input_args_factory,
+        jwt_user,
+        op_with_a_note,
+):
+    note = 'Эта строка обязательно должна найтись ведь иначе и не может быть.'
+    target_op = await op_with_a_note(note)
+
+    search_args = user_asset_operation_search_by_note_input_args_factory.build(
+        user_id=jwt_user.id,
+        notes=['строка', 'ведь'],
+        op_filter=UserAssetOperationsFilter(),
+        note_filter=NoteFilter(**{filter_: op(target_op.time, datetime.timedelta(days=1000))}),
+        search_method=SearchMethod.MATCH_ALL,
+        distance=0,
+    )
+    result = await pg_user_asset_operation_repo.get_by_notes(
+        search_args=search_args,
+        cursor=None,
+        results_per_page=100,
+    )
+    assert not result.items
