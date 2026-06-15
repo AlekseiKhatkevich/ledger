@@ -9,7 +9,8 @@ from polyfactory.factories.dataclass_factory import DataclassFactory
 from polyfactory.factories.msgspec_factory import MsgspecFactory
 
 from api.user_asset_addresses.domain import UserAssetAddressData, UserAssetAddressUpdateData, UserAssetAddressDeleteData
-from api.user_asset_operations.domain import UserAssetOperationData, UserAssetOperationDetailOut
+from api.user_asset_operations.domain import UserAssetOperationData, UserAssetOperationDetailOut, \
+    UserAssetOperationSearchByNoteInputArgs, UserAssetOperationsFilter, NoteFilter
 from api.user_assets.domain import UserAssetData, UserAssetDetailCombinedOut, UserAssetDetailOut
 
 
@@ -96,3 +97,25 @@ class UserAssetDetailCombinedOutFactory(CustomDataClassFactory[UserAssetDetailCo
     operations = Use(UserAssetOperationDetailOutFactory.batch, size=10)
     operations_summary = None
     public_key_details = None
+
+
+class UserAssetOperationsFilterFactory(
+    CustomDataClassFactory[UserAssetOperationsFilter],
+):
+    __use_defaults__ = True
+
+class NoteFilterFactory(CustomDataClassFactory[NoteFilter]):
+    __use_defaults__ = True
+
+class UserAssetOperationSearchByNoteInputArgsFactory(
+    CustomDataClassFactory[UserAssetOperationSearchByNoteInputArgs],
+):
+    __max_collection_length__ = 2
+    __min_collection_length__ = 2
+
+    op_filter = UserAssetOperationsFilterFactory
+    note_filter = NoteFilterFactory
+
+    @classmethod
+    def distance(cls) -> int:
+        return cls.__faker__.pyint(min_value=0, max_value=2)

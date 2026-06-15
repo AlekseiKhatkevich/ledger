@@ -10,10 +10,10 @@ import constants
 from database.postgres.repositories.asset_popularity import PostgresPopularityRepository
 from database.postgres.repositories.asset_ticker import PostgresAssetTickerRepository
 from database.postgres.repositories.asset_ticker_price import PostgresAssetTickerPriceRepository
+from database.postgres.repositories.note import NoteRepository
 from database.postgres.repositories.user_asset import PostgresUserAssetRepository
 from database.postgres.repositories.user_asset_address import PostgresUserAssetAddressRepository
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
-from logic.db_models import AssetOperationType, AssetTickerPrice
 from tests.logic.db_models.factories import (
     UserAssetAddressFactory,
     AssetTickerFactory,
@@ -25,7 +25,15 @@ from tests.logic.db_models.factories import (
 from user.domain import User
 
 if TYPE_CHECKING:
-    from logic.db_models import UserAssetAddress, AssetTicker, UserAsset, UserAssetOperation
+    from logic.db_models import (
+        UserAssetAddress,
+        AssetTicker,
+        UserAsset,
+        UserAssetOperation,
+        AssetOperationType,
+        AssetTickerPrice,
+        Note,
+    )
 
 register_fixture(UserAssetAddressFactory)
 register_fixture(AssetTickerFactory)
@@ -58,6 +66,10 @@ def pg_user_asset_operation_repo() -> PostgresUserAssetOperationRepository:
 @pytest.fixture(scope='session')
 def pg_asset_popularity_repo() -> PostgresPopularityRepository:
     return PostgresPopularityRepository()
+
+@pytest.fixture(scope='session')
+def pg_note_repo() -> NoteRepository:
+    return NoteRepository()
 
 
 @pytest.fixture
@@ -200,3 +212,8 @@ async def extra_user_asset_in_db_full_monty(
         address_id=user_asset_address_in_db.id,
     )
     return extra_user_asset, extra_user_asset_operation
+
+
+@pytest.fixture
+async def note_in_db(notes_factory: NotesFactory) -> Note:
+    return await notes_factory.create_async()

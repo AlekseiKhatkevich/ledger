@@ -9,6 +9,7 @@ from tests.logic.domain.factories import (
     UserAssetDetailOutFactory,
     UserAssetOperationDetailOutFactory,
     UserAssetDetailCombinedOutFactory,
+    UserAssetOperationSearchByNoteInputArgsFactory,
 )
 
 register_fixture(UserAssetDataFactory)
@@ -19,5 +20,4 @@ register_fixture(UserAssetOperationDataFactory)
 register_fixture(UserAssetDetailOutFactory)
 register_fixture(UserAssetOperationDetailOutFactory)
 register_fixture(UserAssetDetailCombinedOutFactory)
-
-
+register_fixture(UserAssetOperationSearchByNoteInputArgsFactory)

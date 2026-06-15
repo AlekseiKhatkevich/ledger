@@ -3,6 +3,7 @@ import decimal
 import pytest
 from sqlalchemy import func, select
 
+from api.notes.domain import SearchMethod
 from api.user_asset_operations.domain import DbCRUDOperationReturnData
 from api.user_assets.domain import UserAssetAggregatedPage
 from database.postgres.connection import db
@@ -19,6 +20,7 @@ from tests.logic.db_models.factories import (
     UserAssetFactory,
     UserAssetOperationFactory,
 )
+from tests.logic.db_models.fixtures import pg_user_asset_operation_repo
 from user.domain import User
 
 
@@ -619,3 +621,31 @@ async def test_delete_if_valid_other_user(
     # Verify the operation still exists in the database (not deleted by other user)
     fetched = await pg_user_asset_operation_repo.get_by_id(other_operation.id)
     assert fetched is not None
+
+
+@pytest.mark.parametrize(
+    ['method', 'sql_op', 'relaxer'],
+    [
+        (SearchMethod.MATCH_ALL, '&&&', 'pdb.fuzzy'),
+        (SearchMethod.MATCH_ANY, '|||', 'pdb.fuzzy'),
+        (SearchMethod.PHRASE, '###', 'pdb.slop'),
+    ]
+)
+def test_build_search_criteria(
+        method,
+        sql_op,
+        relaxer,
+        user_asset_operation_search_by_note_input_args_factory,
+        pg_user_asset_operation_repo,
+        db,
+):
+    search_args = user_asset_operation_search_by_note_input_args_factory.build(
+        search_method=method,
+    )
+
+    criteria = pg_user_asset_operation_repo._build_search_criteria(search_args)
+    sql = str(criteria.compile(dialect=db.engine.dialect, compile_kwargs={"literal_binds": True}))
+    assert 'OR' in sql
+    for part, note in zip(sql.split('OR'), search_args.notes):
+        assert sql_op in part
+        assert f"'{note}'::{relaxer}({search_args.distance})".lower() in part
