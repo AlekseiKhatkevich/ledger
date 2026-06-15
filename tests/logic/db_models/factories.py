@@ -59,6 +59,10 @@ class UserAssetOperationFactory(CustomFactory[UserAssetOperation]):
     def unit_price(cls) -> decimal.Decimal:
         return cls.__faker__.pydecimal(min_value=1.0, max_value=100, right_digits=4)
 
+    @classmethod
+    def time(cls) -> datetime.datetime:
+        return cls.__faker__.date_time_this_year(before_now=True, tzinfo=datetime.UTC)
+
 
 class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
 

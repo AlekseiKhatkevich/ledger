@@ -137,8 +137,8 @@ class AssetTickerPrice(Base):
 notes_association_table = Table(
     "notes_association_table",
     Base.metadata,
-    Column("op_id", ForeignKey("user_asset_operations.id"), primary_key=True,),
-    Column("note_id", ForeignKey("notes.id"), primary_key=True,),
+    Column("op_id", ForeignKey("user_asset_operations.id", ondelete='CASCADE'), primary_key=True,),
+    Column("note_id", ForeignKey("notes.id",  ondelete='CASCADE'), primary_key=True,),
 )
 
 
