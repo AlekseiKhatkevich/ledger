@@ -25,6 +25,7 @@ dependencies = [
     "polars>=1.40.1",
     "opentelemetry-instrumentation-asyncio>=0.52b0",
     "sqlalchemy-paradedb>=0.6.0",
+    "pgvector>=0.4.2",
 ]
 
 [dependency-groups]

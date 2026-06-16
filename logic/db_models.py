@@ -5,6 +5,7 @@ import uuid
 from typing import Annotated
 
 from paradedb.sqlalchemy import indexing, tokenizer
+from pgvector.sqlalchemy import VECTOR
 from sqlalchemy import (
     String,
     ForeignKey,
@@ -190,12 +191,14 @@ class UserAssetOperation(Base):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}: {self.user_asset_id = })'
 
-# Note.related_user_assets.any(UserAsset.user_id == '7f4296f5-ba32-434e-9c18-2ad2e40b9526')
+
 class Note(CreatedAtMixin, Base):
     __tablename__ = 'notes'
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     note: Mapped[str]
+    embedding: Mapped[list[float] | None] = mapped_column(VECTOR(1536), nullable=True)
+    # todo index
 
     operations: Mapped[UserAssetOperation] = relationship(
         init=False,
@@ -231,6 +234,12 @@ indexing.BM25Field(Note.id),
     indexing.BM25Field(Note.created_at),
     postgresql_using='bm25',
     postgresql_with={'key_field': 'id'},
+)
+index = Index(
+    'notes_vector_idx',
+    Note.embedding,
+    postgresql_using='hnsw',
+    postgresql_ops={'embedding': 'vector_cosine_ops'},
 )
 
 
