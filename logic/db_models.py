@@ -197,8 +197,7 @@ class Note(CreatedAtMixin, Base):
 
     id: Mapped[bigint_pk] = mapped_column(init=False)
     note: Mapped[str]
-    embedding: Mapped[list[float] | None] = mapped_column(VECTOR(1536), nullable=True)
-    # todo index
+    embedding: Mapped[list[float] | None] = mapped_column(VECTOR(768), nullable=True)
 
     operations: Mapped[UserAssetOperation] = relationship(
         init=False,

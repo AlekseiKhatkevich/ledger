@@ -61,6 +61,22 @@ services:
 
 #  ---
 
+  ollama:
+    image: ollama/ollama
+    profiles: [ollama]
+    expose:
+      - "11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: [ledger-network]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list 2>&1 | grep -q nomic-embed-text || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 60s
+
+  #  ---
+
   postgres:
     build: aux/docker/postgres_custom
     shm_size: 1g
@@ -472,3 +488,4 @@ volumes:
   caddy_config:
   minio_data:
   jaeger_data:
+  ollama_data:
