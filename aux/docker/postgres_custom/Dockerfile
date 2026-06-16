@@ -1,4 +1,4 @@
-# Custom PostgreSQL 18 image with pg_ivm and pg_search extensions
+# Custom PostgreSQL 18 image with pg_ivm, pg_search, and pgvector extensions
 FROM postgres:18 AS builder
 
 RUN set -eux; \
@@ -11,6 +11,7 @@ RUN set -eux; \
         postgresql-server-dev-18; \
     rm -rf /var/lib/apt/lists/*
 
+# --- pg_ivm ---
 # Clone pg_ivm at the specific commit that supports PG 18
 # Pin to a specific commit for reproducible builds
 ARG PG_IVM_COMMIT=2949e99d7cbd59039aa20f6444bf3b6e13e0c6d8
@@ -20,6 +21,18 @@ RUN git clone https://github.com/sraoss/pg_ivm.git /tmp/pg_ivm && \
 
 # Build and install the extension
 WORKDIR /tmp/pg_ivm
+RUN make USE_PGXS=1 -j"$(nproc)" && \
+    make USE_PGXS=1 install
+
+# --- pgvector ---
+# Clone pgvector at the latest stable release for PG 18
+ARG PGVECTOR_VERSION=v0.8.2
+RUN git clone https://github.com/pgvector/pgvector.git /tmp/pgvector && \
+    cd /tmp/pgvector && \
+    git checkout ${PGVECTOR_VERSION}
+
+# Build and install the extension
+WORKDIR /tmp/pgvector
 RUN make USE_PGXS=1 -j"$(nproc)" && \
     make USE_PGXS=1 install
 
@@ -38,6 +51,12 @@ RUN set -eux; \
 COPY --from=builder /usr/lib/postgresql/18/lib/bitcode/pg_ivm /usr/lib/postgresql/18/lib/bitcode/pg_ivm
 COPY --from=builder /usr/lib/postgresql/18/lib/pg_ivm.so /usr/lib/postgresql/18/lib/pg_ivm.so
 COPY --from=builder /usr/share/postgresql/18/extension/pg_ivm* /usr/share/postgresql/18/extension/
+
+# Copy pgvector from builder
+COPY --from=builder /usr/lib/postgresql/18/lib/bitcode/vector /usr/lib/postgresql/18/lib/bitcode/vector
+COPY --from=builder /usr/lib/postgresql/18/lib/bitcode/vector.index.bc /usr/lib/postgresql/18/lib/bitcode/vector.index.bc
+COPY --from=builder /usr/lib/postgresql/18/lib/vector.so /usr/lib/postgresql/18/lib/vector.so
+COPY --from=builder /usr/share/postgresql/18/extension/vector* /usr/share/postgresql/18/extension/
 
 # Install pg_search extension (ParadeDB) v0.24.0 for PG 18 on Debian 13 Trixie amd64
 RUN curl -L \

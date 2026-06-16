@@ -1,6 +1,7 @@
 import decimal
 
 import msgspec
+import pytest
 from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_204_NO_CONTENT
 
 from api.user_asset_operations.crud import UserAssetAddressOperationController

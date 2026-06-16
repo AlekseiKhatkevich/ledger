@@ -121,7 +121,6 @@ class UserAssetAddressOperationController(Controller):
                     distance=distance,
                     search_method=search_method,
                 )
-
         paginator = UserAssetOperationsByNotesPaginator(search_args)
         return await paginator(
             cursor=cursor,
