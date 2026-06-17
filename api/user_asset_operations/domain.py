@@ -166,6 +166,7 @@ class UserAssetOperationSearchByNoteInputArgs:
 @dataclass(frozen=True)
 class MltInputArgs:
     user_id: uuid.UUID
-    op_id: int
+    note_id: int
     op_filter: UserAssetOperationsFilter
     fts_to_sim_search_ratio: float
+    limit: int

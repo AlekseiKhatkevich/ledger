@@ -9,7 +9,7 @@ class NoteOut:
     note: str
     created_at: str
     snippet: str | None
-    score: float
+    score: float | None
 
 
 class SearchMethod(enum.StrEnum):

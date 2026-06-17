@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from logic.db_models import UserAssetOperation
-    from api.user_asset_operations.domain import UserAssetOperationSearchByNoteInputArgs
+    from api.user_asset_operations.domain import (
+        UserAssetOperationSearchByNoteInputArgs,
+        MltInputArgs,
+        UserAssetOperationWithNotesOut,
+    )
 
 
 class BaseUserAssetOperationRepository(abc.ABC):
@@ -21,4 +25,12 @@ class BaseUserAssetOperationRepository(abc.ABC):
         results_per_page: int,
     ) -> list[tuple['UserAssetOperation', list[dict]]]:
         """Get operations filtered by note text."""
+        pass
+
+    @abc.abstractmethod
+    async def get_by_mlt(
+        self,
+        mlt_args: MltInputArgs,
+    ) -> list[UserAssetOperationWithNotesOut]:
+        """Get operations with notes similar to the given note_id via hybrid search (MLT + vector)."""
         pass

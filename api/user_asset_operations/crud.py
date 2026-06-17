@@ -125,12 +125,13 @@ class UserAssetAddressOperationController(Controller):
             results_per_page=pagination_params.results_per_page,
         )
 
-    @get('/mlt/{op_id:int}', dependencies={'op_filter': Provide(operations_filter),},)
+    @get('/mlt/{note_id:int}', dependencies={'op_filter': Provide(operations_filter),},)
     async def mlt(
             self,
             kc_user: User,
             op_filter: UserAssetOperationsFilter,
-            op_id: Annotated[int, PathParameter(ge=1)],
+            note_id: Annotated[int, PathParameter(ge=1)],
             fts_to_sim_search_ratio: Annotated[float, QueryParameter(ge=0, le=1)] = 0.5,
+            limit: Annotated[int, QueryParameter(ge=1)] = 5,
     ):
         pass

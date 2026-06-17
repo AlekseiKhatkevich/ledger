@@ -26,13 +26,16 @@ def _check_asset_and_address(*, data: UserAssetOperationData, return_data: DbCRU
     if not return_data.address_exists:
         raise UserAssetAddressNotFoundError(extra={'id': data.address_id})
 
+
 def _check_if_updated(*, data: UserAssetOperationData, return_data: DbCRUDOperationReturnData) -> None:
     if return_data.id is None:
         raise UserAssetOperationNotFoundError(extra={'id': data.id})
 
+
 def _check_if_deleted(_id: int, *, deleted_id: int | None) -> None:
     if deleted_id is None:
         raise UserAssetOperationNotFoundError(extra={'id': _id})
+
 
 def _check_balance(return_data: DbCRUDOperationReturnData) -> None:
     if not return_data.balance_ok:
@@ -88,6 +91,7 @@ class UserAssetOperationNettoPositionUseCase:
             op_filter=op_filter,
         )
 
+
 class UserAssetOperationsByNotesUseCase:
 
     @staticmethod
@@ -108,5 +112,5 @@ class UserAssetMltUseCase:
     @staticmethod
     async def execute(
         mlt_args: MltInputArgs,
-    ):
-        pass
+    ) -> list[UserAssetOperationWithNotesOut]:
+        return await PostgresUserAssetOperationRepository().get_by_mlt(mlt_args)

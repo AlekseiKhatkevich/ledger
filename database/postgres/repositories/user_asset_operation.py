@@ -7,6 +7,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from paradedb.sqlalchemy import pdb, search
+from paradedb.sqlalchemy.search import more_like_this
 from sqlalchemy import ColumnElement
 
 from api.notes.domain import NoteOut, SearchMethod
@@ -873,7 +874,163 @@ class PostgresUserAssetOperationRepository(
         return PaginatedPage(items, cursor=new_cursor, has_more=has_more)
 
 
-    async def get_by_mlt(self, mlt_args: MltInputArgs) -> UserAssetOperationWithNotesOut:
-        pass
+    async def get_by_mlt(self, mlt_args: MltInputArgs) -> list[UserAssetOperationWithNotesOut]:
+        # Subquery to get the source note's embedding for semantic search
+        source_embedding_subq = (
+            sa.select(Note.embedding)
+            .where(Note.id == mlt_args.note_id)
+            .scalar_subquery()
+        )
+
+        # `more_like_this` expression for ParadeDB full-text similarity
+        mlt_expr = more_like_this(
+            Note.note,  # type: ignore[arg-type]
+            document_id=mlt_args.note_id,
+            fields=['note'],
+            max_query_terms=10,
+            min_doc_frequency=2,
+        )
+
+        # 1. fulltext CTE – search by text similarity via ParadeDB MLT
+        cte_limit = 4 * mlt_args.limit
+        # pdb.score returns ClauseElement which isn't typed for sa.desc,
+        # so we use raw SQL expression for ordering
+        score_desc = sa.text('pdb.score(notes.id) DESC')
+        fulltext = (
+            sa.select(
+                Note.id,
+                Note.note,
+                Note.created_at,
+                sa.func.row_number()
+                .over(order_by=score_desc)
+                .label('r'),
+            )
+            .where(
+                mlt_expr,
+                Note.id != mlt_args.note_id,
+            )
+            .limit(cte_limit)
+            .cte('fulltext')
+        )
+
+        # 2. semantic CTE – search by vector cosine distance via pgvector
+        semantic = (
+            sa.select(
+                Note.id,
+                Note.note,
+                Note.created_at,
+                sa.func.row_number()
+                .over(order_by=Note.embedding.cosine_distance(source_embedding_subq))
+                .label('r'),
+            )
+            .where(
+                Note.id != mlt_args.note_id,  # isdistict from
+                Note.embedding.isnot(None),
+            )
+            .limit(cte_limit)
+            .cte('semantic')
+        )
+
+        # 3. rrf CTE – Reciprocal Rank Fusion with weighted scores
+        #   fts_to_sim_search_ratio is the weight for FTS,
+        #   (1 - fts_to_sim_search_ratio) is the weight for semantic search.
+        fts_weight = sa.literal(mlt_args.fts_to_sim_search_ratio)
+        sim_weight = sa.literal(1.0 - mlt_args.fts_to_sim_search_ratio)
+        k = 60  # standard RRF constant
+
+        rrf = (
+            sa.select(
+                fulltext.c.id,
+                (fts_weight * 1.0 / (k + fulltext.c.r)).label('s'),
+            )
+            .union_all(
+                sa.select(
+                    semantic.c.id,
+                    (sim_weight * 1.0 / (k + semantic.c.r)).label('s'),
+                ),
+            )
+            .cte('rrf')
+        )
+
+        # 4. grouped CTE – aggregate by operation via notes_association_table
+        grouped = (
+            sa.select(
+                notes_association_table.c.op_id,
+                sa.func.sum(rrf.c.s).label('score'),
+                sa.func.jsonb_agg(
+                sa.func.jsonb_build_object(
+                    'id', Note.id,
+                    'note', Note.note,
+                    'created_at', Note.created_at,
+                    'score', None,
+                    'snippet', None,
+                ),
+                ).label('notes'),
+            )
+            .select_from(rrf)
+            .join(Note, Note.id == rrf.c.id)
+            .join(
+                notes_association_table,
+                notes_association_table.c.note_id == Note.id,
+            )
+            .group_by(notes_association_table.c.op_id)
+            .order_by(sa.func.sum(rrf.c.s).desc())
+            .limit(mlt_args.limit)
+            .cte('grouped')
+        )
+
+        # 5. Final SELECT – join with operations, filter by user, apply op_filter
+        stmt = (
+            sa.select(
+                UserAssetOperation.id,
+                UserAssetOperation.time,
+                UserAssetOperation.type,
+                UserAssetOperation.user_asset_id,
+                UserAssetOperation.quantity,
+                UserAssetOperation.unit_price,
+                UserAssetOperation.summ,
+                UserAssetOperation.address_id,
+                grouped.c.score,
+                grouped.c.notes,
+            )
+            .select_from(grouped)
+            .join(
+                UserAssetOperation,
+                UserAssetOperation.id == grouped.c.op_id,
+            )
+            .join(
+                UserAsset,
+                sa.and_(
+                    UserAsset.id == UserAssetOperation.user_asset_id,
+                    UserAsset.user_id == mlt_args.user_id,
+                ),
+            )
+            .order_by(grouped.c.score.desc())
+        )
+
+        stmt = self.apply_filters(stmt, mlt_args.op_filter)
+
+        async with self.db.session() as session:
+            rows = await session.execute(stmt)
+
+        return [
+            UserAssetOperationWithNotesOut(
+                id=row.id,
+                time=row.time,
+                type=row.type,
+                user_asset_id=row.user_asset_id,
+                quantity=row.quantity,
+                unit_price=row.unit_price,
+                summ=row.summ,
+                address_id=row.address_id,
+                score=row.score,
+                notes=sorted(
+                    (NoteOut(**note) for note in row.notes),
+                    key=lambda n: n.score,
+                    reverse=True,
+                ),
+            )
+            for row in rows
+        ]
 
 # todo citus
