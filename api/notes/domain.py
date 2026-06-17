@@ -8,8 +8,8 @@ class NoteOut:
     id: int
     note: str
     created_at: str
+    score: float
     snippet: str | None = None
-    score: float | None = None
 
 
 class SearchMethod(enum.StrEnum):

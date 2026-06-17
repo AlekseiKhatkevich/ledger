@@ -920,7 +920,7 @@ class PostgresUserAssetOperationRepository(
                 Note.note,
                 Note.created_at,
                 sa.func.row_number()
-                .over(order_by=Note.embedding.cosine_distance(source_note_embedding))
+                .over(order_by=Note.embedding.cosine_distance(source_note_embedding).asc())
                 .label('semantic_rank'),
             )
             .where(
@@ -980,31 +980,14 @@ class PostgresUserAssetOperationRepository(
                 UserAssetOperation.summ,
                 UserAssetOperation.address_id,
                 sa.func.sum(matched_notes.c.score).label('aggregated_score'),
-                # Correlated subquery: all notes of the operation,
-                # matched notes first, then by created_at DESC.
-                (
-                    sa.select(
-                        sa.func.jsonb_agg(
-                            sa.func.jsonb_build_object(
-                                'id', Note.id,
-                                'note', Note.note,
-                                'created_at', Note.created_at,
-                            )
-                            # .order_by(
-                            #     Note.id.in_(
-                            #         sa.select(matched_notes.c.id).scalar_subquery(),
-                            #     ).desc(),  # type: ignore[arg-type]
-                            #     Note.created_at.desc(),
-                            # ),
-                        ),
-                    )
-                    .select_from(notes_association_table)
-                    .join(Note, Note.id == notes_association_table.c.note_id)
-                    .where(notes_association_table.c.op_id == UserAssetOperation.id)
-                    .correlate(UserAssetOperation)
-                    .scalar_subquery()
-                ).label('all_notes'),
-            )
+                sa.func.jsonb_agg(
+                    sa.func.jsonb_build_object(
+                        'id', matched_notes.c.id,
+                        'note', matched_notes.c.note,
+                        'created_at', matched_notes.c.created_at,
+                        'score', matched_notes.c.score,
+                    ),
+                ).label('notes'))
             .select_from(matched_notes)
             .join(
                 notes_association_table,
@@ -1041,7 +1024,9 @@ class PostgresUserAssetOperationRepository(
                 summ=row.summ,
                 address_id=row.address_id,
                 score=row.aggregated_score,
-                notes=[NoteOut(**note) for note in row.all_notes],
+                notes=[
+                    NoteOut(**note) for note in
+                    sorted(row.notes, key=operator.itemgetter('score'), reverse=True)],
             )
             for row in rows
         ]
