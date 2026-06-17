@@ -8,7 +8,7 @@ from typing import Any
 import sqlalchemy as sa
 from paradedb.sqlalchemy import pdb, search
 from paradedb.sqlalchemy.search import more_like_this
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, desc
 
 from api.notes.domain import NoteOut, SearchMethod
 from api.pagination_domain import PaginatedPage
@@ -875,15 +875,15 @@ class PostgresUserAssetOperationRepository(
 
 
     async def get_by_mlt(self, mlt_args: MltInputArgs) -> list[UserAssetOperationWithNotesOut]:
-        # Subquery to get the source note's embedding for semantic search
-        source_embedding_subq = (
+        # Subquery to get the source note's embedding for semantic vector search
+        source_note_embedding = (
             sa.select(Note.embedding)
             .where(Note.id == mlt_args.note_id)
             .scalar_subquery()
         )
 
-        # `more_like_this` expression for ParadeDB full-text similarity
-        mlt_expr = more_like_this(
+        # `more_like_this` condition for ParadeDB full-text similarity
+        more_like_this_condition = more_like_this(
             Note.note,  # type: ignore[arg-type]
             document_id=mlt_args.note_id,
             fields=['note'],
@@ -891,25 +891,25 @@ class PostgresUserAssetOperationRepository(
             min_doc_frequency=2,
         )
 
-        # 1. fulltext CTE – search by text similarity via ParadeDB MLT
-        cte_limit = 4 * mlt_args.limit
-        # pdb.score returns ClauseElement which isn't typed for sa.desc,
-        # so we use raw SQL expression for ordering
-        score_desc = sa.text('pdb.score(notes.id) DESC')
+        # Each sub-CTE (fulltext, semantic) fetches 4x the final limit
+        # to ensure enough candidates for RRF, as recommended by ParadeDB docs.
+        subquery_limit = 4 * mlt_args.limit
+
+        # 1. fulltext CTE – search by text similarity via ParadeDB more_like_this
         fulltext = (
             sa.select(
                 Note.id,
                 Note.note,
                 Note.created_at,
                 sa.func.row_number()
-                .over(order_by=score_desc)
-                .label('r'),
+                .over(order_by=desc(pdb.score(Note.id)))
+                .label('fulltext_rank'),
             )
             .where(
-                mlt_expr,
+                more_like_this_condition,
                 Note.id != mlt_args.note_id,
             )
-            .limit(cte_limit)
+            .limit(subquery_limit)
             .cte('fulltext')
         )
 
@@ -920,14 +920,14 @@ class PostgresUserAssetOperationRepository(
                 Note.note,
                 Note.created_at,
                 sa.func.row_number()
-                .over(order_by=Note.embedding.cosine_distance(source_embedding_subq))
-                .label('r'),
+                .over(order_by=Note.embedding.cosine_distance(source_note_embedding))
+                .label('semantic_rank'),
             )
             .where(
-                Note.id != mlt_args.note_id,  # isdistict from
+                Note.id != mlt_args.note_id,
                 Note.embedding.isnot(None),
             )
-            .limit(cte_limit)
+            .limit(subquery_limit)
             .cte('semantic')
         )
 
@@ -935,36 +935,36 @@ class PostgresUserAssetOperationRepository(
         #   fts_to_sim_search_ratio is the weight for FTS,
         #   (1 - fts_to_sim_search_ratio) is the weight for semantic search.
         fts_weight = sa.literal(mlt_args.fts_to_sim_search_ratio)
-        sim_weight = sa.literal(1.0 - mlt_args.fts_to_sim_search_ratio)
-        k = 60  # standard RRF constant
+        semantic_weight = sa.literal(1.0 - mlt_args.fts_to_sim_search_ratio)
+        rrf_k_constant = 60  # standard RRF constant
 
         rrf = (
             sa.select(
                 fulltext.c.id,
-                (fts_weight * 1.0 / (k + fulltext.c.r)).label('s'),
+                (fts_weight * 1.0 / (rrf_k_constant + fulltext.c.fulltext_rank)).label('weighted_score'),
             )
             .union_all(
                 sa.select(
                     semantic.c.id,
-                    (sim_weight * 1.0 / (k + semantic.c.r)).label('s'),
+                    (semantic_weight * 1.0 / (rrf_k_constant + semantic.c.semantic_rank)).label('weighted_score'),
                 ),
             )
             .cte('rrf')
         )
 
-        # 4. grouped CTE – aggregate by operation via notes_association_table
-        grouped = (
+        # 4. operation_groups CTE – aggregate rrf scores by operation via notes_association_table
+        operation_groups = (
             sa.select(
                 notes_association_table.c.op_id,
-                sa.func.sum(rrf.c.s).label('score'),
+                sa.func.sum(rrf.c.weighted_score).label('score'),
                 sa.func.jsonb_agg(
-                sa.func.jsonb_build_object(
-                    'id', Note.id,
-                    'note', Note.note,
-                    'created_at', Note.created_at,
-                    'score', None,
-                    'snippet', None,
-                ),
+                    sa.func.jsonb_build_object(
+                        'id', Note.id,
+                        'note', Note.note,
+                        'created_at', Note.created_at,
+                        'score', None,
+                        'snippet', None,
+                    ),
                 ).label('notes'),
             )
             .select_from(rrf)
@@ -974,9 +974,9 @@ class PostgresUserAssetOperationRepository(
                 notes_association_table.c.note_id == Note.id,
             )
             .group_by(notes_association_table.c.op_id)
-            .order_by(sa.func.sum(rrf.c.s).desc())
+            .order_by(sa.func.sum(rrf.c.weighted_score).desc())
             .limit(mlt_args.limit)
-            .cte('grouped')
+            .cte('operation_groups')
         )
 
         # 5. Final SELECT – join with operations, filter by user, apply op_filter
@@ -990,13 +990,13 @@ class PostgresUserAssetOperationRepository(
                 UserAssetOperation.unit_price,
                 UserAssetOperation.summ,
                 UserAssetOperation.address_id,
-                grouped.c.score,
-                grouped.c.notes,
+                operation_groups.c.score,
+                operation_groups.c.notes,
             )
-            .select_from(grouped)
+            .select_from(operation_groups)
             .join(
                 UserAssetOperation,
-                UserAssetOperation.id == grouped.c.op_id,
+                UserAssetOperation.id == operation_groups.c.op_id,
             )
             .join(
                 UserAsset,
@@ -1005,7 +1005,7 @@ class PostgresUserAssetOperationRepository(
                     UserAsset.user_id == mlt_args.user_id,
                 ),
             )
-            .order_by(grouped.c.score.desc())
+            .order_by(operation_groups.c.score.desc())
         )
 
         stmt = self.apply_filters(stmt, mlt_args.op_filter)
@@ -1024,11 +1024,7 @@ class PostgresUserAssetOperationRepository(
                 summ=row.summ,
                 address_id=row.address_id,
                 score=row.score,
-                notes=sorted(
-                    (NoteOut(**note) for note in row.notes),
-                    key=lambda n: n.score,
-                    reverse=True,
-                ),
+                notes=[NoteOut(**note) for note in row.notes],
             )
             for row in rows
         ]

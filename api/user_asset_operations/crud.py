@@ -18,7 +18,7 @@ from api.user_asset_operations.domain import (
     UserAssetOperationsFilter,
     NettoPositionData,
     UserAssetOperationWithNotesOut,
-    NoteFilter, UserAssetOperationSearchByNoteInputArgs,
+    NoteFilter, UserAssetOperationSearchByNoteInputArgs, MltInputArgs,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,
@@ -31,7 +31,7 @@ from logic.usecases.user_asset_operation import (
     UserAssetOperationUpdateUseCase,
     UserAssetOperationDeleteUseCase,
     UserAssetOperationNettoPositionUseCase,
-    UserAssetOperationsByNotesUseCase,
+    UserAssetOperationsByNotesUseCase, UserAssetMltUseCase,
 )
 from user.domain import User
 
@@ -133,5 +133,12 @@ class UserAssetAddressOperationController(Controller):
             note_id: Annotated[int, PathParameter(ge=1)],
             fts_to_sim_search_ratio: Annotated[float, QueryParameter(ge=0, le=1)] = 0.5,
             limit: Annotated[int, QueryParameter(ge=1)] = 5,
-    ):
-        pass
+    ) -> list[UserAssetOperationWithNotesOut]:
+        args = MltInputArgs(
+            user_id=kc_user.id,
+            op_filter=op_filter,
+            note_id=note_id,
+            fts_to_sim_search_ratio=fts_to_sim_search_ratio,
+            limit=limit,
+        )
+        return await UserAssetMltUseCase.execute(args)
