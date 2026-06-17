@@ -932,8 +932,6 @@ class PostgresUserAssetOperationRepository(
         )
 
         # 3. rrf CTE – Reciprocal Rank Fusion with weighted scores
-        #   fts_to_sim_search_ratio is the weight for FTS,
-        #   (1 - fts_to_sim_search_ratio) is the weight for semantic search.
         fts_weight = sa.literal(mlt_args.fts_to_sim_search_ratio)
         semantic_weight = sa.literal(1.0 - mlt_args.fts_to_sim_search_ratio)
         rrf_k_constant = 60  # standard RRF constant
@@ -952,34 +950,25 @@ class PostgresUserAssetOperationRepository(
             .cte('rrf')
         )
 
-        # 4. operation_groups CTE – aggregate rrf scores by operation via notes_association_table
-        operation_groups = (
+        # 4. matched_notes CTE – top-N note_ids ranked by RRF aggregated score
+        matched_notes = (
             sa.select(
-                notes_association_table.c.op_id,
+                Note.id,
+                Note.note,
+                Note.created_at,
                 sa.func.sum(rrf.c.weighted_score).label('score'),
-                sa.func.jsonb_agg(
-                    sa.func.jsonb_build_object(
-                        'id', Note.id,
-                        'note', Note.note,
-                        'created_at', Note.created_at,
-                        'score', None,
-                        'snippet', None,
-                    ),
-                ).label('notes'),
             )
             .select_from(rrf)
             .join(Note, Note.id == rrf.c.id)
-            .join(
-                notes_association_table,
-                notes_association_table.c.note_id == Note.id,
-            )
-            .group_by(notes_association_table.c.op_id)
+            .group_by(Note.id, Note.note, Note.created_at)
             .order_by(sa.func.sum(rrf.c.weighted_score).desc())
             .limit(mlt_args.limit)
-            .cte('operation_groups')
+            .cte('matched_notes')
         )
 
-        # 5. Final SELECT – join with operations, filter by user, apply op_filter
+        # 5. Final SELECT – join matched notes → operations with GROUP BY,
+        # aggregate score, include a correlated subquery for ALL notes of each operation.
+        # Correlated subquery collects all notes and sorts them with matched ones first.
         stmt = (
             sa.select(
                 UserAssetOperation.id,
@@ -990,13 +979,40 @@ class PostgresUserAssetOperationRepository(
                 UserAssetOperation.unit_price,
                 UserAssetOperation.summ,
                 UserAssetOperation.address_id,
-                operation_groups.c.score,
-                operation_groups.c.notes,
+                sa.func.sum(matched_notes.c.score).label('aggregated_score'),
+                # Correlated subquery: all notes of the operation,
+                # matched notes first, then by created_at DESC.
+                (
+                    sa.select(
+                        sa.func.jsonb_agg(
+                            sa.func.jsonb_build_object(
+                                'id', Note.id,
+                                'note', Note.note,
+                                'created_at', Note.created_at,
+                            )
+                            # .order_by(
+                            #     Note.id.in_(
+                            #         sa.select(matched_notes.c.id).scalar_subquery(),
+                            #     ).desc(),  # type: ignore[arg-type]
+                            #     Note.created_at.desc(),
+                            # ),
+                        ),
+                    )
+                    .select_from(notes_association_table)
+                    .join(Note, Note.id == notes_association_table.c.note_id)
+                    .where(notes_association_table.c.op_id == UserAssetOperation.id)
+                    .correlate(UserAssetOperation)
+                    .scalar_subquery()
+                ).label('all_notes'),
             )
-            .select_from(operation_groups)
+            .select_from(matched_notes)
+            .join(
+                notes_association_table,
+                notes_association_table.c.note_id == matched_notes.c.id,
+            )
             .join(
                 UserAssetOperation,
-                UserAssetOperation.id == operation_groups.c.op_id,
+                UserAssetOperation.id == notes_association_table.c.op_id,
             )
             .join(
                 UserAsset,
@@ -1005,7 +1021,8 @@ class PostgresUserAssetOperationRepository(
                     UserAsset.user_id == mlt_args.user_id,
                 ),
             )
-            .order_by(operation_groups.c.score.desc())
+            .group_by(UserAssetOperation.id, UserAsset.id)
+            .order_by(sa.func.sum(matched_notes.c.score).desc())
         )
 
         stmt = self.apply_filters(stmt, mlt_args.op_filter)
@@ -1023,8 +1040,8 @@ class PostgresUserAssetOperationRepository(
                 unit_price=row.unit_price,
                 summ=row.summ,
                 address_id=row.address_id,
-                score=row.score,
-                notes=[NoteOut(**note) for note in row.notes],
+                score=row.aggregated_score,
+                notes=[NoteOut(**note) for note in row.all_notes],
             )
             for row in rows
         ]
