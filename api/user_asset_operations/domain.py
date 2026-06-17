@@ -161,3 +161,11 @@ class UserAssetOperationSearchByNoteInputArgs:
     note_filter: NoteFilter
     search_method: SearchMethod
     distance: int
+
+
+@dataclass(frozen=True)
+class MltInputArgs:
+    user_id: uuid.UUID
+    op_id: int
+    op_filter: UserAssetOperationsFilter
+    fts_to_sim_search_ratio: float

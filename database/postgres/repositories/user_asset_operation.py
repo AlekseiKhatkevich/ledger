@@ -16,7 +16,9 @@ from api.user_asset_operations.domain import (
     DbCRUDOperationReturnData,
     UserAssetOperationsFilter,
     NettoPositionData,
-    UserAssetOperationWithNotesOut, UserAssetOperationSearchByNoteInputArgs,
+    UserAssetOperationWithNotesOut,
+    UserAssetOperationSearchByNoteInputArgs,
+    MltInputArgs,
 )
 from api.user_assets.domain import UserAssetAggregatedData, UserAssetAggregatedPage
 from database.postgres.repositories.base_repository import PostgresBaseRepository
@@ -869,5 +871,9 @@ class PostgresUserAssetOperationRepository(
         ]
 
         return PaginatedPage(items, cursor=new_cursor, has_more=has_more)
+
+
+    async def get_by_mlt(self, mlt_args: MltInputArgs) -> UserAssetOperationWithNotesOut:
+        pass
 
 # todo citus

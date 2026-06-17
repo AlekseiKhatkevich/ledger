@@ -3,7 +3,7 @@ from typing import Annotated
 from litestar import Controller, post, put, delete, get
 from litestar.di import Provide, NamedDependency
 from litestar.dto import DTOData
-from litestar.params import FromPath, FromQuery, QueryParameter
+from litestar.params import FromPath, FromQuery, QueryParameter, PathParameter
 
 from api.dependencies import operations_filter, note_filter
 from api.exceptions_handling import base_error_handler_factory
@@ -93,8 +93,6 @@ class UserAssetAddressOperationController(Controller):
         return await UserAssetOperationNettoPositionUseCase().execute(user_asset_id, kc_user.sub, op_filter)
 
     # todo POST notes create
-    # todo векторный поиск
-    # todo More like this new endpoint?
     @get(
         'notes',
         dependencies={
@@ -126,3 +124,13 @@ class UserAssetAddressOperationController(Controller):
             cursor=cursor,
             results_per_page=pagination_params.results_per_page,
         )
+
+    @get('/mlt/{op_id:int}', dependencies={'op_filter': Provide(operations_filter),},)
+    async def mlt(
+            self,
+            kc_user: User,
+            op_filter: UserAssetOperationsFilter,
+            op_id: Annotated[int, PathParameter(ge=1)],
+            fts_to_sim_search_ratio: Annotated[float, QueryParameter(ge=0, le=1)] = 0.5,
+    ):
+        pass

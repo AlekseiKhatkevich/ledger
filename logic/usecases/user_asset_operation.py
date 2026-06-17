@@ -8,6 +8,7 @@ from api.user_asset_operations.domain import (
     NettoPositionData,
     UserAssetOperationWithNotesOut,
     UserAssetOperationSearchByNoteInputArgs,
+    MltInputArgs,
 )
 from database.postgres.repositories.user_asset_operation import PostgresUserAssetOperationRepository
 from logic.exceptions import (
@@ -100,3 +101,12 @@ class UserAssetOperationsByNotesUseCase:
             cursor,
             results_per_page,
         )
+
+
+class UserAssetMltUseCase:
+
+    @staticmethod
+    async def execute(
+        mlt_args: MltInputArgs,
+    ):
+        pass
