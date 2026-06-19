@@ -1,5 +1,5 @@
-# Custom PostgreSQL 18 image with pg_ivm, pg_search, and pgvector extensions
-FROM postgres:18 AS builder
+# Custom Citus 14 + PostgreSQL 18 image with pg_ivm, pg_search, and pgvector extensions
+FROM citusdata/citus:14.0 AS builder
 
 RUN set -eux; \
     apt-get update; \
@@ -13,7 +13,6 @@ RUN set -eux; \
 
 # --- pg_ivm ---
 # Clone pg_ivm at the specific commit that supports PG 18
-# Pin to a specific commit for reproducible builds
 ARG PG_IVM_COMMIT=2949e99d7cbd59039aa20f6444bf3b6e13e0c6d8
 RUN git clone https://github.com/sraoss/pg_ivm.git /tmp/pg_ivm && \
     cd /tmp/pg_ivm && \
@@ -36,8 +35,8 @@ WORKDIR /tmp/pgvector
 RUN make USE_PGXS=1 -j"$(nproc)" && \
     make USE_PGXS=1 install
 
-# --- Final slim image ---
-FROM postgres:18
+# --- Final slim image (same Citus base, so we already have citus installed) ---
+FROM citusdata/citus:14.0
 
 # Install ca-certificates and curl for downloading pg_search
 RUN set -eux; \
@@ -65,3 +64,7 @@ RUN curl -L \
     apt-get install -y --no-install-recommends /tmp/pg_search.deb && \
     rm -f /tmp/pg_search.deb && \
     rm -rf /var/lib/apt/lists/*
+
+# Copy custom citus entrypoint to handle multi-node cluster setup
+# COPY citus_entrypoint.sh /usr/local/bin/citus_entrypoint.sh
+# RUN chmod +x /usr/local/bin/citus_entrypoint.sh

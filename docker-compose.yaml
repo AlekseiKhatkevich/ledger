@@ -77,12 +77,113 @@ services:
 
   #  ---
 
-  postgres:
+  citus-worker-1:
     build: aux/docker/postgres_custom
     shm_size: 1g
-    container_name: postgres
+    container_name: citus-worker-1
     restart: unless-stopped
     profiles: [main, temporal]
+    command: [
+      "postgres",
+      "-c", "shared_buffers=4GB",
+      "-c", "effective_cache_size=12GB",
+      "-c", "work_mem=32MB",
+      "-c", "maintenance_work_mem=1GB",
+      "-c", "wal_buffers=32MB",
+      "-c", "huge_pages=try",
+      "-c", "max_connections=100",
+      "-c", "max_wal_size=4GB",
+      "-c", "min_wal_size=1GB",
+      "-c", "wal_compression=on",
+      "-c", "autovacuum=on",
+      "-c", "log_filename='postgresql-%Y-%m-%d.log'",
+      "-c", "log_min_duration_statement=1000",
+      "-c", "log_line_prefix='%m [%p] %q%u@%d '",
+      "-c", "password_encryption=scram-sha-256",
+      "-c", "shared_preload_libraries=citus,pg_stat_statements,pg_ivm,pg_search",
+      "-c", "max_worker_processes=12",
+      "-c", "max_parallel_workers=8",
+      "-c", "max_parallel_workers_per_gather=2"
+    ]
+    env_file: secrets/postgres/.env
+    environment:
+      POSTGRES_USER: postgres228
+      POSTGRES_PASSWORD: 1q2w3e
+      POSTGRES_DB: ledger-db
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    expose:
+      - "5432"
+    volumes:
+      - citus_worker_1_data:/var/lib/postgresql
+    networks:
+      [ ledger-network ]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 120s
+
+  citus-worker-2:
+    build: aux/docker/postgres_custom
+    shm_size: 1g
+    container_name: citus-worker-2
+    restart: unless-stopped
+    profiles: [main, temporal]
+    command: [
+      "postgres",
+      "-c", "shared_buffers=4GB",
+      "-c", "effective_cache_size=12GB",
+      "-c", "work_mem=32MB",
+      "-c", "maintenance_work_mem=1GB",
+      "-c", "wal_buffers=32MB",
+      "-c", "huge_pages=try",
+      "-c", "max_connections=100",
+      "-c", "max_wal_size=4GB",
+      "-c", "min_wal_size=1GB",
+      "-c", "wal_compression=on",
+      "-c", "autovacuum=on",
+      "-c", "log_filename='postgresql-%Y-%m-%d.log'",
+      "-c", "log_min_duration_statement=1000",
+      "-c", "log_line_prefix='%m [%p] %q%u@%d '",
+      "-c", "password_encryption=scram-sha-256",
+      "-c", "shared_preload_libraries=citus,pg_stat_statements,pg_ivm,pg_search",
+      "-c", "max_worker_processes=12",
+      "-c", "max_parallel_workers=8",
+      "-c", "max_parallel_workers_per_gather=2"
+    ]
+    env_file: secrets/postgres/.env
+    environment:
+      POSTGRES_USER: postgres228
+      POSTGRES_PASSWORD: 1q2w3e
+      POSTGRES_DB: ledger-db
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    expose:
+      - "5432"
+    volumes:
+      - citus_worker_2_data:/var/lib/postgresql
+    networks:
+      [ ledger-network ]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 120s
+
+  citus-coordinator:
+    build: aux/docker/postgres_custom
+    shm_size: 1g
+    container_name: citus-coordinator
+    restart: unless-stopped
+    profiles: [main, temporal]
+    depends_on:
+      citus-worker-1:
+        condition: service_started
+      citus-worker-2:
+        condition: service_started
     command: [
       "postgres",
       "-c", "shared_buffers=8GB",
@@ -128,7 +229,7 @@ services:
       "-c", "password_encryption=scram-sha-256",
       "-c", "idle_in_transaction_session_timeout=1min",
       "-c", "idle_session_timeout=5min",
-      "-c", "shared_preload_libraries=pg_stat_statements,pg_ivm,pg_search",
+      "-c", "shared_preload_libraries=citus,pg_stat_statements,pg_ivm,pg_search",
       "-c", "pg_stat_statements.track=all",
       "-c", "max_worker_processes=24",
       "-c", "max_parallel_workers=18",
@@ -136,6 +237,11 @@ services:
       "-c", "paradedb.enable_join_custom_scan=on"
     ]
     env_file: secrets/postgres/.env
+    environment:
+      POSTGRES_USER: postgres228
+      POSTGRES_PASSWORD: 1q2w3e
+      POSTGRES_DB: ledger-db
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     expose:
       - "5432"
     volumes:
@@ -147,7 +253,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     stop_grace_period: 120s
 
   #  ---
@@ -169,41 +275,8 @@ services:
       start_interval: 2s
       start_period: 20s
     depends_on:
-      postgres:
+      citus-coordinator:
         condition: service_started
-
-  #  ---
-
-  pgcache:
-    image: pgcache/pgcache:0.4.11-amd64
-    shm_size: 16g
-    profiles: [pgcache, main]
-    container_name: pgcache
-    restart: unless-stopped
-    networks: [ledger-network]
-    depends_on:
-      - postgres
-    expose:
-      - "5432"
-    ports:
-      - "9090:9090"
-    volumes:
-      # Mount embedded postgres PGDATA as tmpfs so it's clean on every restart.
-      # This prevents the 'database "pgcache_cache" already exists' error.
-      # Mode 0777 needed because postgres user (uid 70) is not the tmpfs owner.
-      - type: tmpfs
-        target: /var/lib/postgresql/data
-        tmpfs:
-          size: 16G
-          mode: 0777
-    env_file: secrets/pgcache/.env
-    environment:
-      NUM_WORKERS: 4
-      PUBLICATION: pgcache_pub
-      SLOT: pgcache_slot
-      LOG_LEVEL: info
-      PGCACHE_TELEMETRY: off
-      METRICS_PORT: "9090"
 
   #  ---
 
@@ -241,10 +314,10 @@ services:
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     environment:
       DB_VENDOR: postgres
-      DB_ADDR: postgres
+      DB_ADDR: citus-coordinator
       DB_DATABASE: keycloak
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_URL: jdbc:postgresql://citus-coordinator:5432/keycloak
       KC_METRICS_ENABLED: true
       KC_HEALTH_ENABLED: true
       KC_PROXY_HEADERS: xforwarded
@@ -256,7 +329,7 @@ services:
       KC_TELEMETRY_ENDPOINT: http://jaeger:4317
       KC_TELEMETRY_PROTOCOL: grpc
     depends_on:
-      - postgres
+      - citus-coordinator
     networks:
       [ ledger-network ]
     env_file:
@@ -314,13 +387,13 @@ services:
       test: [ "CMD-SHELL", "temporal operator cluster health 2>&1 | grep -Fxq 'SERVING' || exit 1" ]
       start_period: 5s
     depends_on:
-      - postgres
+      - citus-coordinator
     environment:
       <<: *temporal_env
       DB: postgres12
       DB_PORT: 5432
       POSTGRES_USER: postgres228
-      POSTGRES_SEEDS: postgres
+      POSTGRES_SEEDS: citus-coordinator
       DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
     env_file:
       - ./secrets/temporal-server/.env
@@ -483,6 +556,8 @@ networks:
 
 volumes:
   postgres_data:
+  citus_worker_1_data:
+  citus_worker_2_data:
   keycloak_data:
   caddy_data:
   caddy_config:
