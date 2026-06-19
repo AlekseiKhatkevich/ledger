@@ -106,11 +106,6 @@ services:
       "-c", "max_parallel_workers_per_gather=2"
     ]
     env_file: secrets/postgres/.env
-    environment:
-      POSTGRES_USER: postgres228
-      POSTGRES_PASSWORD: 1q2w3e
-      POSTGRES_DB: ledger-db
-      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     expose:
       - "5432"
     volumes:
@@ -154,11 +149,6 @@ services:
       "-c", "max_parallel_workers_per_gather=2"
     ]
     env_file: secrets/postgres/.env
-    environment:
-      POSTGRES_USER: postgres228
-      POSTGRES_PASSWORD: 1q2w3e
-      POSTGRES_DB: ledger-db
-      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     expose:
       - "5432"
     volumes:
@@ -237,11 +227,6 @@ services:
       "-c", "paradedb.enable_join_custom_scan=on"
     ]
     env_file: secrets/postgres/.env
-    environment:
-      POSTGRES_USER: postgres228
-      POSTGRES_PASSWORD: 1q2w3e
-      POSTGRES_DB: ledger-db
-      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     expose:
       - "5432"
     volumes:

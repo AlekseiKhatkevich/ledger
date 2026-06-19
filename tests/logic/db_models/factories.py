@@ -5,7 +5,6 @@ from typing import Any, Callable
 
 from faker import Faker
 from pgvector.sqlalchemy import VECTOR
-from polyfactory import Ignore
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
 import constants

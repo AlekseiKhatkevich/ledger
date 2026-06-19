@@ -42,7 +42,7 @@ class DB:
                 pool_class = AsyncAdaptedQueuePool
 
         engine_kwargs = dict(
-            url=settings.PG_DSN,
+            url=settings.PG_DSN, #  during testing changes to dsn from pyproject.toml
             echo=settings.POSTGRES_ECHO,
             echo_pool=settings.ECHO_POOL,
             poolclass=pool_class,
