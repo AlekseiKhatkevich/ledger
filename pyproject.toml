@@ -59,7 +59,7 @@ exclude-newer = "7 days"
 [tool.pytest_env]
 PGDATABASE = "ledger-db-test"
 POOL_CLASS = "null"
-PGHOSTADDR = "postgres"
+PGHOSTADDR = "citus-coordinator"
 OTEL_SDK_DISABLED = "true"
 
 [tool.uv.workspace]

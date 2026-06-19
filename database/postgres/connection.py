@@ -41,13 +41,8 @@ class DB:
             case 'async':
                 pool_class = AsyncAdaptedQueuePool
 
-        # Add sslmode=disable to the DSN query string (asyncpg defaults to SSL,
-        # but we connect through HAProxy which doesn't support PostgreSQL SSL)
-        dsn = settings.PG_DSN.set(
-            query={'sslmode': 'disable'},
-        )
         engine_kwargs = dict(
-            url=dsn,
+            url=settings.PG_DSN,
             echo=settings.POSTGRES_ECHO,
             echo_pool=settings.ECHO_POOL,
             poolclass=pool_class,
