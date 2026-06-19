@@ -1,7 +1,11 @@
 import datetime
 import decimal
+from functools import partial
+from typing import Any, Callable
 
 from faker import Faker
+from pgvector.sqlalchemy import VECTOR
+from polyfactory import Ignore
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
 import constants
@@ -81,7 +85,15 @@ class AssetTickerPriceFactory(CustomFactory[AssetTickerPrice]):
 
 
 class NotesFactory(CustomFactory[Note]):
-    pass
-    # @classmethod
-    # def note(cls):
-    #     return cls.__faker__.unique.text(max_nb_chars=500)
+    embedding = None
+
+    @classmethod
+    def get_sqlalchemy_types(cls) -> dict[Any, Callable[[], Any]]:
+        mapping = super().get_sqlalchemy_types()
+        mapping[VECTOR] = partial(
+            cls.__faker__.pylist,
+            nb_elements=768,
+            variable_nb_elements=False,
+            allowed_types=(float,),
+        )
+        return mapping
