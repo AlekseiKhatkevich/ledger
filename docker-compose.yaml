@@ -77,103 +77,12 @@ services:
 
   #  ---
 
-  citus-worker-1:
-    build: aux/docker/postgres_custom
-    shm_size: 1g
-    container_name: citus-worker-1
-    restart: unless-stopped
-    profiles: [main, temporal]
-    command: [
-      "postgres",
-      "-c", "shared_buffers=4GB",
-      "-c", "effective_cache_size=12GB",
-      "-c", "work_mem=32MB",
-      "-c", "maintenance_work_mem=1GB",
-      "-c", "wal_buffers=32MB",
-      "-c", "huge_pages=try",
-      "-c", "max_connections=100",
-      "-c", "max_wal_size=4GB",
-      "-c", "min_wal_size=1GB",
-      "-c", "wal_compression=on",
-      "-c", "autovacuum=on",
-      "-c", "log_filename='postgresql-%Y-%m-%d.log'",
-      "-c", "log_min_duration_statement=1000",
-      "-c", "log_line_prefix='%m [%p] %q%u@%d '",
-      "-c", "password_encryption=scram-sha-256",
-      "-c", "shared_preload_libraries=citus,pg_stat_statements,pg_ivm,pg_search",
-      "-c", "max_worker_processes=12",
-      "-c", "max_parallel_workers=8",
-      "-c", "max_parallel_workers_per_gather=2"
-    ]
-    env_file: secrets/postgres/.env
-    expose:
-      - "5432"
-    volumes:
-      - citus_worker_1_data:/var/lib/postgresql
-    networks:
-      [ ledger-network ]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    stop_grace_period: 120s
-
-  citus-worker-2:
-    build: aux/docker/postgres_custom
-    shm_size: 1g
-    container_name: citus-worker-2
-    restart: unless-stopped
-    profiles: [main, temporal]
-    command: [
-      "postgres",
-      "-c", "shared_buffers=4GB",
-      "-c", "effective_cache_size=12GB",
-      "-c", "work_mem=32MB",
-      "-c", "maintenance_work_mem=1GB",
-      "-c", "wal_buffers=32MB",
-      "-c", "huge_pages=try",
-      "-c", "max_connections=100",
-      "-c", "max_wal_size=4GB",
-      "-c", "min_wal_size=1GB",
-      "-c", "wal_compression=on",
-      "-c", "autovacuum=on",
-      "-c", "log_filename='postgresql-%Y-%m-%d.log'",
-      "-c", "log_min_duration_statement=1000",
-      "-c", "log_line_prefix='%m [%p] %q%u@%d '",
-      "-c", "password_encryption=scram-sha-256",
-      "-c", "shared_preload_libraries=citus,pg_stat_statements,pg_ivm,pg_search",
-      "-c", "max_worker_processes=12",
-      "-c", "max_parallel_workers=8",
-      "-c", "max_parallel_workers_per_gather=2"
-    ]
-    env_file: secrets/postgres/.env
-    expose:
-      - "5432"
-    volumes:
-      - citus_worker_2_data:/var/lib/postgresql
-    networks:
-      [ ledger-network ]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    stop_grace_period: 120s
-
   citus-coordinator:
     build: aux/docker/postgres_custom
     shm_size: 1g
     container_name: citus-coordinator
     restart: unless-stopped
     profiles: [main, temporal]
-    depends_on:
-      citus-worker-1:
-        condition: service_started
-      citus-worker-2:
-        condition: service_started
     command: [
       "postgres",
       "-c", "shared_buffers=8GB",
