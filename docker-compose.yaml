@@ -242,6 +242,39 @@ services:
 
     #  ---
 
+  pgcache:
+    image: pgcache/pgcache:0.4.11-amd64
+    shm_size: 16g
+    profiles: [ pgcache ]
+    container_name: pgcache
+    restart: unless-stopped
+    networks: [ ledger-network ]
+    depends_on:
+      - citus-coordinator
+    expose:
+      - "5432"
+    ports:
+      - "9090:9090"
+    volumes:
+      # Mount embedded postgres PGDATA as tmpfs so it's clean on every restart.
+      # This prevents the 'database "pgcache_cache" already exists' error.
+      # Mode 0777 needed because postgres user (uid 70) is not the tmpfs owner.
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+        tmpfs:
+          size: 16G
+          mode: 0777
+    env_file: secrets/pgcache/.env
+    environment:
+      NUM_WORKERS: 4
+      PUBLICATION: pgcache_pub
+      SLOT: pgcache_slot
+      LOG_LEVEL: info
+      PGCACHE_TELEMETRY: off
+      METRICS_PORT: "9090"
+
+#  --------
+
   caddy:
     build: aux/caddy/.
     restart: unless-stopped
