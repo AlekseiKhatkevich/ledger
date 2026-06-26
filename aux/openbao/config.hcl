@@ -19,4 +19,6 @@ listener "tcp" {
   tls_disable = true
 }
 
-api_addr = "http://0.0.0.0:8200"
+ui = true
+
+api_addr = "http://localhost:8200"
