@@ -477,6 +477,23 @@ services:
       - ./aux/jaeger/jaeger-ui-config.json:/etc/jaeger/jaeger-ui-config.json:ro
 
 
+  #  ---
+
+  openbao:
+    image: openbao/openbao
+    command: [ 'server', '-dev', '-dev-listen-address=0.0.0.0:8200' ]
+    ports:
+      - "8200:8200"
+    container_name: openbao
+    profiles: [ openbao ]
+    restart: unless-stopped
+    networks: [ ledger-network ]
+    environment:
+      BAO_ADDR: 'http://0.0.0.0:8200'
+    env_file:
+      - secrets/openbao/.env
+
+
 networks:
     ledger-network:
       driver: bridge

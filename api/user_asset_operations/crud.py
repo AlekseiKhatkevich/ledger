@@ -18,7 +18,9 @@ from api.user_asset_operations.domain import (
     UserAssetOperationsFilter,
     NettoPositionData,
     UserAssetOperationWithNotesOut,
-    NoteFilter, UserAssetOperationSearchByNoteInputArgs, MltInputArgs,
+    NoteFilter,
+    UserAssetOperationSearchByNoteInputArgs,
+    MltInputArgs,
 )
 from logic.exceptions import (
     UserAssetNotFoundError,

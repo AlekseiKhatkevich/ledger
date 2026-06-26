@@ -142,3 +142,7 @@ ty path="":
 pghero-ui:
     nohup xdg-open http://localhost:8002/ >/dev/null 2>&1 &
 
+# openbao web ui
+[group('openbao')]
+openbao-ui:
+    nohup xdg-open http://localhost:8200/ >/dev/null 2>&1 &

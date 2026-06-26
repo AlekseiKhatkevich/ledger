@@ -1030,5 +1030,3 @@ class PostgresUserAssetOperationRepository(
             )
             for row in rows
         ]
-
-# todo citus
