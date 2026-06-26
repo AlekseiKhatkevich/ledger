@@ -481,17 +481,29 @@ services:
 
   openbao:
     image: openbao/openbao
-    command: [ 'server', '-dev', '-dev-listen-address=0.0.0.0:8200' ]
-    ports:
-      - "8200:8200"
     container_name: openbao
     profiles: [ openbao ]
     restart: unless-stopped
     networks: [ ledger-network ]
-    environment:
-      BAO_ADDR: 'http://0.0.0.0:8200'
+    command: [ "server", "-config", "/etc/openbao/config.hcl" ]
     env_file:
       - secrets/openbao/.env
+    volumes:
+      - ./aux/openbao/config.hcl:/etc/openbao/config.hcl:ro
+      - openbao_keyring:/bao/keyring
+    expose:
+      - "8200"
+    ports:
+      - "8200:8200"
+    depends_on:
+      citus-coordinator:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --spider -q -T 2 http://localhost:8200/v1/sys/health || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 
 networks:
@@ -508,3 +520,4 @@ volumes:
   minio_data:
   jaeger_data:
   ollama_data:
+  openbao_keyring:
