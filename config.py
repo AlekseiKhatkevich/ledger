@@ -79,6 +79,8 @@ class OpenBaoSettings:
     BAO_UNSEAL_KEYS: tuple[SecretStr, ...]
     BAO_ROOT_KEY: SecretStr
     BAO_ACCESS_ADDR: HttpUrl
+    BAO_APPROLE_ID: SecretStr
+    BAO_APPROLE_SECRET_ID: SecretStr
 
 
 @cache
