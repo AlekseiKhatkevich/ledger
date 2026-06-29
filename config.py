@@ -1,7 +1,7 @@
 from functools import cached_property, cache
 from typing import Literal
 
-from pydantic import computed_field, PositiveInt, PositiveFloat
+from pydantic import computed_field, PositiveInt, PositiveFloat, HttpUrl, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -74,8 +74,16 @@ class TemporalSettings:
     TEMPORAL_ADDRESS: str = 'temporal:7233'
     TEMPORAL_NAMESPACE: str = 'default'
 
+
+class OpenBaoSettings:
+    BAO_UNSEAL_KEYS: tuple[SecretStr, ...]
+    BAO_ROOT_KEY: SecretStr
+    BAO_ACCESS_ADDR: HttpUrl
+
+
 @cache
 class Settings(
+    OpenBaoSettings,
     ApiSettings,
     PostgresSettings,
     KeycloakSettings,
@@ -89,7 +97,11 @@ class Settings(
 
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
-        env_file=('secrets/postgres/.env', 'secrets/keycloak/.env', ),
+        env_file=(
+            'secrets/postgres/.env',
+            'secrets/keycloak/.env',
+            'secrets/openbao/.env',
+        ),
         extra='ignore',
     )
 

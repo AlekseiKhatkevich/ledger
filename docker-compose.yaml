@@ -486,7 +486,7 @@ services:
     profiles: [ openbao ]
     restart: unless-stopped
     networks: [ ledger-network ]
-    mem_swappiness: 0
+#    mem_swappiness: 0
     env_file:
       - secrets/openbao/.env
     volumes:
@@ -494,6 +494,7 @@ services:
       - openbao_keyring:/bao/keyring
     expose:
       - "8200"
+#      - "8201"
     depends_on:
       citus-coordinator:
         condition: service_healthy

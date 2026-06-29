@@ -1,3 +1,4 @@
+cluster_name = "openbao-ledger"
 
 storage "postgresql" {
   connection_url = "postgresql://openbao_user:1q2w3e@citus-coordinator:5432/openbao?sslmode=disable"
@@ -11,8 +12,11 @@ storage "postgresql" {
 
 listener "tcp" {
   address     = "0.0.0.0:8200"
+  cluster_address = "0.0.0.0:8201"
   tls_disable = true
 }
+
+log_level = "info"
 
 ui = true
 
