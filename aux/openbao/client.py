@@ -1,6 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from functools import cache, wraps, cached_property
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import async_hvac
 import hvac
@@ -74,10 +74,7 @@ class OpenBaoClient:
 
 class SyncOpenBaoClient:
 
-    def __init__(
-            self,
-            settings: OpenBaoSettingsFinal
-    ) -> None:
+    def __init__(self, settings: OpenBaoSettingsFinal) -> None:
         self.settings = settings
 
     @cached_property
@@ -94,9 +91,10 @@ class SyncOpenBaoClient:
             url=self.settings.BAO_ACCESS_ADDR,
             token=self.settings.BAO_ROOT_KEY.get_secret_value(),
         )
-        if not client.sys.is_sealed():
-            return
-        client.sys.submit_unseal_keys([key.get_secret_value() for key in self.settings.BAO_UNSEAL_KEYS])
+        if client.sys.is_sealed():
+            client.sys.submit_unseal_keys(
+                [key.get_secret_value() for key in self.settings.BAO_UNSEAL_KEYS]
+            )
 
     def read_secret(self, path: str, mount_point: str | None = None) -> OpenBaoSecretResponse:
         mount_point = mount_point or self.settings.BAO_KV_MOUNT_POINT
@@ -112,12 +110,8 @@ class SyncOpenBaoClient:
             max_workers: int = 5,
     ) -> OpenBaoSecretResponseBatch:
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = [
-                pool.submit(self.read_secret, path)
-                for path in paths
-            ]
-
-        return OpenBaoSecretResponseBatch(responses=[res.result() for res in as_completed(futures)])
+            results = list(pool.map(self.read_secret, paths))
+        return OpenBaoSecretResponseBatch(responses=results)
 
 
 

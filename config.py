@@ -1,9 +1,13 @@
 from functools import cached_property, cache
-from typing import Literal
+from typing import Literal, Any, ChainMap
 
 from pydantic import computed_field, PositiveInt, PositiveFloat, HttpUrl, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 from sqlalchemy import URL
+
+import constants
+from aux.openbao.client import SyncOpenBaoClient
 
 
 class PostgresSettings:
@@ -92,6 +96,35 @@ class OpenBaoSettingsFinal(OpenBaoSettings, BaseSettings):
     )
 
 
+class OpenBaoSettingsSource(PydanticBaseSettingsSource):
+
+    @cache
+    def _load_openbao_settings(self) -> ChainMap[str, str]:
+        client = SyncOpenBaoClient(settings=OpenBaoSettingsFinal())
+        response = client.read_secrets_batch(constants.OPENBAO_PATHS)
+        return response.response_dict
+
+    def get_field_value(
+            self, field: FieldInfo, field_name: str
+    ) -> tuple[Any, str, bool]:
+        loaded_openbao_settings = self._load_openbao_settings()
+        field_value = loaded_openbao_settings.get(field_name)
+        return field_value, field_name, False
+
+    def __call__(self) -> dict[str, Any]:
+        d: dict[str, Any] = {}
+        for field_name, field in self.settings_cls.model_fields.items():
+            field_value, field_key, value_is_complex = self.get_field_value(
+                field, field_name
+            )
+            field_value = self.prepare_field_value(
+                field_name, field, field_value, value_is_complex
+            )
+            if field_value is not None:
+                d[field_key] = field_value
+        return d
+
+
 @cache
 class Settings(
     OpenBaoSettings,
@@ -115,6 +148,23 @@ class Settings(
         ),
         extra='ignore',
     )
+
+    @classmethod
+    def settings_customise_sources(
+            cls,
+            settings_cls: type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            OpenBaoSettingsSource(settings_cls),
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
 
 settings: Settings
 openbao_settings: OpenBaoSettingsFinal

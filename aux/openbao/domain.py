@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ChainMap
 
 import msgspec
 
@@ -35,3 +35,7 @@ class OpenBaoSecretResponse(msgspec.Struct, kw_only=True):
 
 class OpenBaoSecretResponseBatch(msgspec.Struct):
     responses: list[OpenBaoSecretResponse]
+
+    @property
+    def response_dict(self) -> ChainMap[str, str]:
+        return ChainMap(*(resp.data.data for resp in self.responses))

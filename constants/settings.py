@@ -1,0 +1,1 @@
+OPENBAO_PATHS = ['postgres', ]
