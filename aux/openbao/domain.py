@@ -31,3 +31,7 @@ class OpenBaoSecretResponse(msgspec.Struct, kw_only=True):
     wrap_info: Any = None
     warnings: list[str] | None = None
     auth: Any = None
+
+
+class OpenBaoSecretResponseBatch(msgspec.Struct):
+    responses: list[OpenBaoSecretResponse]

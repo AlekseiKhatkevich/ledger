@@ -7,7 +7,7 @@ import hvac
 import msgspec
 from pydantic import HttpUrl, SecretStr
 
-from aux.openbao.domain import OpenBaoSecretResponse
+from aux.openbao.domain import OpenBaoSecretResponse, OpenBaoSecretResponseBatch
 
 if TYPE_CHECKING:
     from config import OpenBaoSettingsFinal
@@ -109,44 +109,16 @@ class SyncOpenBaoClient:
     def read_secrets_batch(
             self,
             paths: list[str],
-            mount_point: str = 'secret',
             max_workers: int = 5,
-    ) -> dict[str, Any]:
-        """
-        Read multiple secrets in parallel using a thread pool.
-
-        Returns a flat dict combining all 'data' fields from all paths.
-        If a path is not found it is silently skipped.
-        """
-        self.authenticate()
-        results: dict[str, Any] = {}
-
+    ) -> OpenBaoSecretResponseBatch:
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = {
-                pool.submit(self._read_single, path, mount_point): path
+            futures = [
+                pool.submit(self.read_secret, path)
                 for path in paths
-            }
-            for future in as_completed(futures):
-                try:
-                    data = future.result()
-                    results.update(data)
-                except Exception:
-                    continue
+            ]
 
-        return results
+        return OpenBaoSecretResponseBatch(responses=[res.result() for res in as_completed(futures)])
 
-    def _read_single(self, path: str, mount_point: str) -> dict[str, Any]:
-        """Read a single secret (used internally by thread pool)."""
-        try:
-            secret = self._client.secrets.kv.v2.read_secret_version(
-                path=path,
-                mount_point=mount_point,
-            )
-            return secret.get('data', {}).get('data', {})
-        except hvac.exceptions.InvalidPath:
-            return {}
-        except hvac.exceptions.Forbidden:
-            return {}
 
 
 openbao_client: OpenBaoClient
