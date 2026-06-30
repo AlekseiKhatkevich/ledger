@@ -27,6 +27,7 @@ dependencies = [
     "sqlalchemy-paradedb>=0.6.0",
     "pgvector>=0.4.2",
     "async-hvac>=0.7.4",
+    "hvac>=2.4.0",
 ]
 
 [dependency-groups]

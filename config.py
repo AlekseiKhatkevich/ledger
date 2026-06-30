@@ -81,6 +81,15 @@ class OpenBaoSettings:
     BAO_ACCESS_ADDR: HttpUrl
     BAO_APPROLE_ID: SecretStr
     BAO_APPROLE_SECRET_ID: SecretStr
+    BAO_KV_MOUNT_POINT: str = 'ledger'
+
+
+class OpenBaoSettingsFinal(OpenBaoSettings, BaseSettings):
+    model_config = SettingsConfigDict(
+        env_ignore_empty=True,
+        env_file=('secrets/openbao/.env',),
+        extra='ignore',
+    )
 
 
 @cache
@@ -108,7 +117,10 @@ class Settings(
     )
 
 settings: Settings
-def __getattr__(name: str) -> Settings:
+openbao_settings: OpenBaoSettingsFinal
+def __getattr__(name: str) -> Settings | OpenBaoSettingsFinal:
     if name == 'settings':
         return Settings()
+    elif name == 'openbao_settings':
+        return OpenBaoSettingsFinal()
     raise AttributeError(f'Module {__name__} has no attribute {name}')

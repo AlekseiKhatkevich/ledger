@@ -1,10 +1,17 @@
-from functools import cache, wraps
-from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import cache, wraps, cached_property
+from typing import Any, TYPE_CHECKING
 
 import async_hvac
+import hvac
+import msgspec
 from pydantic import HttpUrl, SecretStr
 
-from config import settings
+from aux.openbao.domain import OpenBaoSecretResponse
+
+if TYPE_CHECKING:
+    from config import OpenBaoSettingsFinal
+
 
 
 def retry_on_auth_error(func):
@@ -19,15 +26,16 @@ def retry_on_auth_error(func):
 
     return wrapper
 
+
 @cache
 class OpenBaoClient:
     def __init__(
             self,
             url: HttpUrl,
             unseal_keys: tuple[SecretStr, ...],
-            root_token: Optional[SecretStr],
-            approle_id: Optional[SecretStr],
-            approle_secret_id: Optional[SecretStr],
+            root_token: SecretStr,
+            approle_id: SecretStr,
+            approle_secret_id: SecretStr,
     ) -> None:
         self.url = url
         self.unseal_keys = unseal_keys
@@ -35,7 +43,6 @@ class OpenBaoClient:
         self.approle_id = approle_id
         self.approle_secret_id = approle_secret_id
         self._client = None
-        # async_hvac.exceptions.UnauthorizedError
 
     async def get_client(self) -> async_hvac.AsyncClient:
         if self._client is None:
@@ -53,7 +60,7 @@ class OpenBaoClient:
     async def unseal(self) -> None:
         async with async_hvac.AsyncClient(
                 url=self.url,
-                token=self.root_token.get_secret_value()
+                token=self.root_token.get_secret_value(),
         ) as root_client:
             if await root_client.is_sealed():
                 await root_client.unseal_multi(
@@ -65,12 +72,90 @@ class OpenBaoClient:
         pass
 
 
+class SyncOpenBaoClient:
+
+    def __init__(
+            self,
+            settings: OpenBaoSettingsFinal
+    ) -> None:
+        self.settings = settings
+
+    @cached_property
+    def client(self) -> hvac.Client:
+        client = hvac.Client(url=self.settings.BAO_ACCESS_ADDR)
+        client.auth.approle.login(
+            self.settings.BAO_APPROLE_ID.get_secret_value(),
+            self.settings.BAO_APPROLE_SECRET_ID.get_secret_value(),
+        )
+        return client
+
+    def unseal(self) -> None:
+        client = hvac.Client(
+            url=self.settings.BAO_ACCESS_ADDR,
+            token=self.settings.BAO_ROOT_KEY.get_secret_value(),
+        )
+        if not client.sys.is_sealed():
+            return
+        client.sys.submit_unseal_keys([key.get_secret_value() for key in self.settings.BAO_UNSEAL_KEYS])
+
+    def read_secret(self, path: str, mount_point: str | None = None) -> OpenBaoSecretResponse:
+        mount_point = mount_point or self.settings.BAO_KV_MOUNT_POINT
+        secret = self.client.secrets.kv.read_secret_version(
+            path=f'{mount_point}/{path}',
+            raise_on_deleted_version=True,
+        )
+        return msgspec.convert(secret, OpenBaoSecretResponse)
+
+    def read_secrets_batch(
+            self,
+            paths: list[str],
+            mount_point: str = 'secret',
+            max_workers: int = 5,
+    ) -> dict[str, Any]:
+        """
+        Read multiple secrets in parallel using a thread pool.
+
+        Returns a flat dict combining all 'data' fields from all paths.
+        If a path is not found it is silently skipped.
+        """
+        self.authenticate()
+        results: dict[str, Any] = {}
+
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {
+                pool.submit(self._read_single, path, mount_point): path
+                for path in paths
+            }
+            for future in as_completed(futures):
+                try:
+                    data = future.result()
+                    results.update(data)
+                except Exception:
+                    continue
+
+        return results
+
+    def _read_single(self, path: str, mount_point: str) -> dict[str, Any]:
+        """Read a single secret (used internally by thread pool)."""
+        try:
+            secret = self._client.secrets.kv.v2.read_secret_version(
+                path=path,
+                mount_point=mount_point,
+            )
+            return secret.get('data', {}).get('data', {})
+        except hvac.exceptions.InvalidPath:
+            return {}
+        except hvac.exceptions.Forbidden:
+            return {}
+
+
 openbao_client: OpenBaoClient
 
 
 def __getattr__(name: str) -> OpenBaoClient:
     """Lazy initialization of openbao_client singleton."""
     if name == 'openbao_client':
+        from config import settings
         return OpenBaoClient(
             url=settings.BAO_ACCESS_ADDR,
             unseal_keys=settings.BAO_UNSEAL_KEYS,
