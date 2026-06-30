@@ -101,18 +101,17 @@ class OpenBaoSettingsSource(PydanticBaseSettingsSource):
     @cache
     def _load_openbao_settings(self) -> ChainMap[str, str]:
         client = SyncOpenBaoClient(settings=OpenBaoSettingsFinal())
+        client.unseal()
         response = client.read_secrets_batch(constants.OPENBAO_PATHS)
         return response.response_dict
 
-    def get_field_value(
-            self, field: FieldInfo, field_name: str
-    ) -> tuple[Any, str, bool]:
+    def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
         loaded_openbao_settings = self._load_openbao_settings()
         field_value = loaded_openbao_settings.get(field_name)
         return field_value, field_name, False
 
     def __call__(self) -> dict[str, Any]:
-        d: dict[str, Any] = {}
+        d = {}
         for field_name, field in self.settings_cls.model_fields.items():
             field_value, field_key, value_is_complex = self.get_field_value(
                 field, field_name
@@ -142,8 +141,8 @@ class Settings(
     model_config = SettingsConfigDict(
         env_ignore_empty=True,
         env_file=(
-            'secrets/postgres/.env',
-            'secrets/keycloak/.env',
+            # 'secrets/postgres/.env',
+            # 'secrets/keycloak/.env',
             'secrets/openbao/.env',
         ),
         extra='ignore',

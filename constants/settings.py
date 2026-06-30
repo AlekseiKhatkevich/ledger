@@ -1,1 +1,1 @@
-OPENBAO_PATHS = ['postgres', ]
+OPENBAO_PATHS = ['postgres', 'keycloak']

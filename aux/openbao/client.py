@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from functools import cache, wraps, cached_property
+from functools import wraps, cached_property
 from typing import TYPE_CHECKING
 
 import async_hvac
@@ -27,7 +27,6 @@ def retry_on_auth_error(func):
     return wrapper
 
 
-@cache
 class OpenBaoClient:
     def __init__(
             self,
@@ -115,18 +114,21 @@ class SyncOpenBaoClient:
 
 
 
-openbao_client: OpenBaoClient
+_openbao_client: OpenBaoClient | None = None
 
 
 def __getattr__(name: str) -> OpenBaoClient:
-    """Lazy initialization of openbao_client singleton."""
+    """Lazy initialisation of openbao_client singleton."""
     if name == 'openbao_client':
-        from config import settings
-        return OpenBaoClient(
-            url=settings.BAO_ACCESS_ADDR,
-            unseal_keys=settings.BAO_UNSEAL_KEYS,
-            root_token=settings.BAO_ROOT_KEY,
-            approle_id=settings.BAO_APPROLE_ID,
-            approle_secret_id=settings.BAO_APPROLE_SECRET_ID,
-        )
+        global _openbao_client
+        if _openbao_client is None:
+            from config import settings
+            _openbao_client = OpenBaoClient(
+                url=settings.BAO_ACCESS_ADDR,
+                unseal_keys=settings.BAO_UNSEAL_KEYS,
+                root_token=settings.BAO_ROOT_KEY,
+                approle_id=settings.BAO_APPROLE_ID,
+                approle_secret_id=settings.BAO_APPROLE_SECRET_ID,
+            )
+        return _openbao_client
     raise AttributeError(f'Module {__name__} has no attribute {name}')
