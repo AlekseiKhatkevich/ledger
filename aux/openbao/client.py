@@ -86,12 +86,12 @@ class SyncOpenBaoClient:
         return client
 
     def unseal(self) -> None:
-        client = hvac.Client(
+        root_client = hvac.Client(
             url=self.settings.BAO_ACCESS_ADDR,
             token=self.settings.BAO_ROOT_KEY.get_secret_value(),
         )
-        if client.sys.is_sealed():
-            client.sys.submit_unseal_keys(
+        if root_client.sys.is_sealed():
+            root_client.sys.submit_unseal_keys(
                 [key.get_secret_value() for key in self.settings.BAO_UNSEAL_KEYS]
             )
 

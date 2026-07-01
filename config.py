@@ -123,7 +123,6 @@ class OpenBaoSettingsSource(PydanticBaseSettingsSource):
                 d[field_key] = field_value
         return d
 
-
 @cache
 class Settings(
     OpenBaoSettings,
@@ -159,8 +158,8 @@ class Settings(
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,
-            OpenBaoSettingsSource(settings_cls),
             env_settings,
+            OpenBaoSettingsSource(settings_cls),
             dotenv_settings,
             file_secret_settings,
         )
